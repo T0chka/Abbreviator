@@ -7,3 +7,4 @@ __pycache__/
 *.log
 drafts/
 abb_examples/
+docs_examples/
