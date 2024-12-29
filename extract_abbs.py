@@ -8,14 +8,20 @@ from collections import defaultdict
 folder_path = 'data/abb_examples/'
 abb_dict_path = "data/abb_dict.csv"
 
-SECTION_PATTERN = 'СПИСОК СОКРАЩЕНИЙ'
+SECTION_PATTERNS = ["ПЕРЕЧЕНЬ СОКРАЩЕНИЙ И ОПРЕДЕЛЕНИЯ ТЕРМИНОВ", "СПИСОК СОКРАЩЕНИЙ"]
 NAMESPACE = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
 
-def extract_abb_table(doc, section_pattern=SECTION_PATTERN):
+def extract_abb_table(doc, section_patterns=SECTION_PATTERNS):
     """
-    Iterate over the document blocks. Once the specified `section_pattern` is found,
-    return the first table that appears right after that section.
+    Extract the first relevant table from the document.
+    - If the document contains a section matching `section_pattern`, extract the first table after it.
+    - If the document consists of a single table (without section headings), extract the first table directly.
     """
+    # If the entire doc is just one table, return it
+    tables = [block for block in doc.element.body if block.tag.endswith('tbl')]
+    if len(tables) == 1:
+        return tables[0]
+    
     found_section = False
 
     for block in doc.element.body:
@@ -23,14 +29,19 @@ def extract_abb_table(doc, section_pattern=SECTION_PATTERN):
             para_text = ''.join(
                 node.text for node in block.findall('.//w:t', namespaces=NAMESPACE) if node.text
             )
-            if section_pattern.casefold() in para_text.casefold():
+            if any(pattern.casefold() in para_text.casefold() for pattern in section_patterns):
+                
+                # Must NOT end with a digit (avoid "СПИСОК СОКРАЩЕНИЙ<page number>" in missformated ToC)
+                if para_text.strip().endswith(tuple("0123456789")):
+                    continue
+                # Must NOT have a hyperlink (avoid ToC lines)
+                if block.find('.//w:hyperlink', namespaces=NAMESPACE) is not None:
+                    continue
+                # Must have some heading indication (pStyle or outlineLvl)
                 para_style = block.find('.//w:pStyle', namespaces=NAMESPACE)
                 outline_level = block.find('.//w:outlineLvl', namespaces=NAMESPACE)
-                if para_style is not None and para_style.attrib.get(f"{{{NAMESPACE['w']}}}val") == "Heading1":
-                    found_section = True
-                    continue
-                        
-                elif outline_level is not None and outline_level.attrib.get(f"{{{NAMESPACE['w']}}}val") == "0":
+
+                if para_style is not None or outline_level is not None:
                     found_section = True
                     continue
 
@@ -58,7 +69,7 @@ def parse_table(table_element):
         df.columns = ["abbreviation", "description"]
     return df
 
-def get_all_abbreviations(folder_path, section_pattern=SECTION_PATTERN):
+def get_all_abbreviations(folder_path, section_patterns=SECTION_PATTERNS):
     """
     Loop through all .docx files in `folder_path`, extract the relevant table, parse it,
     and append to a single DataFrame with columns ['abbreviation', 'description'].
@@ -70,7 +81,7 @@ def get_all_abbreviations(folder_path, section_pattern=SECTION_PATTERN):
             file_path = os.path.join(folder_path, file_name)
             
             doc = Document(file_path)
-            table_element = extract_abb_table(doc, section_pattern)
+            table_element = extract_abb_table(doc, section_patterns)
 
             if table_element is not None:
                 df = parse_table(table_element)
@@ -93,9 +104,11 @@ if __name__ == "__main__":
 
     new_abbs = get_all_abbreviations(folder_path)
 
-    combined_abbs = pd.concat([existing_abbs, new_abbs], ignore_index=True)\
-                  .drop_duplicates()\
-                  .sort_values(by=["abbreviation", "description"])
+    combined_abbs = pd.concat([existing_abbs, new_abbs], ignore_index=True)
+    combined_abbs['description'] = combined_abbs['description'].str.capitalize()
+
+    combined_abbs = combined_abbs.drop_duplicates()\
+        .sort_values(by=["abbreviation", "description"])
 
     new_entries_count = len(combined_abbs) - len(existing_abbs)
 
@@ -106,9 +119,11 @@ if __name__ == "__main__":
     .reset_index()
     .query("description > 1")
     )
+    count_inconsistent = inconsistent["abbreviation"].nunique()
     inconsistent = combined_abbs[combined_abbs["abbreviation"].isin(inconsistent["abbreviation"])]
-    print("Abbreviations with different descriptions:")
+    print(f"Abbreviations with more than one unique description: {count_inconsistent}")
     print(inconsistent)
 
-    combined_abbs.to_csv("data/abb_dict.csv", index=False)
+    os.makedirs('data', exist_ok=True)
+    combined_abbs.to_csv("data/abb_dict.csv", index=False, encoding='utf-8-sig')
     print("Abbreviations extracted and saved to data/abb_dict.csv")
