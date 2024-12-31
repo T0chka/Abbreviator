@@ -49,21 +49,28 @@ def extract_abb_table(doc, section_patterns=SECTION_PATTERNS):
 def parse_table(table_element):
     """
     Given an lxml table element, return a DataFrame. 
-    Assumes the table has at least two columns: [abbreviation, description].
+    Assumes the table has two columns: [abbreviation, description].
     """
     rows_data = []
+    first_row = True
+
     for row in table_element.findall('.//w:tr', namespaces=NAMESPACE):
         cell_texts = []
         for cell in row.findall('.//w:tc', namespaces=NAMESPACE):
             texts = cell.findall('.//w:t', namespaces=NAMESPACE)
             cell_text = ''.join(t.text for t in texts if t.text)
             cell_texts.append(cell_text.strip())
+
+        if first_row and cell_texts[:2] == ["Аббревиатура", "Расшифровка"]:
+            first_row = False
+            continue
+
         rows_data.append(cell_texts)
 
     df = pd.DataFrame(rows_data)
     if df.shape[1] == 2:
         df.columns = ['abbreviation', 'description']
-    return df
+        return df
 
 def get_all_abbreviations(folder_path, section_patterns=SECTION_PATTERNS):
     """
@@ -91,43 +98,73 @@ def get_all_abbreviations(folder_path, section_patterns=SECTION_PATTERNS):
     all_abbs = all_abbs.drop_duplicates().sort_values(by=['abbreviation', 'description'])
     return all_abbs
 
-def compare_abbreviations(new_abbs, old_abbs, compare_missing=True, compare_new=True, check_inconsistent=True):
+def compare_abbreviations(new_abbs, old_abbs, compare_missing=True, compare_new=True):
     results = {}
 
-    # Check for abbreviations in the old_abbs that are NOT in the new_abbs
     if compare_missing:
         not_in_new = old_abbs[~old_abbs['abbreviation'].isin(new_abbs['abbreviation'])]
         results['missing_abbs'] = not_in_new
         print(f"\n[INFO] Abbreviations in the old_abbs that are NOT in the new_abbs: {len(not_in_new)}")
         print(not_in_new)
 
-    # Check for abbreviations in the new_abbs that are NOT in the old_abbs
     if compare_new:
         not_in_old = new_abbs[~new_abbs['abbreviation'].isin(old_abbs['abbreviation'])]
         results['new_found'] = not_in_old
         print(f"\n[INFO] Abbreviations in the new_abbs that are NOT in the old_abbs: {len(not_in_old)}")
         print(not_in_old)
 
-    # Check for inconsistent descriptions
-    if check_inconsistent:
-        combined_abbs = pd.concat([old_abbs, new_abbs], ignore_index=True)
-        combined_abbs['description'] = combined_abbs['description'].str.capitalize()
-        combined_abbs = combined_abbs.drop_duplicates().sort_values(by=['abbreviation', 'description'])
-
-        inconsistent = (combined_abbs.groupby('abbreviation')['description']
-                        .nunique()
-                        .reset_index()
-                        .query('description > 1')
-                        )
-
-        count_inconsistent = inconsistent['abbreviation'].nunique()
-        inconsistent_abbs = combined_abbs[combined_abbs['abbreviation'].isin(inconsistent['abbreviation'])]
-        results['inconsistent'] = inconsistent_abbs
-
-        print(f"\n[INFO] Abbreviations with more than one unique description: {count_inconsistent}")
-        print(inconsistent_abbs)
-
     return results
+
+def resolve_conflicts(existing_abbs, new_abbs):
+    """
+    Checks each abbreviation in new_abbs:
+      - If it exists in existing_abbs but with a different description,
+        prompt the user to choose 'old' or 'new'.
+        - If 'old', discard the row from new_abbs.
+        - If 'new', update existing_abbs' description to the new one.
+        
+    Returns updated (existing_abbs, new_abbs).
+    """
+    rows_to_drop = []
+
+    for idx_new, new_row in new_abbs.iterrows():
+        abbreviation_new = new_row['abbreviation']
+        description_new = new_row['description']
+
+        match_mask = (existing_abbs['abbreviation'] == abbreviation_new)
+        if match_mask.any():
+            existing_descriptions = existing_abbs.loc[match_mask, 'description'].unique()
+
+            if description_new in existing_descriptions:
+                rows_to_drop.append(idx_new)
+            else:
+                for old_desc in existing_descriptions:
+                    print(f"\n[CONFLICT] Found abbreviation '{abbreviation_new}' with different descriptions:")
+                    print(f"  Old: {old_desc}")
+                    print(f"  New: {description_new}")
+                    choice = input("Which one do you prefer? [1 = old, 2 = new] (default=1): ")
+
+                    if choice.strip() == '2':
+                        existing_abbs = existing_abbs[
+                            ~((existing_abbs['abbreviation'] == abbreviation_new) &
+                              (existing_abbs['description'] == old_desc))
+                        ]
+                        new_entry = pd.DataFrame(
+                            [[abbreviation_new, description_new]],
+                            columns=['abbreviation','description']
+                        )
+                        existing_abbs = pd.concat([existing_abbs, new_entry], ignore_index=True)
+                        
+                    else:
+                        pass
+
+                rows_to_drop.append(idx_new)
+
+    new_abbs = new_abbs.drop(rows_to_drop)
+    new_abbs = new_abbs.reset_index(drop=True)
+    existing_abbs = existing_abbs.drop_duplicates().reset_index(drop=True)
+
+    return existing_abbs, new_abbs
 
 if __name__ == "__main__":
     if os.path.exists(ABB_DICT_PATH):
@@ -138,18 +175,30 @@ if __name__ == "__main__":
 
     new_abbs = get_all_abbreviations(folder_path)
 
-    combined_abbs = pd.concat([existing_abbs, new_abbs], ignore_index=True)
-    combined_abbs['description'] = combined_abbs['description'].str.capitalize()
+    existing_abbs, new_abbs = resolve_conflicts(existing_abbs, new_abbs)
 
-    combined_abbs = combined_abbs.drop_duplicates()\
-        .sort_values(by=['abbreviation', 'description'])
+    compare_abbreviations(new_abbs, existing_abbs)
+
+    combined_abbs = pd.concat([existing_abbs, new_abbs], ignore_index=True)
+    combined_abbs['description'] = combined_abbs['description'].str.capitalize().str.strip()
+
+    combined_abbs = combined_abbs.drop_duplicates().sort_values(by=['abbreviation', 'description'])
 
     new_entries_count = len(combined_abbs) - len(existing_abbs)
-
     print(f"{new_entries_count} new abbreviations added.")
 
-    compare_abbreviations(new_abbs, existing_abbs, check_inconsistent=True)
+    inconsistent = (combined_abbs.groupby('abbreviation')['description']
+                    .nunique()
+                    .reset_index()
+                    .query('description > 1')
+                    )
 
-    os.makedirs('data', exist_ok=True)
-    # combined_abbs.to_csv("data/abb_dict.csv", index=False, encoding='utf-8-sig')
+    count_inconsistent = inconsistent['abbreviation'].nunique()
+    inconsistent_abbs = combined_abbs[combined_abbs['abbreviation'].isin(inconsistent['abbreviation'])]
+
+    print(f"\n[INFO] Abbreviations with more than one unique description: {count_inconsistent}")
+    print(inconsistent_abbs)
+
+    # os.makedirs('data', exist_ok=True)
+    # combined_abbs.to_csv("data/abb_dict_review.csv", index=False, encoding='utf-8-sig')
     # print("Abbreviations extracted and saved to data/abb_dict.csv")
