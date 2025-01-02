@@ -1,6 +1,10 @@
 import os
+import re
 import pandas as pd
 from docx import Document
+
+# Local imports
+from format_abbs import clean_and_sort_abbreviations
 
 folder_path = "data/abb_examples/"
 ABB_DICT_PATH = "data/abb_dict.csv"
@@ -95,7 +99,7 @@ def get_all_abbreviations(folder_path, section_patterns=SECTION_PATTERNS):
             else:
                 print(f"No relevant table found in {file_name}")
   
-    all_abbs = all_abbs.drop_duplicates().sort_values(by=['abbreviation', 'description'])
+    all_abbs = clean_and_sort_abbreviations(all_abbs)
     return all_abbs
 
 def compare_abbreviations(new_abbs, old_abbs, compare_missing=True, compare_new=True):
@@ -154,7 +158,6 @@ def resolve_conflicts(existing_abbs, new_abbs):
                             columns=['abbreviation','description']
                         )
                         existing_abbs = pd.concat([existing_abbs, new_entry], ignore_index=True)
-                        
                     else:
                         pass
 
@@ -182,10 +185,10 @@ if __name__ == "__main__":
     combined_abbs = pd.concat([existing_abbs, new_abbs], ignore_index=True)
     combined_abbs['description'] = combined_abbs['description'].str.capitalize().str.strip()
 
-    combined_abbs = combined_abbs.drop_duplicates().sort_values(by=['abbreviation', 'description'])
+    combined_abbs = clean_and_sort_abbreviations(combined_abbs)
 
     new_entries_count = len(combined_abbs) - len(existing_abbs)
-    print(f"{new_entries_count} new abbreviations added.")
+    print(f"\n[INFO] {new_entries_count} new abbreviations added.")
 
     inconsistent = (combined_abbs.groupby('abbreviation')['description']
                     .nunique()
