@@ -30,7 +30,55 @@ def load_abbreviation_dict():
         return pd.read_csv(ABB_DICT_PATH)
     return pd.DataFrame(columns=["abbreviation", "description"])
 
-def extract_abbs_from_doc(doc):
+def extract_relevant_text(doc):
+    """
+    Extracts text from the document, excluding sections like "СПИСОК ЛИТЕРАТУРЫ".
+    The exclusion starts at the section title in bold or heading style
+    and resumes at the next bold or heading section.
+    """
+    skip_sections = [
+        "СПИСОК ЛИТЕРАТУРЫ",
+        "Список использованной литературы",
+        "Список использованных источников"
+    ]
+
+    relevant_text = []
+    skip = False
+
+    for para in doc.paragraphs:
+        para_text = para.text.strip()
+
+        is_heading = (
+            para.style.name.startswith('Heading')
+            or 'Заголовок' in para.style.name
+        )
+        is_bold = any(
+            run.bold for run in para.runs if run.text.strip()
+        )
+
+        if any(t.upper() in para_text.upper() for t in skip_sections):
+            print(
+                f"[DEBUG] Detected: {para_text} - "
+                f"Style: {para.style.name} - "
+                f"Is Bold: {is_bold} - Is Heading: {is_heading}"
+            )
+        if ((is_bold or is_heading)
+            and any(t.upper() in para_text.upper() for t in skip_sections)
+            ):
+            skip = True
+
+        elif (is_bold or is_heading) and skip:
+            print(
+                f"[DEBUG] Resuming search at section: {para_text}"
+            )
+            skip = False
+
+        if not skip:
+            relevant_text.append(para_text)
+
+    return " ".join(relevant_text)
+
+def extract_abbs_from_text(text):
     """
     Extracts uppercase and mixed-case abbreviations from the document.
     Stops searching at "Список литературы" if the style is Heading 1.
@@ -49,42 +97,34 @@ def extract_abbs_from_doc(doc):
         r'^(?:[IVXLCDM]+(?:-[IVXLCDM]+)?)[A-Za-zА-Яа-яёЁ]*$',
         re.IGNORECASE
     )
-    stop_section = "Список литературы"
+    # Remove quoted words
+    text_no_quotes = re.compile(r'«\S+»').sub('', text)
+    words = text_no_quotes.split()
 
-    for para in doc.paragraphs:
-        # Stop if "Список литературы" appears in a Heading 1 paragraph
-        if (stop_section.lower() in para.text.lower() and
-            para.style.name == 'Heading 1'):
-            break
+    # Find words with at least 2 uppercase (Latin or Cyrillic) letters
+    matches = [
+        word for word in words
+        if re.search(r'[A-ZА-ЯЁ].*[A-ZА-ЯЁ]', word)
+    ]
+    
+    for match in matches:
+        clean_match = match.strip(':;,.»«][')
 
-        # Remove quoted words like «something» from consideration
-        text_no_space_quoted = re.compile(r'«\S+»').sub('', para.text)
-        words = text_no_space_quoted.split()
+        # Remove '(' if at the beginning and ')' if unmatched
+        if clean_match.startswith('('):
+            clean_match = clean_match[1:]
+        if clean_match.endswith(')') and clean_match.count('(') == 0:
+            clean_match = re.sub(r'\)+$', '', clean_match)
         
-        # Find words with at least 2 uppercase (Latin or Cyrillic) letters
-        matches = [
-            word for word in words
-            if re.search(r'[A-ZА-ЯЁ].*[A-ZА-ЯЁ]', word)
-        ]
-        
-        for match in matches:
-            clean_match = match.strip(':;,.»«][')
+        clean_match = clean_match.strip('»«][')
 
-            # Remove '(' if at the beginning and ')' if unmatched
-            if clean_match.startswith('('):
-                clean_match = clean_match[1:]
-            if clean_match.endswith(')') and clean_match.count('(') == 0:
-                clean_match = re.sub(r'\)+$', '', clean_match)
-            
-            clean_match = clean_match.strip('»«][')
-
-            # Exclude pure Roman numerals and specific excluded terms,
-            # and overly long abbreviations
-            if (not roman_pattern.match(clean_match)
-                and clean_match not in exclude_terms
-                and not (len(clean_match) > 8 and clean_match.isalpha())
-                ):
-                doc_abbs.add(clean_match)
+        # Exclude pure Roman numerals and specific excluded terms,
+        # and overly long abbreviations
+        if (not roman_pattern.match(clean_match)
+            and clean_match not in exclude_terms
+            and not (len(clean_match) > 8 and clean_match.isalpha())
+            ):
+            doc_abbs.add(clean_match)
     return doc_abbs
 
 def find_abbreviation_context(doc, abbreviation, window=50, find_all=False):
@@ -746,7 +786,8 @@ if __name__ == "__main__":
     print(f"[INFO] Processing document: {doc_path}")
 
     doc = Document(doc_path)
-    doc_abbs = extract_abbs_from_doc(doc)
+    text = extract_relevant_text(doc)
+    doc_abbs = extract_abbs_from_text(text)
     
     abb_dict = load_abbreviation_dict()
     # track_abb_dict("just loaded")
