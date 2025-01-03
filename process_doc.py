@@ -6,21 +6,21 @@ from docx.shared import Pt, RGBColor, Cm
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
+from thefuzz import process, fuzz
 
 # Local imports
 from extract_abbs import (
     get_all_abbreviations,
-    compare_abbreviations,
-    clean_and_sort_abbreviations
+    compare_abbreviations
 )
 from format_abbs import clean_and_sort_abbreviations
 
 ABB_DICT_PATH = 'data/abb_dict.csv'
 DOC_PATH = "C:/Workspace/R-pharm/work/abbreviation_app/data/docs_examples"
 
-# ------------------------------
+# -----------------------------------------------------------------------------
 # Abbreviations and context extraction
-# ------------------------------
+# -----------------------------------------------------------------------------
 
 def load_abbreviation_dict():
     """
@@ -30,7 +30,7 @@ def load_abbreviation_dict():
         return pd.read_csv(ABB_DICT_PATH)
     return pd.DataFrame(columns=["abbreviation", "description"])
 
-def extract_abbreviations_from_doc(doc):
+def extract_abbs_from_doc(doc):
     """
     Extracts uppercase and mixed-case abbreviations from the document.
     Stops searching at "Список литературы" if the style is Heading 1.
@@ -43,12 +43,16 @@ def extract_abbreviations_from_doc(doc):
         'КЛИНИЧЕСКОГО', 
         'ИССЛЕДОВАНИЯ'
     }
-    roman_pattern = re.compile(r'^(?:[IVXLCDM]+(?:-[IVXLCDM]+)?)[A-Za-zА-Яа-яёЁ]*$', re.IGNORECASE)
+    roman_pattern = re.compile(
+        r'^(?:[IVXLCDM]+(?:-[IVXLCDM]+)?)[A-Za-zА-Яа-яёЁ]*$',
+        re.IGNORECASE
+    )
     stop_section = "Список литературы"
 
     for para in doc.paragraphs:
-        # Stop if we see "Список литературы" in a Heading 1 paragraph
-        if stop_section.lower() in para.text.lower() and para.style.name == 'Heading 1':
+        # Stop if "Список литературы" appears in a Heading 1 paragraph
+        if (stop_section.lower() in para.text.lower() and
+            para.style.name == 'Heading 1'):
             break
 
         # Remove quoted words like «something» from consideration
@@ -56,13 +60,15 @@ def extract_abbreviations_from_doc(doc):
         words = text_no_space_quoted.split()
         
         # Find words with at least 2 uppercase (Latin or Cyrillic) letters
-        matches = [word for word in words if re.search(r'[A-ZА-ЯЁ].*[A-ZА-ЯЁ]', word)]
+        matches = [
+            word for word in words
+            if re.search(r'[A-ZА-ЯЁ].*[A-ZА-ЯЁ]', word)
+        ]
         
         for match in matches:
             clean_match = match.strip(':;,.»«][')
 
-            # Remove '(' if at the beginning and trailing ')' only if there is no '(' in the remaining word
-            # E.g. (ABC) -> ABC, but AUC(0-24) remains with parentheses
+            # Remove '(' if at the beginning and ')' if unmatched
             if clean_match.startswith('('):
                 clean_match = clean_match[1:]
             if clean_match.endswith(')') and clean_match.count('(') == 0:
@@ -70,9 +76,8 @@ def extract_abbreviations_from_doc(doc):
             
             clean_match = clean_match.strip('»«][')
 
-            # Exclude pure Roman numerals, excluded terms, etc.
-            if (
-                not roman_pattern.match(clean_match)
+            # Exclude pure Roman numerals and specific excluded terms
+            if (not roman_pattern.match(clean_match)
                 and clean_match not in exclude_terms
                 ):
                 doc_abbs.add(clean_match)
@@ -85,7 +90,9 @@ def find_abbreviation_context(doc, abbreviation, window=50, find_all=False):
     """
     contexts = set()    
     for para in doc.paragraphs:
-        matches = re.finditer(rf'(?<!\w){re.escape(abbreviation)}(?!\w)', para.text)
+        matches = re.finditer(
+            rf'(?<!\w){re.escape(abbreviation)}(?!\w)', para.text
+        )
         
         for match in matches:
             start = max(0, match.start() - window)
@@ -99,9 +106,9 @@ def find_abbreviation_context(doc, abbreviation, window=50, find_all=False):
     
     return list(contexts) if find_all else None
 
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Mistyped Abbreviation Checking
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 def generate_all_mixed_forms(abb, cyr2lat, lat2cyr):
     """
@@ -177,7 +184,8 @@ def check_and_correct_misstyped_abb(abb, abb_dict):
     }
     lat2cyr = {v: k for k, v in cyr2lat.items()}
 
-    is_mixed = any(char in cyr2lat for char in abb) and any(char in lat2cyr for char in abb)
+    is_mixed = any(char in cyr2lat for char in abb) and \
+               any(char in lat2cyr for char in abb)
     possible_forms = generate_all_mixed_forms(abb, cyr2lat, lat2cyr)
     abb_hl = highlight_mixed_characters(abb, cyr2lat, lat2cyr)
 
@@ -192,8 +200,14 @@ def check_and_correct_misstyped_abb(abb, abb_dict):
 
     # No matches found; just return original
     if not matches and is_mixed:
-        print(f"\n[INFO] No corrections found for mixed-language abbreviation: '{abb_hl}'")
-        print("[INFO] This may be a new abbreviation or mistyped. Consider adding it manually.")
+        print(
+            f"\n[INFO] No corrections found for mixed-language abbreviation: "
+            f"'{abb_hl}'"
+        )
+        print(
+            "[INFO] This may be a new abbreviation or mistyped. "
+            "Consider adding it manually."
+        )
         return abb
     
     # De-duplicate the matches
@@ -202,74 +216,142 @@ def check_and_correct_misstyped_abb(abb, abb_dict):
     # If exactly 1 match, ask user to confirm
     if len(matches) == 1:
         corrected_abb, description = matches[0]
-        corrected_abb_hl = highlight_mixed_characters(corrected_abb, cyr2lat, lat2cyr)
+        corrected_abb_hl = highlight_mixed_characters(
+            corrected_abb, cyr2lat, lat2cyr
+        )
         print(f"\n[WARNING] '{abb_hl}' appears mistyped.")
         print(f"Did you mean '{corrected_abb_hl}'? - {description}")
 
-        choice = input(f"Use '{corrected_abb}' instead of '{abb}'? (y/n): ").strip().lower()
+        choice = input(
+            f"Use '{corrected_abb}' instead of '{abb}'? (y/n): "
+        ).strip().lower()
         return corrected_abb if choice == 'y' else abb
 
     # If multiple matches, prompt user to pick
     if matches:
-        print(f"\n[WARNING] '{abb_hl}' appears mistyped. Possible corrections:")
+        print(
+            f"\n[WARNING] '{abb_hl}' appears mistyped. Possible corrections:"
+        )
         for i, (corr, desc) in enumerate(matches, start=1):
             print(f" {i}. {corr} - {desc}")
 
-        choice = input(f"Select the correct abbreviation for '{abb}' (1-{len(matches)}) or Enter to skip: ").strip()
+        choice = input(
+            f"Select the correct abbreviation for '{abb}' (1-{len(matches)}) "
+            f"or Enter to skip: "
+        ).strip()
         if choice.isdigit():
             if 1 <= int(choice) <= len(matches):
                 corrected_abb, _ = matches[int(choice) - 1]
-                confirm = input(f"Use '{corrected_abb}' instead of '{abb}'? (y/n): ").strip().lower()
+                confirm = input(
+                    f"Use '{corrected_abb}' instead of '{abb}'? (y/n): "
+                ).strip().lower()
                 if confirm == 'y':
                     return corrected_abb
-
     return abb
 
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Custom description input
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+
+def get_similar_description(custom_desc, abb_dict, threshold=70):
+    """
+    Returns abbreviation-description pairs that have a similar description
+    to the provided custom_desc, using fuzzy matching.
+    """
+    def normalize_text(text):
+        """Normalize text by stripping, lowering, and keeping only letters."""
+        text = text.strip().lower()
+        text = re.sub(r'[^a-zа-яё\s]', '', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text
+
+    normalized_custom_desc = normalize_text(custom_desc)
+    abb_dict['norm_desc'] = abb_dict['description'].apply(normalize_text)
+
+    matches = process.extract(
+        normalized_custom_desc,
+        abb_dict['norm_desc'],
+        scorer=fuzz.token_sort_ratio,
+        limit=5
+    )
+    abb_dict.drop(columns=['norm_desc'], inplace=True)
+    
+    # Filter by similarity threshold
+    similar_pairs = [
+        abb_dict.iloc[idx].to_dict()
+        for _, score, idx in matches if score >= threshold
+    ]
+    return similar_pairs
 
 def get_custom_description(abb, abb_dict, matched_abbs):
     """
-    Prompts the user to enter a custom description for a given abbreviation.
+    Prompt user to enter a custom description for an abbreviation.
+    Check for similar descriptions and confirm with the user.
     Updates abb_dict and matched_abbs with the new description.
     """
     custom_desc = input(f"Enter custom description for '{abb}': ").strip()
     
     if custom_desc:
-        new_entry = pd.DataFrame([{'abbreviation': abb, 'description': custom_desc}])
-        
         # Check if the description already exists for another abbreviation
-        existing_desc = abb_dict[abb_dict['description'] == custom_desc]
-        
-        if not existing_desc.empty:
-            existing_abbs = ", ".join(existing_desc['abbreviation'].unique())
-            print(
-                f"[INFO] This description already exists for '{existing_abbs}'. "
-                f"Linking '{abb}' to the existing description."
-            )
-            matched_abbs = matched_abbs[
-                (matched_abbs['abbreviation'] != abb) |
-                (matched_abbs['description'] == custom_desc)
-            ]
-        else:
-            abb_dict = pd.concat([abb_dict, new_entry], ignore_index=True)
-            abb_dict = clean_and_sort_abbreviations(abb_dict)
-            matched_abbs = pd.concat([matched_abbs, new_entry], ignore_index=True)
-            print(f"[INFO] New description for '{abb}' added to abbreviation dictionary.")
+        similar_pairs = get_similar_description(custom_desc, abb_dict)
+   
+        if similar_pairs:
+            print(f"\n[INFO] Similar descriptions found for '{abb}':")
+            for i, pair in enumerate(similar_pairs, 1):
+                print(f" {i}. {pair['abbreviation']} - {pair['description']}")
+
+            choice = input(
+                f"Use one of the existing pairs (1-{len(similar_pairs)}) "
+                f"or enter 'n' to proceed with the new one: "
+            ).strip().lower()
+
+            if choice.isdigit() and 1 <= int(choice) <= len(similar_pairs):
+                pair = similar_pairs[int(choice) - 1]
+                print(
+                    f"[INFO] Instead of '{abb}' using existing pair: "
+                    f"{pair['abbreviation']} - {pair['description']}."
+                )
+                matched_abbs.drop(
+                    matched_abbs[matched_abbs['abbreviation'] == abb].index,
+                    inplace=True
+                )
+                matched_abbs = pd.concat(
+                    [matched_abbs, pd.DataFrame([pair])],
+                    ignore_index=True
+                )
+                # track_abb_dict("within get_custom_description, if selected similar")
+                return matched_abbs, abb_dict
+
+        # Add a new entry if no similar pair exists or user opts to continue
+        new_entry = pd.DataFrame(
+            [{'abbreviation': abb, 'description': custom_desc}]
+        )
+        abb_dict.loc[len(abb_dict)] = new_entry.iloc[0]
+
+        matched_abbs.drop(
+            matched_abbs[matched_abbs['abbreviation'] == abb].index,
+            inplace=True
+        )
+        matched_abbs = pd.concat([matched_abbs, new_entry], ignore_index=True)
+        print(
+            f"[INFO] New pair '{abb} - {custom_desc}' "
+            "added to abbreviation dictionary."
+        )
+        # track_abb_dict("within get_custom_description, after new pair added")
     else:
-        print(f"[INFO] No custom description provided. '{abb}' will be excluded.")
-    
+        print(f"[INFO] No description provided. '{abb}' will be excluded.")
+
+    clean_and_sort_abbreviations(abb_dict)             
     return matched_abbs, abb_dict
 
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Handling Multiple Descriptions
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 def handle_multiple_descriptions(abb, descriptions, abb_dict, matched_abbs, doc):
     """
     Let user pick or create a new description if multiple exist.
-    Returns updated (matched_abbs, abb_dict).
+    Uses get_custom_description() to update abb_dict with new entries.
     """
     print(f"\nMultiple descriptions found for '{abb}':")
     for i, desc in enumerate(descriptions, 1):
@@ -281,31 +363,14 @@ def handle_multiple_descriptions(abb, descriptions, abb_dict, matched_abbs, doc)
 
     print("0. Enter a custom description")
     while True:
-        choice = input(f"Select the correct description for '{abb}' (1-{len(descriptions)}) or 0 to add custom: ")
+        choice = input(
+            f"Select the correct description for '{abb}' (1-{len(descriptions)})"
+            " or 0 to add custom: "
+        )
         if choice == "0":
-            custom_desc = input(f"Enter custom description for '{abb}': ").strip()
-            if custom_desc:
-                new_entry = pd.DataFrame([{'abbreviation': abb, 'description': custom_desc}])
-                
-                # Check if the description already exists for another abbreviation
-                existing_desc = abb_dict[abb_dict['description'] == custom_desc]
-                
-                if not existing_desc.empty:
-                    existing_abbs = ", ".join(existing_desc['abbreviation'].unique())
-                    print(
-                        f"[INFO] This description already exists for '{existing_abbs}'. "
-                        f"Linking '{abb}' to the existing description."
-                    )
-                    matched_abbs = matched_abbs[
-                        (matched_abbs['abbreviation'] != abb) |
-                        (matched_abbs['description'] == custom_desc)
-                    ]
-                else:
-                    abb_dict = pd.concat([abb_dict, new_entry], ignore_index=True)
-                    abb_dict = clean_and_sort_abbreviations(abb_dict)
-                    print(f"[INFO] New description for '{abb}' added to abbreviation dictionary.")
-                    
-                    matched_abbs = pd.concat([matched_abbs, new_entry], ignore_index=True)
+            matched_abbs, abb_dict = get_custom_description(
+                abb, abb_dict, matched_abbs
+            )
             break
         
         elif choice.isdigit() and 1 <= int(choice) <= len(descriptions):
@@ -320,32 +385,34 @@ def handle_multiple_descriptions(abb, descriptions, abb_dict, matched_abbs, doc)
 
     return matched_abbs, abb_dict
 
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Core Logic: match and update abbreviations
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
-def match_and_update_abbreviations(doc, doc_abbs, abb_dict):
+def match_and_update_abbs(doc, doc_abbs, abb_dict):
     """
     Match abbreviations found in the doc with an existing dictionary, 
     prompting for new or custom descriptions as needed.
-    Also updates abb_dict with new entries.
+    Uses get_custom_description() to update abb_dict with new entries.
     """
-    # 1) Abbreviations that already exist in the dictionary
-    matched_abbs = abb_dict[abb_dict['abbreviation'].isin(doc_abbs)]
+    # 1) Match existing abbreviations in the dictionary
+    matched_abbs = abb_dict[abb_dict['abbreviation'].isin(doc_abbs)].copy()
+    
     new_abbs = doc_abbs - set(matched_abbs['abbreviation'])
 
-    # Handle existing abbreviations with multiple descriptions
+    # Handle abbreviations with multiple descriptions
     for abb in matched_abbs['abbreviation'].unique():
-        descriptions = abb_dict.loc[abb_dict['abbreviation'] == abb, 'description'].unique()
+        descriptions = abb_dict.loc[
+            abb_dict['abbreviation'] == abb, 'description'
+        ].unique()
     
         if len(descriptions) > 1:
             matched_abbs, abb_dict = handle_multiple_descriptions(
                 abb, descriptions, abb_dict, matched_abbs, doc
             )
     
-    # 2) Prompt for new abbreviations not in dict
+    # 2) Prompt for new abbreviations not in dictionary
     if new_abbs:
-        new_entries = []
         for abb in new_abbs:
 
             # Check for possible mistypes
@@ -353,8 +420,12 @@ def match_and_update_abbreviations(doc, doc_abbs, abb_dict):
             
             # If corrected_abb exists, skip new description prompt
             if corrected_abb in abb_dict['abbreviation'].values:
-                rows_for_corrected = abb_dict[abb_dict['abbreviation'] == corrected_abb]
-                matched_abbs = pd.concat([matched_abbs, rows_for_corrected], ignore_index=True)
+                rows_for_corrected = abb_dict[
+                    abb_dict['abbreviation'] == corrected_abb
+                ]
+                matched_abbs = pd.concat(
+                    [matched_abbs, rows_for_corrected], ignore_index=True
+                )
 
                 # If multiple descriptions exist for the corrected abbreviation
                 descriptions = rows_for_corrected['description'].unique()    
@@ -369,70 +440,70 @@ def match_and_update_abbreviations(doc, doc_abbs, abb_dict):
             print(f"\nFound '{abb}' in text:")
             for context in contexts:
                 print(f"...{context}...")
-            desc = input(f"Enter description for '{abb}' (or press Enter to skip): ").strip()
-            if desc:
-                new_entries.append({'abbreviation': abb, 'description': desc})
+            matched_abbs, abb_dict = get_custom_description(
+                abb, abb_dict, matched_abbs
+            )
 
-        # Add newly provided abbreviations
-        if new_entries:
-            new_df = pd.DataFrame(new_entries)
-            matched_abbs = pd.concat([matched_abbs, new_df], ignore_index=True)
-            abb_dict = pd.concat([abb_dict, new_df], ignore_index=True)
-            abb_dict = clean_and_sort_abbreviations(abb_dict)
-
-    matched_abbs = clean_and_sort_abbreviations(matched_abbs)
+    clean_and_sort_abbreviations(matched_abbs)
     return matched_abbs, abb_dict
 
 def search_abbs_in_text(doc, matched_abbs, abb_dict):
     """
-    Extracts text from the document paragraphs until the stop section.
-    Checks the text for abbreviations from abb_dict that were not initially detected.
-    Returns an updated DataFrame of matched abbreviations.
+    Search for abbreviations from abb_dict that may have been missed
+    in the initial detection and add them to matched_abbs.
     """
     stop_section="Список литературы"
     found_text = []
     
     for para in doc.paragraphs:
-        if stop_section.lower() in para.text.lower() and para.style.name == 'Heading 1':
+        if (stop_section.lower() in para.text.lower() and
+            para.style.name == 'Heading 1'):
             break
         found_text.append(para.text)
 
     found_text = " ".join(found_text)
     
-    # Check full text for any other abb in the dictionary not recognized
     for abb in abb_dict['abbreviation']:
-        if re.search(rf'(?<!\w){re.escape(abb)}(?!\w)', found_text) and abb not in doc_abbs:
-            matched_abbs = pd.concat([matched_abbs, abb_dict[abb_dict['abbreviation'] == abb]])
+        if (re.search(rf'(?<!\w){re.escape(abb)}(?!\w)', found_text) and
+            abb not in doc_abbs):
+            matched_abbs = pd.concat(
+                [matched_abbs, abb_dict[abb_dict['abbreviation'] == abb]],
+                ignore_index=True
+            )
 
-    matched_abbs = clean_and_sort_abbreviations(matched_abbs)
+    clean_and_sort_abbreviations(matched_abbs)
     return matched_abbs
 
-def review_one_letter_abbreviations(matched_abbs, doc, abb_dict):
+def review_ole(matched_abbs, doc, abb_dict):
     """
-    Review one-letter abbreviations in the matched_abbs DataFrame.
-    Ask the user if they want to add each abbreviation to the table.
-    Returns an updated matched_abbs DataFrame.
+    Review one-letter abbreviations (ola), prompting users to confirm 
+    or exclude them from the table.
     """
-    one_letter_abbs = matched_abbs[matched_abbs['abbreviation'].str.len() == 1].copy()
+    ola_abbs = matched_abbs[
+        matched_abbs['abbreviation'].str.len() == 1
+    ].copy()
     
-    if not one_letter_abbs.empty:
+    if not ola_abbs.empty:
         print("\n[INFO] One-letter abbreviations detected:")
         
         to_keep = []
-        for abb in one_letter_abbs['abbreviation'].unique():
-            descriptions = one_letter_abbs[one_letter_abbs['abbreviation'] == abb]
+        for abb in ola_abbs['abbreviation'].unique():
+            descriptions = ola_abbs[ola_abbs['abbreviation'] == abb]
             
             if len(descriptions) > 1:
                 print(f"\nAbbreviation: '{abb}' has multiple descriptions:")
-                for i, desc in enumerate(descriptions['description'].unique(), start=1):
+                for desc in descriptions['description'].unique():
                     print(f"- {desc}")
                                 
                 # Ask if user wants to handle or skip
-                choice = input(f"Do you want to add '{abb}' to the table? (y/n): ").strip().lower()
-
+                choice = input(
+                    f"Do you want to add '{abb}' to the table? (y/n): "
+                ).strip().lower()
+                
                 if choice == 'y':
                     matched_abbs, abb_dict = handle_multiple_descriptions(
-                        abb, descriptions['description'].unique(), abb_dict, matched_abbs, doc
+                        abb, descriptions['description'].unique(),
+                        abb_dict, matched_abbs, doc
                     )
                     to_keep.append(abb)
                 else:
@@ -441,33 +512,31 @@ def review_one_letter_abbreviations(matched_abbs, doc, abb_dict):
                 desc = descriptions['description'].values[0]
                 print(f"\nAbbreviation: '{abb}'")
                 print(f" - {desc}")
-                choice = input(f"Do you want to add this description for '{abb}'? (y/n/custom): ").strip().lower()
+                choice = input(
+                    f"Add this description for '{abb}'? (y/n/c):"
+                ).strip().lower()
                 
                 if choice == 'y':
                     to_keep.append(abb)
-                elif choice == 'custom':
-                    custom_desc = input(f"Enter custom description for '{abb}': ").strip()
-                    if custom_desc:
-                        new_entry = pd.DataFrame([{'abbreviation': abb, 'description': custom_desc}])
-                        abb_dict = pd.concat([abb_dict, new_entry], ignore_index=True)
-                        matched_abbs = pd.concat([matched_abbs, new_entry], ignore_index=True)
-                        print(f"[INFO] Custom description for '{abb}' added.")
-                        to_keep.append(abb)
-                    else:
-                        print(f"[INFO] No custom description provided. '{abb}' will be excluded.")
+                elif choice == 'c':
+                    matched_abbs, abb_dict = get_custom_description(
+                        abb, abb_dict, matched_abbs
+                    )
+                    to_keep.append(abb)
                 else:
                     print(f"[INFO] '{abb}' will be excluded.")
 
         matched_abbs = matched_abbs[
             (matched_abbs['abbreviation'].str.len() > 1) | 
             (matched_abbs['abbreviation'].isin(to_keep))
-        ]                
+        ]
+        clean_and_sort_abbreviations(matched_abbs)
 
     return matched_abbs, abb_dict
 
-# ------------------------------
-# Formatting helper functions
-# ------------------------------
+# -----------------------------------------------------------------------------
+# Output generation
+# -----------------------------------------------------------------------------
 
 def set_cell_border(cell):
     """
@@ -490,10 +559,17 @@ def format_paragraph_spacing(cell):
         paragraph.paragraph_format.line_spacing = Pt(12)  # Single line spacing
         paragraph.paragraph_format.space_after = Pt(0)    # No space after paragraph
         paragraph.paragraph_format.space_before = Pt(0)   # No space before paragraph
-        
-# ------------------------------
-# Output generation
-# ------------------------------
+
+def format_cell_text(cell, bold=False):
+    """
+    Formats text in the given cell with specified font and style.
+    """
+    for paragraph in cell.paragraphs:
+        for run in paragraph.runs:
+            run.font.name = 'Times New Roman'
+            run.font.size = Pt(12)
+            run.font.bold = bold
+            run.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
 
 def generate_abbreviation_table(matched_abbs):
     """
@@ -510,7 +586,9 @@ def generate_abbreviation_table(matched_abbs):
         section.left_margin = Cm(3.0)
         section.right_margin = Cm(1.5)
 
-        total_width = section.page_width - section.left_margin - section.right_margin
+        total_width = (
+            section.page_width - section.left_margin - section.right_margin
+        )
         second_col_width = total_width - Cm(3.7)
 
     # Create table (header row + body, 2 columns)
@@ -523,11 +601,7 @@ def generate_abbreviation_table(matched_abbs):
     for cell in hdr_cells:
         set_cell_border(cell)
         format_paragraph_spacing(cell)
-        for run in cell.paragraphs[0].runs:
-            run.font.name = 'Times New Roman'
-            run.font.size = Pt(12)
-            run.font.bold = True
-            run.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+        format_cell_text(cell, bold=True)
 
     # Table body
     for _, row_data in matched_abbs.iterrows():
@@ -538,12 +612,7 @@ def generate_abbreviation_table(matched_abbs):
         for cell in row_cells:
             set_cell_border(cell)
             format_paragraph_spacing(cell)
-            for paragraph in cell.paragraphs:
-                paragraph.paragraph_format.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-                for run in paragraph.runs:
-                    run.font.name = 'Times New Roman'
-                    run.font.size = Pt(12)
-                    run.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
+            format_cell_text(cell, bold=False)
 
     # Enforce column widths
     for row in table.rows:
@@ -556,9 +625,9 @@ def generate_abbreviation_table(matched_abbs):
     doc.save(out_path)
     print(f"Abbreviation table saved to {out_path}")
 
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # Additional Checks
-# -------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 def check_inconsistencies(matched_abbs):
     """
@@ -572,8 +641,13 @@ def check_inconsistencies(matched_abbs):
                             .query('description > 1'))
     count_mult_desc = len(multi_desc)
     if count_mult_desc > 0:
-        print(f"\n[INFO] {count_mult_desc} abbreviation(s) have multiple descriptions:")
-        duplicates = matched_abbs[matched_abbs['abbreviation'].isin(multi_desc['abbreviation'])]
+        print(
+            f"\n[INFO] {count_mult_desc} abbreviation(s) have "
+            "multiple descriptions:"
+        )
+        duplicates = matched_abbs[
+            matched_abbs['abbreviation'].isin(multi_desc['abbreviation'])
+        ]
         print(duplicates)
     else:
         print("\n[INFO] No abbreviations with multiple descriptions.")
@@ -585,8 +659,13 @@ def check_inconsistencies(matched_abbs):
                              .query('abbreviation > 1'))
     count_mult_abbs = len(multi_abbs)
     if count_mult_abbs > 0:
-        print(f"\n[INFO] {count_mult_abbs} description(s) are shared by multiple abbreviations:")
-        duplicates = matched_abbs[matched_abbs['description'].isin(multi_abbs['description'])]
+        print(
+            f"\n[INFO] {count_mult_abbs} description(s) are shared by "
+            "multiple abbreviations:"
+        )
+        duplicates = matched_abbs[
+            matched_abbs['description'].isin(multi_abbs['description'])
+        ]
         print(duplicates)
     else:
         print("\n[INFO] No descriptions are shared by multiple abbreviations.")
@@ -602,26 +681,49 @@ def review_new_entries(abb_dict_before, abb_dict_after):
         how='left',
         indicator=True
     )
-    new_entries = merged[merged['_merge'] == 'left_only'][['abbreviation', 'description']]
+    new_entries = merged[merged['_merge'] == 'left_only'][
+        ['abbreviation', 'description']
+    ]
 
     if not new_entries.empty:
-        print("\n[INFO] The following new entries have been identified in the abbreviation dictionary:")
+        print(
+            "\n[INFO] The following new entries have been identified "
+            "in the abbreviation dictionary:"
+        )
         print(new_entries)
-        confirm = input("\nAre you sure you want to permanently update the dictionary with these new entries? (y/n): ").strip().lower()
+
+        confirm = input(
+            "\nAre you sure you want to permanently update the dictionary "
+            "with these new entries? (y/n): "
+        ).strip().lower()
         if confirm == 'y':
-            abb_dict_after.to_csv(ABB_DICT_PATH, index=False, encoding='utf-8-sig')
+            abb_dict_after.to_csv(
+                ABB_DICT_PATH, index=False, encoding='utf-8-sig'
+            )
             print("[INFO] Abbreviation dictionary updated.")
         else:
-            print("[INFO] User chose not to save new entries. No changes will be written.")
+            print("[INFO] No changes will be written.")
     else:
-        print("\n[INFO] No new entries found. The abbreviation dictionary was not updated.")
+        print("\n[INFO] No new entries found to update the dictionary.")
 
-# ------------------------------
+# -----------------------------------------------------------------------------
+# Debugging
+# -----------------------------------------------------------------------------
+
+def track_abb_dict(label):
+        print(f"\n[DEBUG] After {label}:")
+        print(f" - Is abb_dict a view? {abb_dict._is_view}")
+        print(f" - Is abb_dict a copy? {abb_dict._is_copy is not None}")
+        print(f" - Shape: {abb_dict.shape}")
+        print(abb_dict)
+
+# -----------------------------------------------------------------------------
 # Main script
-# ------------------------------
+# -----------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    doc_file = [f for f in os.listdir(DOC_PATH) if f.endswith('.docx') and not f.startswith('~$')]
+    doc_file = [f for f in os.listdir(DOC_PATH)
+                if f.endswith('.docx') and not f.startswith('~$')]
     if len(doc_file) != 1:
         raise FileNotFoundError("Expected exactly one .docx file in the folder.")
     
@@ -629,17 +731,24 @@ if __name__ == "__main__":
     print(f"[INFO] Processing document: {doc_path}")
 
     doc = Document(doc_path)
-    doc_abbs = extract_abbreviations_from_doc(doc)
+    doc_abbs = extract_abbs_from_doc(doc)
     
     abb_dict = load_abbreviation_dict()
-    matched_abbs, abb_dict_updated = match_and_update_abbreviations(doc, doc_abbs, abb_dict)
+    # track_abb_dict("just loaded")
+    matched_abbs, abb_dict_updated = match_and_update_abbs(doc, doc_abbs, abb_dict)
+    # track_abb_dict("after match_and_update_abbs")
     matched_abbs = search_abbs_in_text(doc, matched_abbs, abb_dict)
-    matched_abbs, abb_dict_updated = review_one_letter_abbreviations(matched_abbs, doc, abb_dict_updated)
+    # track_abb_dict("after search_abbs_in_text")
+    matched_abbs, abb_dict_updated = review_ole(matched_abbs, doc, abb_dict_updated)
+    # track_abb_dict("after review_ole")
+    
+    
     # Generate abbreviation table
     generate_abbreviation_table(matched_abbs)
+    # track_abb_dict("after generate_abbreviation_table")
 
     # Compare changes
-    initial_abbs = get_all_abbreviations(DOC_PATH)
+    initial_abbs = get_all_abbreviations(DOC_PATH)    
     compare_abbreviations(old_abbs=initial_abbs, new_abbs=matched_abbs)
 
     # Check for abbreviations with multiple unique descriptions
