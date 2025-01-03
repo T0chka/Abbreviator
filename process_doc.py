@@ -34,14 +34,16 @@ def extract_abbs_from_doc(doc):
     """
     Extracts uppercase and mixed-case abbreviations from the document.
     Stops searching at "Список литературы" if the style is Heading 1.
-    Excludes pure Roman numerals, specific terms, and words in quotes.
+    Excludes pure Roman numerals, specific terms, and words in quotes,
+    and abbs that are 9 or more characters long and contain only letters.
     """
     doc_abbs = set()
 
     exclude_terms = {
-        'ПРОТОКОЛ', 
-        'КЛИНИЧЕСКОГО', 
-        'ИССЛЕДОВАНИЯ'
+        'ДИЗАЙН', 'ГЛАВНЫЙ', 'СПИСОК', 'ПРЯМОЙ', 'ПРИЕМ', 'ПРОТОКОЛ', 'ОТБОР',
+        'КАЧЕСТВА', 'ПЕРИОД', 'ВЕДЕНИЕ', 'ЭТАП', 'ЭТИКА', 'СИНОПСИС', 'ЛИСТ',
+        'ЦЕЛИ', 'РАБОТА', 'ИСТОРИЯ', 'ОЦЕНКА', 'СПОНСОР', 'ЗАДАЧИ', 'ДОСТУП',
+        'КОНТРОЛЬ', 'ТЕРМИНОВ', 'ЗАПИСЕЙ', 'ГИПОТЕЗА', 'ДАННЫМИ'
     }
     roman_pattern = re.compile(
         r'^(?:[IVXLCDM]+(?:-[IVXLCDM]+)?)[A-Za-zА-Яа-яёЁ]*$',
@@ -76,9 +78,11 @@ def extract_abbs_from_doc(doc):
             
             clean_match = clean_match.strip('»«][')
 
-            # Exclude pure Roman numerals and specific excluded terms
+            # Exclude pure Roman numerals and specific excluded terms,
+            # and overly long abbreviations
             if (not roman_pattern.match(clean_match)
                 and clean_match not in exclude_terms
+                and not (len(clean_match) > 8 and clean_match.isalpha())
                 ):
                 doc_abbs.add(clean_match)
     return doc_abbs
@@ -341,7 +345,8 @@ def get_custom_description(abb, abb_dict, matched_abbs):
     else:
         print(f"[INFO] No description provided. '{abb}' will be excluded.")
 
-    clean_and_sort_abbreviations(abb_dict)             
+    clean_and_sort_abbreviations(abb_dict)
+    check_for_invalid_characters(abb_dict, stage="in get_custom_description")          
     return matched_abbs, abb_dict
 
 # -----------------------------------------------------------------------------
@@ -716,6 +721,16 @@ def track_abb_dict(label):
         print(f" - Is abb_dict a copy? {abb_dict._is_copy is not None}")
         print(f" - Shape: {abb_dict.shape}")
         print(abb_dict)
+
+def check_for_invalid_characters(df, stage="Unknown"):
+    invalid_rows = df[
+        df['description'].str.contains(r'[\x00-\x1F\x7F]', na=False)
+    ]
+    if not invalid_rows.empty:
+        print(f"[ERROR - {stage}] Invalid descriptions found:\n", invalid_rows)
+        raise ValueError(
+            f"Control characters detected after {stage}. Please clean the data."
+        )
 
 # -----------------------------------------------------------------------------
 # Main script
