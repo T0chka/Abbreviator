@@ -99,7 +99,7 @@ def get_all_abbreviations(folder_path, section_patterns=SECTION_PATTERNS):
             else:
                 print(f"No relevant table found in {file_name}")
   
-    all_abbs = clean_and_sort_abbreviations(all_abbs)
+    clean_and_sort_abbreviations(all_abbs)
     return all_abbs
 
 def compare_abbreviations(new_abbs, old_abbs, compare_missing=True, compare_new=True):
@@ -185,7 +185,7 @@ if __name__ == "__main__":
     combined_abbs = pd.concat([existing_abbs, new_abbs], ignore_index=True)
     combined_abbs['description'] = combined_abbs['description'].str.capitalize().str.strip()
 
-    combined_abbs = clean_and_sort_abbreviations(combined_abbs)
+    clean_and_sort_abbreviations(combined_abbs)
 
     new_entries_count = len(combined_abbs) - len(existing_abbs)
     print(f"\n[INFO] {new_entries_count} new abbreviations added.")
