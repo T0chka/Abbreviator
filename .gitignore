@@ -1,16 +1,51 @@
-__pycache__/
+# Python and Django
 *.pyc
+__pycache__/
+db.sqlite3
 *.pyo
 *.pyd
-*.env
+*.db
+*.sqlite3
+
+# Virtual Environment
+venv/
 .venv/
+
+# Django Migrations
+**/migrations/
+
+# Logs
 *.log
-drafts/
-bkups/
-abb_examples/
-docs_examples/
-data/*
-!data/abb_dict.csv
-notes for review.txt
-output/abbreviations_table.docx
-abbs_review.py
+*.out
+*.err
+
+# IDE and Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Jupyter Notebooks (Optional)
+*.ipynb_checkpoints
+
+# Test and Temporary Files
+*.bak
+*.tmp
+*.old
+
+# Word and Excel files
+*.xlsx
+*.xls
+*.docx
+*.doc
+
+# Ignore Backup or Draft Data
+!backend_scripts/data/abb_dict.csv
+backend_scripts/data/bkups/
+backend_scripts/data/tmp/
+backend_scripts/drafts/
+backend_scripts/notes for review.txt
