@@ -3,10 +3,10 @@ import re
 import pandas as pd
 from docx import Document
 from docx.shared import Pt, RGBColor, Cm
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from thefuzz import process, fuzz
+from collections import Counter
 
 # Local imports
 from extract_abbs import (
@@ -85,7 +85,7 @@ def extract_abbs_from_text(text):
     Excludes pure Roman numerals, specific terms, and words in quotes,
     and abbs that are 9 or more characters long and contain only letters.
     """
-    doc_abbs = set()
+    doc_abbs = Counter()
 
     exclude_terms = {
         'ДИЗАЙН', 'ГЛАВНЫЙ', 'СПИСОК', 'ПРЯМОЙ', 'ПРИЕМ', 'ПРОТОКОЛ', 'ОТБОР',
@@ -125,7 +125,7 @@ def extract_abbs_from_text(text):
             and clean_match not in exclude_terms
             and not (len(clean_match) > 8 and clean_match.isalpha())
             ):
-            doc_abbs.add(clean_match)
+            doc_abbs[clean_match] += 1
     return doc_abbs
 
 def find_abbreviation_context(text, abbreviation, window=50, find_all=False):
@@ -156,7 +156,6 @@ def generate_all_mixed_forms(abb, cyr2lat, lat2cyr):
     """
     Given an abbreviation that may have mixed Cyrillic/Latin chars,
     generate all possible "conversion" permutations by:
-      - leaving the character as is,
       - converting Cyrillic -> Latin,
       - converting Latin -> Cyrillic.
     """
@@ -168,18 +167,13 @@ def generate_all_mixed_forms(abb, cyr2lat, lat2cyr):
             return
 
         ch = abb[i]
-        # 1) Leave the character as is
-        current.append(ch)
-        backtrack(i + 1, current)
-        current.pop()
-
-        # 2) Cyrillic -> Latin (if ch is in cyr2lat)
+        # 1) Cyrillic -> Latin (if ch is in cyr2lat)
         if ch in cyr2lat:
             current.append(cyr2lat[ch])
             backtrack(i + 1, current)
             current.pop()
 
-        # 3) Latin -> Cyrillic (if ch is in lat2cyr)
+        # 2) Latin -> Cyrillic (if ch is in lat2cyr)
         if ch in lat2cyr:
             current.append(lat2cyr[ch])
             backtrack(i + 1, current)
@@ -432,16 +426,55 @@ def handle_multiple_descriptions(abb, descriptions, abb_dict, matched_abbs, text
 # Core Logic: match and update abbreviations
 # -----------------------------------------------------------------------------
 
-def match_and_update_abbs(text, doc_abbs, abb_dict):
+def handle_single_abbs(doc_abbs, abb_dict, matched_abbs, text):
+    single_abbs = [abb for abb, count in doc_abbs.items() if count == 1]
+    print(f"\nFound single-occurrence abbreviations: {', '.join(single_abbs)}")
+        
+    for abb in single_abbs:
+        print(f"\nAbbreviation '{abb}' found in:")
+        contexts = find_abbreviation_context(text, abb, find_all=True)
+        for context in contexts:
+            print(f"...{context}...")
+        choice = input(
+            f"Would you like to add '{abb}' to the abbreviation table? (y/n): "
+        )
+        if choice.lower() == 'y':
+            # Check for possible mistypes
+            corrected_abb = check_and_correct_misstyped_abb(abb, abb_dict)
+            
+            # If abb descroption exists, skip new description prompt
+            if corrected_abb in abb_dict['abbreviation'].values:
+                rows_for_corrected = abb_dict[
+                    abb_dict['abbreviation'] == corrected_abb
+                ]
+                matched_abbs = pd.concat(
+                    [matched_abbs, rows_for_corrected], ignore_index=True
+                )
+
+                # If multiple descriptions exist for the corrected abbreviation
+                descriptions = rows_for_corrected['description'].unique()    
+                if len(descriptions) > 1:
+                    matched_abbs = handle_multiple_descriptions(
+                        corrected_abb, descriptions, abb_dict, matched_abbs, text
+                    )
+                continue            
+            else: 
+                matched_abbs = get_custom_description(
+                    abb, abb_dict, matched_abbs
+                )
+    return matched_abbs
+
+def match_and_update_abbs(doc_abbs, abb_dict, text):
     """
     Match abbreviations found in the doc with an existing dictionary, 
     prompting for new or custom descriptions as needed.
     Uses get_custom_description() to update abb_dict with new entries.
     """
     # 1) Match existing abbreviations in the dictionary
-    matched_abbs = abb_dict[abb_dict['abbreviation'].isin(doc_abbs)].copy()
+    freq_abbs = {abb: count for abb, count in doc_abbs.items() if count > 1}
+    matched_abbs = abb_dict[abb_dict['abbreviation'].isin(freq_abbs)].copy()
     
-    new_abbs = doc_abbs - set(matched_abbs['abbreviation'])
+    new_abbs = set(freq_abbs) - set(matched_abbs['abbreviation'])
 
     # Handle abbreviations with multiple descriptions
     for abb in matched_abbs['abbreviation'].unique():
@@ -485,7 +518,8 @@ def match_and_update_abbs(text, doc_abbs, abb_dict):
             matched_abbs = get_custom_description(
                 abb, abb_dict, matched_abbs
             )
-
+    # 3) process abbreviations appearing only once
+    matched_abbs = handle_single_abbs(doc_abbs, abb_dict, matched_abbs, text)
     clean_and_sort_abbreviations(matched_abbs)
     return matched_abbs
 
@@ -776,13 +810,14 @@ if __name__ == "__main__":
 
     doc = Document(doc_path)
     text = extract_relevant_text(doc)
+    print(text)
     doc_abbs = extract_abbs_from_text(text)
     
     abb_dict = load_abbreviation_dict()
     abb_dict_init = abb_dict.copy()
 
     # track_abb_dict("just loaded")
-    matched_abbs = match_and_update_abbs(text, doc_abbs, abb_dict)
+    matched_abbs = match_and_update_abbs(doc_abbs, abb_dict, text)
     # track_abb_dict("after match_and_update_abbs")
     matched_abbs = search_abbs_in_text(text, matched_abbs, abb_dict)
     # track_abb_dict("after search_abbs_in_text")
