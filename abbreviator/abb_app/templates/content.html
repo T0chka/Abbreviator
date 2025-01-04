@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Document Content</title>
+</head>
+<body>
+    <h1>Uploaded Document Content</h1>
+
+    {% if content %}
+        <h2>First 10 Paragraphs:</h2>
+        {% for paragraph in content %}
+            <p>{{ paragraph }}</p>
+        {% endfor %}
+    {% else %}
+        <p>No content to display.</p>
+    {% endif %}
+
+    <hr>
+    <a href="{% url 'upload_file' %}">Upload Another File</a>
+</body>
+</html>

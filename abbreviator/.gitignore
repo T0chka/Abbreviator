@@ -1,0 +1,39 @@
+# Python bytecode and cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+
+# Virtual environment
+.venv/
+venv/
+
+# Django migrations
+**/migrations/
+
+# Logs
+*.log
+
+# SQLite database
+*.sqlite3
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Also
+drafts/
+bkups/
+abb_examples/
+docs_examples/
+data/*
+!data/abb_dict.csv
+notes for review.txt
+output/abbreviations_table.docx
+abbs_review.py

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload and View Document</title>
+</head>
+<body>
+    <h1>Upload a Word Document</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="file" name="uploaded_file" required>
+        <button type="submit">Upload</button>
+    </form>
+
+    <hr>
+
+    {% if content %}
+        <h2>File Content:</h2>
+        {% for paragraph in content %}
+            <p>{{ paragraph }}</p>
+        {% endfor %}
+    {% elif error %}
+        <p style="color: red;">Error: {{ error }}</p>
+    {% endif %}
+</body>
+</html>

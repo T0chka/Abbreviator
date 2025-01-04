@@ -1,0 +1,1159 @@
+﻿abbreviation,description
+14C,Меченый радиоактивным изотопом углерод
+14C-AMG,14C-Alpha-Methyl-Glucopyranoside (14C-альфа-метил-глюкопиранозид)
+14C-DOG,14C-Deoxy-Glucose (14C-дезоксиглюкоза)
+3TC, Lamivudine (Ламивудин)
+3T3 NRU,"3T3 Neutral Red Ultraviolet (клеточная линия фибробластов мышей-альбиносов): Тест для оценки цитотоксичности, основанный на окрашивании нейтральным красным"
+5-HT1b,5-Hydroxytryptamine Receptor 1b (рецептор 5-гидрокситриптамина 1b)
+A:H exposure,Animal:Human Exposure (сравнение воздействия между животными и человеком)
+AAG,Alpha-1-Acid Glycoprotein (α1-кислый гликопротеин)
+ABC,Abacavir (Абакавир)
+ACALA,Acalabrutinib (Акалабрутиниб)
+ACE,Angiotensin-Converting Enzyme (ангиотензин-превращающий фермент)
+ACQ,Asthma Control Questionnaire (опросник по контролю над астмой)
+ACR20,American College of Rheumatology 20 (достижение 20% улучшения по критериям американского колледжа ревматологии)
+ACR30,American College of Rheumatology 30 (достижение 30% улучшения по критериям американского колледжа ревматологии)
+ACR50,American College of Rheumatology 50 (достижение 50% улучшения по критериям американского колледжа ревматологии)
+ACR70,American College of Rheumatology 70 (достижение 70% улучшения по критериям американского колледжа ревматологии)
+ACT,Asthma Control Test (тест по контролю над астмой)
+AGRP,Agouti-Related Peptide (агути-подобный пептид)
+ALBI,Albumin-Bilirubin Score (шкала альбумин-билирубин)
+AMG,Alpha-Methyl-Glucopyranoside (метилглюкопиранозид)
+ANP,Atrial Natriuretic Peptide (предсердный натрийуретический пептид)
+ANZUP,Australian and New Zealand Urogenital and Prostate Cancer Trials Group (Австралийско-новозеландская группа по изучению урогенитального рака и рака предстательной железы)
+AP-1,Activator Protein 1 (активирующий белок 1)
+APC,Adenomatous Polyposis Coli (ген аденоматозного полипоза толстой кишки)
+APN,Aminopeptidase N (аминопептидаза N)
+APP,Amyloid Beta Precursor Protein (предшественник бета-амилоида)
+AQLQ,Asthma Quality of Life Questionnaire (опросник оценки качества жизни у больных бронхиальной астмой)
+AR,Acute Rejection (острое отторжение)
+AR+,"Androgen Receptor-Positive (позитивная по рецептору андрогена): Опухоль, экспрессирующая андрогеновые рецепторы"
+ARC,Arcuate Nucleus (аркуатное ядро гипоталамуса)
+ARNI,Angiotensin Receptor-Neprilysin Inhibitor (ингибитор рецепторов ангиотензина и неприлизина)
+ARVPR,Antiretroviral Pregnancy Registry (регистр по применению антиретровирусных препаратов)
+ASA,Active Systemic Anaphylaxis (активная общая анафилактическая реакция)
+ASAS20,Assessment of Spondyloarthritis International Society 20 (20% улучшение по шкале оценки международного общества по изучению спондилоартритов)
+ASCO,American Society of Clinical Oncology (Американское общество клинической онкологии)
+ASH,American Society of Hematology (Американское общество гематологии)
+ATA,Anti-Topoisomerase Antibodies (антитела к топоизомеразе)
+ATV,Atazanavir (Атазанавир)
+ATV/c,"Atazanavir/Cobicistat (Атазанавир, бустированный кобицистатом)"
+AUC(0-72),Area Under the Curve from 0 to 72 hours (площадь под кривой «концентрация-время» от нуля до 72 часов): Отражает экспозицию препарата в течение первых 72 часов
+AUC(0-τ),Area Under the Curve Over Dosing Interval (площадь под кривой «концентрация-время» в интервале дозирования): Отражает экспозицию препарата в течение одного интервала дозирования
+AUC(0–10),Area Under the Curve from 0 to 10 hours (площадь под кривой «концентрация-время» от нуля до 10 часов): Отражает экспозицию препарата в течение первых 10 часов
+AUC0-3 ч,Area Under the Curve from 0 to 3 hours (площадь под кривой «концентрация-время» от нуля до 3 часов): Отражает экспозицию препарата в течение первых 3 часов
+AUC0–24,Area Under the Curve from 0 to 24 hours (площадь под кривой «концентрация-время» от нуля до 24 часов): Отражает экспозицию препарата в течение первых суток
+"AUC24,ss",Area Under the Curve Over 24 Hours at Steady State (площадь под кривой «концентрация-время» в равновесном состоянии за 24 часа): Отражает экспозицию препарата в равновесном состоянии за сутки
+AUC24h,Area Under the Curve from 0 to 24 hours (площадь под кривой «концентрация-время» от нуля до 24 часов): Отражает экспозицию препарата в течение первых суток
+AUCinf,"Area Under the Curve to Infinity (площадь под кривой «концентрация-время» до бесконечности): Отражает общую экспозицию препарата, включая экстраполяцию за пределы последнего отбора крови с измеряемой концентрацией"
+AUCss,Area Under the Curve at Steady State (площадь под кривой «концентрация-время» в равновесном состоянии): Отражает экспозицию препарата при достижении равновесного состояния
+AUCtau,Area Under the Curve Over Dosing Interval (площадь под кривой «концентрация-время» в интервале дозирования): Отражает экспозицию препарата в течение одного интервала дозирования
+AUCtotal,Area Under the Curve Total (общая площадь под кривой «концентрация-время»): Общая экспозиция препарата в плазме крови за всё время наблюдения
+"AUCτ,ss",Area Under the Curve Over Dosing Interval at Steady State (равновесная площадь под кривой в интервале дозирования): Отражает экспозицию препарата в течение одного интервала дозирования в равновесном состоянии
+AUEC,Area Under the Effect Curve (площадь под кривой эффекта): Измерение связи концентрации препарата с фармакологическим эффектом
+AUMC,"Area Under the First Moment Curve (площадь под кривой времени-концентрации): Показатель, отражающий задержку препарата в организме"
+AZ5104,Лабораторный шифр метаболита осимертиниба
+AZ7550,Лабораторный шифр метаболита осимертиниба
+AZA,Azathioprine (Азатиоприн)
+AZD9291,Лабораторный шифр осимертиниба
+AZT,Zidovudine (Азидотимидин)
+Abl,Abelson Murine Leukemia Viral Oncogene (протоонкоген Абельсона)
+Akt,Protein Kinase B (протеинкиназа B)
+Amax,Maximum Activity (максимальная активность): Максимальная активность препарата против определенного фактора
+Apo,Apolipoprotein (аполипопротеин)
+ApoE,Apolipoprotein E (аполипопротеин E)
+BCLC,Barcelona Clinic Liver Cancer (Барселонская система стадирования печеночно-клеточного рака)
+BCOP,Bovine Corneal Opacity and Permeability Test (анализ прозрачности/непрозрачности бычьей роговицы)
+BCR-ABL,"Breakpoint Cluster Region-Abelson (кластерный регион точечного разрыва Абельсона): белок, ассоциированный с хроническим миелоидным лейкозом"
+BCR-Abl,"Breakpoint Cluster Region-Abelson (кластерный регион точечного разрыва Абельсона): белок, ассоциированный с хроническим миелоидным лейкозом"
+BDC,Bile Duct Cannulation (канюлированный желчный проток)
+BIBF 1202,Метаболит нинтеданиба
+BIC,Bictegravir (Биктегравир)
+BIC/B,"Bictegravir/Booster (Биктегравир, бустированный препаратом)"
+BIC/FTC/TAF,Bictegravir/Emtricitabine/Tenofovir Alafenamide (биктегравир/эмтрицитабин/тенофовир алафенамид)
+BICR,Blinded Independent Central Review (независимая централизованная оценка в слепом режиме)
+BLC,Basophilic Leukemia Cells (клетки базофильного лейкоза)
+BMMC,Bone Marrow-Derived Mast Cells (тучные клетки костного мозга мышей)
+BNP,B-type Natriuretic Peptide (натрийуретический пептид B-типа)
+BONF,Brain-Derived Neurotrophic Factor (нейротрофический фактор из тканей мозга)
+BOV,"Between-Occasion Variability (дисперсия между событиями): Фармакокинетический параметр, отражающий изменчивость между разными введениями препарата"
+BPAR,Biopsy-Proven Acute Rejection (подтвержденные биопсией эпизоды острого отторжения)
+BPI,Brief Pain Inventory (краткий опросник оценки боли)
+BRCA,Breast Cancer Gene (ген рака молочной железы)
+BSC,Best Supportive Care (наилучшая поддерживающая терапия)
+BSV,Between-Subject Variability (межсубъектная вариабельность)
+BTK,Bruton’s Tyrosine Kinase (тирозинкиназа Брутона)
+ТКБ,тирозинкиназа Брутона
+BUN,Blood Urea Nitrogen (азот мочевины в крови)
+BVDV,Bovine Viral Diarrhea Virus (вирус диареи крупного рогатого скота)
+BZD,Benzodiazepines (бензодиазепины)
+Bridge-терапия,"Bridge Therapy (терапия «ожидания»): Неоадъювантное или иное противоопухолевое лечение для пациентов, ожидающих трансплантацию печени"
+C24,Concentration at 24 Hours (концентрация через 24 часа после приема лекарственного вещества)
+CACO-2,Caco-2 (иммортализованная клеточная линия колоректальной аденокарциномы человека)
+CART,"Cocaine- and Amphetamine-Regulated Transcript (пептид, происходящий из регулируемого кокаином и амфетамином транскрипта)"
+CC50,"50% Cytotoxic Concentration (средняя цитотоксическая концентрация): Концентрация вещества, при которой гибнет 50% клеток в эксперименте"
+CCK1,Cholecystokinin Receptor 1 (рецептор холецистокинина A)
+CCR5,C-C Chemokine Receptor 5 (C-C-рецептор хемокина 5)
+CD,Cluster of Differentiation (кластер дифференцировки)
+CD (SD),Sprague Dawley (спрег-доули): Линия лабораторных крыс-альбиносов
+CD (SD) BR,"Sprague-Dawley Rats, Barrier Raised (лабораторные крысы Спрег-Доули, выращенные в условиях барьера)"
+CDK,Cyclin-Dependent Kinase (циклин-зависимая киназа)
+CDK4,Cyclin-Dependent Kinase 4 (циклин-зависимая киназа 4)
+CDK6,Cyclin-Dependent Kinase 6 (циклин-зависимая киназа 6)
+CEF,Composite Endpoint of Failure (первичная комбинированная конечная точка неэффективности)
+CES,Carboxylesterase (карбоксилэстераза)
+CES1,Carboxylesterase 1 (карбоксилэстераза 1)
+CHADS2,"Congestive Heart Failure, Hypertension, Age, Diabetes, Stroke (шкала оценки риска инсульта у пациентов с фибрилляцией предсердий)"
+CHAQ,Children's Health Assessment Questionnaire (опросник оценки здоровья детей)
+CKD-EPI,Chronic Kidney Disease Epidemiology Collaboration (формула расчета скорости клубочковой фильтрации)
+CLL,Chronic Lymphocytic Leukemia (хронический лимфолейкоз)
+CLNR,Non-Renal Clearance (внепочечный клиренс)
+CLR,Renal Clearance (почечный клиренс)
+CLp,Plasma Clearance (плазменный клиренс)
+CLu,Unbound Clearance (собственный клиренс): Клиренс несвязанной (свободной) фракции препарата
+CNP,C-Type Natriuretic Peptide (натрийуретический пептид C-типа)
+CO2,"Carbon Dioxide (углекислый газ, оксид углерода IV)"
+COBI,Cobicistat (Кобицистат)
+COVID-19,Coronavirus Disease 2019 (коронавирусная инфекция 2019 года)
+CP,Cyclophosphamide (Циклофосфамид)
+CP-690550,Лабораторный шифр тофацитиниба
+CP-690550-10,"Cp-690550 в форме водной суспензии в носителе, состоящем из 5% метилцеллюлозы и 0,025% твин-80"
+CPMP,Committee for Proprietary Medicinal Products (Комитет по лекарственным средствам)
+CR,Controlled Release (контролируемое высвобождение)
+CRC,Concentration-Response Curve (кривая концентрация-ответ)
+CRF,Circulating Recombinant Forms (циркулирующие рекомбинантные формы)
+CSF1R,Colony Stimulating Factor 1 Receptor (рецептор колониестимулирующего фактора 1)
+CTEPH,Chronic Thromboembolic Pulmonary Hypertension (хроническая тромбоэмболическая легочная гипертензия)
+CTLA-4,Cytotoxic T-Lymphocyte-Associated Antigen 4 (антиген 4 цитотоксических T-лимфоцитов)
+CVOT,Cardiovascular Outcome Trial (исследование сердечно-сосудистых исходов)
+CaMK2d,Calcium/Calmodulin-Dependent Protein Kinase II Delta (кальций/кальмодулин-зависимая протеинкиназа δ)
+CaMK2g,Calcium/Calmodulin-Dependent Protein Kinase II Gamma (кальций/кальмодулин-зависимая протеинкиназа γ)
+CaMKII,Calmodulin-Dependent Protein Kinase II (кальмодулин-зависимая протеинкиназа II)
+Cav,Average Concentration (средняя концентрация)
+Ceff,Effective Concentration (фармакологически эффективная концентрация)
+Child–Pugh,Child-Pugh Classification (классификация Чайлда-Пью): Метод оценки тяжести цирроза печени и прогнозирования выживаемости пациента на основе клинических и лабораторных показателей
+Cl/F,"Apparent Clearance (кажущийся клиренс): Общий клиренс лекарственного вещества после внесосудистого введения, учитывающий биодоступность (F)"
+Clast,Last Measurable Concentration (последняя ненулевая концентрация)
+ClinicalTrials.gov Identifier,ClinicalTrials.gov Identifier (идентификатор исследования на сайте ClinicalTrials.gov)
+Clt,"Total Clearance (общий клиренс препарата): Показатель, характеризующий скорость выведения лекарственного вещества из плазмы крови"
+Covid-19,Coronavirus Disease 2019 (коронавирусная инфекция 2019 года)
+CrCl,Creatinine Clearance (клиренс креатинина)
+CsA,Cyclosporine A (Циклоспорин А)
+Ctrough,Trough Concentration (концентрация перед очередным введением)
+"Ctrough,ss",rough Concentration at Steady State (концентрация лекарственного вещества в плазме в стационарном состоянии)
+Cys,Cysteine (цистеин)
+DAS28-4(СОЭ),"Disease Activity Score 28 with 4 Variables (четыре переменные для 28 суставов по шкале активности заболевания), включая скорость оседания эритроцитов"
+DAS28-hsCRP,Disease Activity Score 28 with High-Sensitivity C-Reactive Protein (показатель активности заболевания в 28 суставах с помощью высокочувствительного анализа С-реактивного белка)
+DAT,Dopamine Transporter (переносчик дофамина)
+DCV,Daclatasvir (Даклатасвир)
+DDW,Distilled Deionized Water (дистиллированная деионизированная вода)
+DEX,Deferasirox (Деферазирокс)
+DFN,Deferiprone (Деферипрон)
+DFO,Deferoxamine (Дефероксамин)
+DICER1,DICER1 Gene (ген DICER1)
+DIRKO,Double Incretin Receptor Knockout Mice (линия мышей нокаутных по генам рецепторов гормонов-инкретинов)
+DL0,"Maximum Non-Lethal Dose (максимальная нелетальная доза): Высшая доза вещества, не вызывающая летального исхода"
+DLCO,Diffusing Capacity for Carbon Monoxide (диффузионная способность легких по монооксиду углерода)
+DLQI,Dermatology Life Quality Index (дерматологический индекс качества жизни)
+DLV,Delavirdine (Делавирдин)
+DNA,Deoxyribonucleic Acid (дезоксирибонуклеиновая кислота)
+DOR,Doravirine (Доравирин)
+DP,Diphosphate (Дифосфат)
+DPP,Dipeptidyl Peptidase (дипептидил-пептидаза)
+DPP-IV,Dipeptidyl Peptidase-4 Inhibitor (ингибитор дипептидилпептидазы-4)
+DRV,Darunavir (Дарунавир)
+DSS,Dahl Salt-Sensitive Rat (перегруженные солью крысы Dahl)
+DTG,Dolutegravir (Долутегравир)
+DTSQ,Diabetes Treatment Satisfaction Questionnaire (опросник удовлетворенности от лечения диабета)
+Dx+,Diagnostic-Positive (диагностированный)
+Dx-,Diagnostic-Negative (недиагностированный)
+EAC,Event Adjudication Committee (комитет по оценке нежелательных явлений)
+EASD,European Association for the Study of Diabetes (Европейская ассоциация по изучению сахарного диабета)
+EBSS,Earle's Balanced Salt Solution (сбалансированный солевой раствор Эрла)
+ECE,Endothelin Converting Enzyme (эндотелин-превращающий фермент)
+EFS,Event-Free Survival (бессобытийная выживаемость)
+EFV,Efavirenz (Эфавиренз)
+ENF,Enfuvirtide (Энфувиртид)
+EORTC,European Organisation for Research and Treatment of Cancer (Европейская организация по исследованию и лечению рака)
+EPC,Established Pharmacologic Class (установленный фармакологический класс)
+EQ-5D,European Quality of Life 5-Domain Scale (европейская шкала оценки качества жизни по пяти аспектам)
+ER-,"Estrogen Receptor-Negative (негативная по рецептору эстрогена): Опухоль, не экспрессирующая рецепторы эстрогена"
+ERAUC,"Exposure Ratio Based on AUC (коэффициент экспозиции, основанный на AUC)"
+ERK,"Extracellular Signal-Regulated Kinase (киназа, регулируемая внеклеточными сигналами)"
+MAPK,Mitogen-Activated Protein Kinase (митоген-активируемая протеинкиназа)
+ESI,Electrospray Ionization (источник ионизации электрораспылением)
+ESMO,European Society for Medical Oncology (Европейское общество медицинской онкологии)
+ESV,Elsulfavirine (Элсульфавирин)
+ETR,Etravirine (Этравирин)
+EULAR,European League Against Rheumatism (критерии ревматоидного артрита Европейской антиревматической лиги)
+EVG,Elvitegravir (Элвитегравир)
+EVG/c,"Elvitegravir/Cobicistat (Элвитегравир, бустированный кобицистатом)"
+ECOG,Eastern Cooperative Oncology Group (Восточная объединённая онкологическая группа)
+F,Females (самки)
+FACIT-F,Functional Assessment of Chronic Illness Therapy – Fatigue (опросник для оценки функционального состояния при хронических заболеваниях – подшкала усталости)
+FACT-P,Functional Assessment of Cancer Therapy – Prostate (шкала функциональной оценки противораковой терапии – рак предстательной железы)
+FBS,Fetal Bovine Serum (фетальная бычья сыворотка)
+FDC,Fixed-Dose Combination (комбинация фиксированных доз)
+FIH,Factor Inhibiting Hypoxia-Inducible Factor (фактор ингибирования гипоксия-индуцируемого фактора)
+FIP1L1,"Factor Interacting with Poly(A) Polymerase L1 (фактор, взаимодействующий с поли(А)-полимеразой L1)"
+FKB-12,FK-Binding Protein 12 (FK-связывающий белок 12)
+FLT3LG,"Feline McDonough Sarcoma-Like Tyrosine Kinase 3 Ligand (лиганд тирозинкиназы 3, родственный тирозинкиназе Fms)"
+FMI,"Final Marketed Item (окончательный вариант, предназначенный для обращения на рынке)"
+FMO3,"Flavin-Containing Monooxygenase 3 (мутация, ассоциированная с триметиламинурией)"
+FOLFIRI,"Fluorouracil, Leucovorin, Irinotecan (Фторурацил, лейковорин, иринотекан)"
+FOLFOX,"Fluorouracil, Leucovorin, Oxaliplatin (Фторурацил, лейковорин, оксалиплатин)"
+FPD,Fine Particle Diameter (диаметр мелкодисперсных частиц)
+FPV/r,Fosamprenavir/Ritonavir (Фосампренавир/Ритонавир)
+FTC,Emtricitabine (Эмтрицитабин)
+FTC/F,Emtricitabine/Fumarate (Эмтрицитабин/Фумарат)
+Fe (0-t),"Fraction of Dose Excreted in Urine (доля от введенной дозы вещества, экскретируемой с мочой в течение t часов после введения)"
+Flt-3,Feline McDonough Sarcoma-Like Tyrosine Kinase 3 (Fms-подобная протеинтирозинкиназа)
+Frel,Relative Bioavailability (относительная биодоступность)
+GAS6 (AXL),"Growth Arrest-Specific 6 (витамин K-зависимый белок, активирующий рецепторную тирозинкиназу AXL)"
+GD,Gestational Day (день гестации)
+GINA,Global Initiative for Asthma (глобальная инициатива по бронхиальной астме)
+GIP,Gastric Inhibitory Polypeptide (желудочный ингибитор полипептида)
+GLDH,Glutamate Dehydrogenase (глутаматдегидрогеназа)
+GLE,Glecaprevir (Глекапревир)
+GLI,"Glioma-Associated Oncogene (онкоген, ассоциированный с глиомой)"
+GLUT,Glucose Transporter (глюкозный транспортер)
+GM,Geometric Mean (геометрическое среднее)
+GP,Glycoprotein (гликопротеин)
+GSS,Genotypic Susceptibility Score (оценка генотипической восприимчивости)
+GST,Glutathione S-Transferase (глутатион-S-трансфераза)
+GT,Genotype (генотип)
+Glu,Glutamic Acid (глутаминовая кислота)
+GlyT1,Glycine Transporter 1 (глицин-1 переносчик)
+Gmean,Geometric Mean (геометрическое среднее)
+GAK,G-Associated Kinase (G-ассоциированная киназа)
+HADS,Hospital Anxiety and Depression Scale (шкала тревоги и депрессии)
+HAQ-DI,Health Assessment Questionnaire-Disability Index (индекс инвалидизации по опроснику оценки состояния здоровья)
+HBsAg,Hepatitis B Surface Antigen (поверхностный антиген вируса гепатита B)
+HBs-Ag,Hepatitis B Surface Antigen (поверхностный антиген вируса гепатита B)
+HCV,Hepatitis C Virus (вирус гепатита C)
+HE,Hypoglycemic Episodes (эпизоды гипогликемии)
+HED,Human Equivalent Dose (человеческая эквивалентная доза)
+HEPM,Human Embryonic Palatal Mesenchyme (клеточная линия небной мезенхимы эмбриона человека)
+HER2,HER2-Negative (отрицательный по рецептору эпидермального фактора роста 2-го типа)
+HFe,High-Iron Diet (рацион с высоким содержанием железа)
+HGF,Hepatocyte Growth Factor (фактор роста гепатоцитов)
+HGPRT,Hypoxanthine-Guanine Phosphoribosyltransferase (гипоксантингуанинфосфорибозилтрансфераза)
+HIF,"Hypoxia-Inducible Factor (фактор, индуцируемый гипоксией)"
+HIF-1a,"Hypoxia-Inducible Factor 1-Alpha (фактор, индуцируемый гипоксией 1-альфа)"
+HIF-α,"Hypoxia-Inducible Factor Alpha (фактор, индуцируемый гипоксией – альфа)"
+HIV,Human Immunodeficiency Virus (вирус иммунодефицита человека)
+HLM,Human Liver Microsomes (микросомы печени человека)
+HOMA-IR,Homeostasis Model Assessment of Insulin Resistance (индекс инсулинорезистентности)
+HOMA‑IR,Homeostasis Model Assessment of Insulin Resistance (индекс инсулинорезистентности)
+HPI,"Propidium Iodide with Hoechst (йодид пропидия в сочетании с Hoechst): Флуоресцентные красители, используемые для оценки жизнеспособности клеток и определения апоптоза"
+HR+,Hormone Receptor-Positive (гормон-рецептор-положительный)
+HRV,Human Rhinovirus (человеческий риновирус)
+HSA,Human Serum Albumin (человеческий сывороточный альбумин)
+Hb,Hemoglobin (гемоглобин)
+HbsAg,Hepatitis B Surface Antigen (поверхностный антиген вируса гепатита B)
+Hh,Hedgehog Signaling Pathway (сигнальный путь Hedgehog)
+Ht,Hematocrit (гематокрит)
+IAC,Independent Adjudication Committee (независимый экспертный комитет)
+IARC,International Agency for Research on Cancer (Международное агентство по изучению рака)
+IB,Immunoblotting (вестерн-блоттинг)
+IBDQ,Inflammatory Bowel Disease Questionnaire (опросник для оценки воспалительных заболеваний кишечника)
+IBE,Iron-Binding Equivalent (железо-связывающий эквивалент)
+ICR,Independent Central Review (независимая централизованная оценка)
+ID,Identification Code (идентификационный код)
+IDE,Insulin-Degrading Enzyme (инсулино-деградирующий фермент)
+IDF,International Diabetes Federation (Международная диабетическая федерация)
+IDV,Indinavir (Индинавир)
+IFN,Interferon (интерферон)
+IGA,Investigator Global Assessment (шкала тяжести атопического дерматита)
+IGF,Insulin-Like Growth Factor (инсулиноподобный фактор роста)
+IGF1,Insulin-Like Growth Factor 1 (инсулиноподобный фактор роста 1)
+IL-6,Interleukin-6 (интерлейкин-6)-6
+IMAP,Ion Mobility Affinity Polarization (анализ поляризации флуоресценции на основе сродства ионов)
+IMDC,International Metastatic Renal Cell Carcinoma Database Consortium (Международный консорциум по лечению метастатического рака почки)
+IND,Investigational New Drug (исследуемый новый препарат)
+INSTI,Integrase Strand Transfer Inhibitor (ингибитор переноса цепи интегразы)
+ИПЦИ,Ингибитор переноса цепи интегразы
+IPSS-R,Revised International Prognostic Scoring System (пересмотренная интернациональная прогностическая шкала)
+IR,Immediate Release (немедленное высвобождение)
+IRR,Incident Rate Ratio (коэффициент инцидентности)
+ISR,Insulin Secretion Rate (скорость секреции инсулина)
+ISR/G,Insulin Secretion Rate Adjusted for Glucose (скорость секреции инсулина с поправкой на глюкозу)
+ITT,Intention-to-Treat (популяция всех рандомизированных пациентов)
+IUPAC,International Union of Pure and Applied Chemistry (Международный союз теоретической и прикладной химии)
+IWCLL,International Workshop on Chronic Lymphocytic Leukemia (Критерии международного семинара по хроническому лимфоцитарному лейкозу)
+IgA,Immunoglobulin A (иммуноглобулин A)
+IgG,Immunoglobulin G (иммуноглобулин G)
+JAK,Janus Activated Kinases (янус-активированные киназы)
+Jmax,"Maximum Transporter-Mediated Flux (максимальный поток, опосредованный переносчиком)"
+K-BILD,King's Brief Interstitial Lung Disease questionnaire (Краткий опросник Кинга по интерстициальным болезням легких)
+KIT,"Receptor Tyrosine Kinase CD117 (рецепторная тирозин-протеинкиназа CD117): Трансмембранный рецептор, принадлежащий к классу рецепторных тирозинкиназ, кодируемый протоонкогеном c-KIT"
+KLH,Keyhole Limpet Hemocyanin (гемоцианин лимфы улитки)
+KRAS,"Kirsten Rat Sarcoma Viral Oncogene Homolog (протоонкоген, кодирующий мембранный белок)"
+Kd,"Equilibrium Dissociation Constant (константа равновесной диссоциации): Показатель, характеризующий аффинность взаимодействия между молекулой лиганда и рецептором"
+Kel,"Elimination Rate Constant (константа скорости элиминации лекарственного вещества): Показатель, отражающий скорость выведения лекарственного вещества из организма"
+Km,"Michaelis Constant (константа Михаэлиса): Показатель, отражающий концентрацию субстрата, при которой скорость ферментативной реакции достигает половины максимального значения"
+LAmB,Liposomal Amphotericin B (липосомальный амфотерицин В)
+LBQ657,"Sacubitrilat (Сакубитрилат, активный метаболит сакубитрила)"
+LC-MS/MS,Liquid Chromatography with Tandem Mass Spectrometry (жидкостная хроматография с тандемной масс-спектрометрией)
+LCX,Left Circumflex Artery (левая периферическая коронарная артерия)
+LDH,Lactate Dehydrogenase (лактатдегидрогеназа)
+LDV,Ledipasvir (Ледипасвир)
+LLNA,Local Lymph Node Assay (оценка локальных лимфатических узлов)
+LNC,Lymph Node Cell Proliferative Response (пролиферативная реакция клеток лимфатических узлов)
+LPV,Lopinavir (Лопинавир)
+Lck,Lymphocyte-Specific Protein Tyrosine Kinase (лимфоцит-специфическая протеинтирозинкиназа)
+M,Mean (среднее арифметическое)
+MEAN,Среднее арифметическое
+MACDP,Metropolitan Atlanta Congenital Defects Program (Программа мониторинга врожденных пороков развития города Атланта)
+MAO-B,Monoamine Oxidase B (моноаминоксидаза B)
+MAT,"Medication-Assisted Treatment (поддерживающая терапия при расстройстве, связанном с употреблением опиоидов)"
+MATE1,Multidrug And Toxin Extrusion Protein 1 (белок множественной резистентности и выведения токсинов 1)
+MCH,Mean Corpuscular Hemoglobin (среднее содержание гемоглобина в эритроците)
+MCP-1,Monocyte Chemotactic Protein-1 (моноцитарный хемотаксический белок-1)
+MD,Mid-Dose (средняя доза)
+MDA,Malondialdehyde (малоновый диальдегид)
+MDCK,Madin-Darby Canine Kidney (клетки Мадин-Дарби почек собак)
+MDZ,Midazolam (мидазолам)
+MEAN,Среднее арифметическое
+MED,Minimum Effective Dose (минимальная эффективная доза)
+MEK,Mitogen-Activated Protein Kinase Kinase (киназа митоген-активируемой протеинкиназы)
+MEN2,Multiple Endocrine Neoplasia Type 2 (множественная эндокринная неоплазия 2-го типа)
+MER,Proto-Oncogene Tyrosine-Protein Kinase MER (протоонкогенная тирозин-протеинкиназа MER)
+MMAD,Mass-Median Aerodynamic Diameter (масс-медианный аэродинамический диаметр)
+MMC,Mitomycin C (митомицин C)
+MMF,Mycophenolate Mofetil (микофенолата мофетил)
+MMRM,Mixed-Effects Model for Repeated Measures (модель смешанных эффектов для многократных измерений)
+MNC,Mononuclear Cells (мононуклеарные клетки)
+MPA,Mycophenolate Sodium (микофенолат натрия)
+MPE,Mean Photo Effect (средний фотоэффект)
+MR,Modified Release (модифицированное высвобождение)
+MRT(0-24),Mean Residence Time (0-24) (среднее время удерживания в течение 24 ч)
+MSDS,Material Safety Data Sheet (паспорт безопасности)
+MSKCC,Memorial Sloan-Kettering Cancer Center (Мемориальный онкологический центр им. Слоуна-Кеттеринга)
+MVC,Maraviroc (маравирок)
+МЛВ,Межлекарственное взаимодействие
+N.c.,Not calculated (не рассчитано)
+NAC,N-ацетилцистеин
+NADPH,Никотинамиддинуклеотидфосфат
+NAPSI,Индекс тяжести псориаза ногтей (nail psoriasis severity index)
+NAPSI100,100% улучшение по индексу тяжести псориаза ногтей (nail psoriasis severity index)
+NAPSI50,50% улучшение по индексу тяжести псориаза ногтей (nail psoriasis severity index)
+NAPSI75,75% улучшение по индексу тяжести псориаза ногтей (nail psoriasis severity index)
+NCI CTCAE,Общие терминологические критерии нежелательных явлений национального института онкологии сша (national cancer institute common terminology criteria for adverse events)
+NCI-ODWG,"Национальный институт онкологии, рабочая группа по нарушению функции органа (national cancer institute classifications for hepatic dysfunction)"
+NEP,Неприлизин
+NF-kB (RANK),Рецептор-активатор ядерного транскрипционного фактора
+NF-κB,"Транскрипционный фактор (ядерный фактор «каппа-би»),   nuclear factor kappa-light-chain-enhancer of activated b cells"
+NFV,Нелфинавир
+NHE,Na+/h+-обменники
+NIH,"National institutes of health, национальный институт здоровья"
+NK2,Рецептор тахикининов типа 2
+NO,Оксид азота
+NOEC,"Концентрация, не вызывающая видимых отрицательных эффектов"
+NPH,Человеческий инсулин нейтрал протамин хагедорн
+NPR,"Natriuretic peptide receptor, натрийуретический рецептор"
+NPY,Нейропептид y
+NR,Нейтральный красный
+NRAS,"Онкоген n-ras, кодирующий мембранный белок, мутации в семействе белков ras"
+NRS,Числовая шкала оценки зуда
+NRVM,Миоциты желудочков новорожденных крыс
+NS3/4A,Неструктурный белок 4а
+NS5A,Неструктурный белок 5а
+NSAA,Нестероидный антиандогенный препарат (nonsteroidal antiandrogen)
+NSTEMI,"Non-st-elevation myocardial infarction, инфаркт миокарда без подъема сегмента st"
+NTDT,"Non-transfusion-dependent thalassemias, талассемии, не зависящие от переливания крови"
+NTEL,"No toxic effect level, уровень препарата без токсического эффекта"
+NVP,Невирапин
+NZW,Белые новозеландские (кролики) (new zealand white)
+Numb-associated kinase,Члены семейства нечувствительных киназ
+O2,Молекулярный кислород
+OARAC,Консультативный совет сша по исследованиям в области спид (the office of aids research advisory council)
+OAT1,Транспортер органических анионов 1
+"OATP1B1, OATP1B3","Ингибиторы полипептидов 1b1 и 1b3, переносящих органические анионы"
+Oct-02,Переносчик органических катионов 2 (organic cation transporter 2 )
+OR,Отношение шансов (odds ratio)
+OS,Общая выживаемость
+OVA,Овальбумин
+PAI-1,Ингибитор активатора плазминогена
+PAQLQ,Опросник оценки качества жизни - детская версия опросника aqlq
+PARP,Поли (адф-рибоза)-полимераза
+PASI,Улучшение индекса площади и тяжести псориаза (psoriasis area and severity index)
+PASI75,75% улучшение индекса площади и тяжести псориаза (psoriasis area and severity index)
+PAWP,Давление заклинивания в легочной артерии (pulmonary arterial wedge pressure)
+PBT,"Стойкие, биоаккумулятивные токсичные вещества"
+PCA,Пассивная кожная анафилаксии (passive cutaneous anaphylaxis)
+PCSA,Возможно клинически значимое отклонение
+PCWG2,Рабочая группа 2 по клиническим исследованиям рака предстательной железы (prostate cancer clinical trials working group 2)
+PD-1,Белок запрограммированной гибели клеток-1 (programmed cell death protein-1)
+PD-L1,Лиганд запрограммированной смерти-1 (programmed death ligand-1)
+PD,Фармакодинамика
+ФД,Фармакодинамика
+PEP,Первичная конечная точка оценки эффективности и переносимости
+PGA,Общая оценка врачом (physician’s global assessment)
+PHD,"Prolyl hydroxylase domain (enzyme), (белок) пролилгидроксилазного домена"
+PHE,Фенилэфрин
+PI3K,Фосфоинозитол-3-киназа (phosphoinositide 3-kinase)
+PIB,Пибрентасвир
+PIF,Коэффициент фотораздражения
+PK,Фармакокинетика
+ФК,Фармакокинетика
+PKB,"Protein kinase b, протеинкиназа тип в"
+PND,Поснатальный день
+PPAR-γ,"Рецепторы, активируемые пероксисомными пролифераторами"
+PQ,Интервал между волной r и интервал qrs сердечного ритма на электрокардиограмме
+PR,Рецепторы прогестерона (progesterone receptor)
+PRL,Пролактин (prolactin)
+PSADT,Время удвоения простатспецифического антигена
+PSS,"Phenotypic susceptibility score, оценка фенотипической восприимчивости"
+PTEN,"Фосфатаза с двойной субстратной специфичностью, продукт гена (phosphatase and tensin homolog deleted on chromosome)"
+PTLD,Посттрансплантационный лимфопролиферативный синдром
+PVR,Легочное сосудистое сопротивление (pulmonary vascular resistance)
+PWID,"Субъекты, употребляющих инъекционные наркотики"
+PYE,Пациенто-лет воздействия
+PgR,Прогестероновый рецептор (progesterone receptor)
+PgR+,Позитивная по рецептору прогестерона [опухоль]
+Ph,"Philadelphia chromosome, «филадельфийская» хромосома"
+Ph+,"Клетки, содержащие филадельфийскую хромосому"
+PtGA,Шкала общей оценки пациентом заболевания (patient global assessment of disease)
+Ptch1,12-сегментный трансмембранный рецептор patched
+QD,Ежедневно
+QLQ,Опросник для оценки качества жизни (quality of life questionnaire)
+QRS,"Желудочковый комплекс, который регистрируется во время возбуждения желудочков сердца на электрокардиограмме"
+QTcB,"Ширина интервала qt, скорректированная по формуле базетта"
+QWBA,Количественная авторадиография всего тела
+RAL,Ралтегравир
+RAP,Популяция анализа резистентности
+RAS,Малый g-белок (rat sarcoma virus)
+RBC,Эритроцит
+RBV,Рибавирин
+RDW,Ширина распределения эритроцитов
+RF,Ревматоидный фактор
+RGS2,Регулятор передачи сигналов g-белка 2
+RIF,Рифампин
+ROS,"Reactive oxygen species, активные формы кислорода"
+ROS1,"Протоонкогенная тирозин-протеинкиназа ros, кодируется геном ros1"
+RPV,Рилпивирин
+RQ,Дыхательный коэффициент
+RSD,"Residual standard deviation, остаточное стандартное отклонение"
+RSV,Респираторно-синцитиальный вирус
+RTV,Ритонавир
+"RTV, r",Ритонавир
+RW,Реакция вассермана
+Ras,"Retrovirus-associated sarcoma gene, ген, связанный с саркомой, вызываемой ретровирусом у крыс"
+RdRp,Рнк-зависимая рнк полимераза
+RET,REarranged during Transfection
+SALT,Шкала оценки степени тяжести алопеции
+SARS-CoV-2,"Новый коронавирус, вызвавший пандемию covid-19"
+SCAR,"Severe cutaneous adverse reaction, серьезные кожные нежелательные реакции"
+SCF,Фактор стволовых клеток (stem cell factor)
+SCID,Тяжелый комбинированный иммунодефицит
+SCORE,10-летний абсолютный риск фатальныхсердечно-сосудистых осложнений для лиц в возрасте 40-65 лет (systematic coronary risk evaluation)
+SDAI,Упрощенный индекс активности болезни
+SDF,Фактор стромальных клеток (stromal cell-derived factor)
+SE,Стандартная ошибка
+SF-36,"Краткая форма шкалы оценки качества жизни, состоящей из 36 пунктов (short form 36 item)"
+SF-36v2,"Краткая форма шкалы оценки качества жизни, состоящей из 36 пунктов версия 2 (short form item 36 version 2)"
+SGLT-2,Ингибиторы натрий-глюкозного контранспортера
+SGLT1,Натрий-глюкозный котранспортер 1-го типа
+SGRQ,Анкета госпиталя святого георга для оценки дыхательной функции (saint george’s respiratory questionnaire)
+SJS,Синдром стивенса-джонсона
+SLD,Сумма наибольших диаметров
+SMO,7-сегментый трансмембранный белок smoothend
+SMQ,Стандартизованный запрос по терминам meddra (standardized meddra query)
+SNP,Однонуклеотидный полиморфизм
+SOD,Супероксиддисмутаза
+SOF,Софосбувир
+SQV,Саквинавир
+SQV/r,Саквинавир/ ритонавир
+SSC,Подсчет импульсов в твердой фазе (solid scintillation counting)
+STEMI,"St-elevation myocardial infarction, инфаркт миокарда с подъемом сегмента st"
+STZ,Стрептозотоцин
+SUCRA,Поверхность под кривой совокупного ранжирования (surface under the cumulative ranking)
+SVR12,Устойчивый вирусологический ответ через 12 недель после прекращения лечения
+SYE,Пациенто-лет применения препарата
+Src,Протоонкогенная протеинтирозинкиназа
+STAT,Транспортеры сигнала и активаторы транскрипции
+T-20,Энфувиртид
+T/C,Тест/контроль
+T1/2β,Терминальный период полувыведения
+TAC,Такролимус
+TBDR,Реестр врожденных дефектов техаса (texas birth defects registry)
+TBF,Тканевой кровоток
+TC50,Средняя токсическая концентрация
+TDAR,Первичный t-клеточный иммунный ответ
+TDR,Трансмуральная дисперсия реполяризации (transmural dispersion of repolarisation)
+TE-PRS,"Пациенты, ранее получавшие лечение"
+TEAE,"Нежелательные явления, возникшие во время лечения, нежелательные явления, отсутствовавшие до начала лечения, или уже имеющиеся явления, интенсивность или частота которых ухудшаются после лечения"
+TEL,"Translocated ets (e26 transformation-specific) leukemia, транскрипционный фактор трансформации e26, связанный с развитием лейкемии"
+TERT,"Теломераза обратная транскриптаза, ген, кодирующий белок (telomerase reverse transcriptase)"
+TFPI,"Tissue factor pathway inhibitor, ингибитор пути тканевого фактора"
+TFV,Тенофовир
+TGA,Австралийская администрация лекарственных средств
+TGF,"Transforming growth factor, трансформирующий фактор роста"
+TGFβ1,Трансформирующий фактор роста бета (transforming growth factor beta)
+TIMP,Ингибитор металлопротеиназы
+TLOVR,Время до потери вирусологического ответа
+TLR,Toll-подобные рецепторы
+TLR4,Толл-подобный рецептор 4
+TN,"Пациенты, ранее не получавшие лечения"
+TNF-α,Фактор некроза опухоли-α (tumour necrosis factor-α)
+TPGS,Токоферилполиэтиленгликольсукцинат
+TPO,Тромбопоэтин (thrombopoietin)
+TPO-R,Рецептор тромбопоэтина (thrombopoietin receptor)
+TRKB,"Киназа рецептора тропомиозина b, кодируется геном ntrk2 (tropomyosin receptor kinase)"
+TSC,"Tuberosis sclerosis (complex), туберозный склероз"
+TTF,Время до неэффективности лечения
+TTP,Время до прогрессирования заболевания (time to progression)
+TYR03,"Протоонкогенная тирозин-протеинкиназа tyro3, кодируется геном tyro3"
+TZD,Тиазолидиндионы
+Tg,Трансгенный (transgenic)
+Th17,Т-хелперные клетки типа 17
+Tlag,Время задержки абсорбции
+Tlast,Время отбора последнего биообразца
+Tp-Te,Время от пика до конца зубца
+TyK2,Тирозинкиназа 2 (tyrosine kinase 2)
+UACR,Соотношение альбумина и креатинина мочи
+UDP-GT,Уридин-5'-дифосфоглюкуронозилтрансфераза (uridine 5'-diphospho-glucuronosyltransferase)
+UDPGA,Уридиндифосфат глюкуроновой кислоты
+UGE,Экскреция глюкозы с мочой (urinary glucose excretion)
+ULN,Верхняя граница нормы согласно данным испытательной лаборатории
+URT,"Unique recombinant forms, уникальные рекомбинантные формы"
+UV-LLNA,"Ultra violet local lymph node assay, метод локальных лимфатических узлов при ультрафиолетовом облучении"
+V1,Кажущийся объем распределения в центральном компартменте
+V2,Кажущийся объем распределения в периферическом компартменте
+VCAM-1,Молекула адгезии сосудистого эндотелия-1
+VSS,Кажущийся объем распределения
+"Vd,ss/F",Кажущийся объем распределения в равновесном состоянии
+Vd/F,Кажущийся объем распределения
+Vdβ,Кажущийся объем распределения
+Vp/F,Кажущийся объем распределения в периферическом компартменте
+Vs.,Против
+Vz / Fss,Средний кажущийся объем распределения в равновесном состоянии
+Vz/F,"Объем распределения, связанный с терминальной фазой"
+WCAW,Неделя хорошо контролируемой астмы (well-controlled asthma week)
+WH,[крысы линии] wistar hannover
+WHO,Всемирная организация здравоохранения
+ВОЗ,Всемирная организация здравоохранения
+WMD,Средневзвешенное различие (weighted mean difference)
+WPAI-UC,Опросник нарушения трудоспособности и повседневной деятельности (work productivity and activity impairment)
+WT,Дикий тип
+WU,Единицы вуда (wood units)
+ZDF,Крысы с диабетом и ожирением (zucker diabetic fatty rat)
+ZDV,Зидовудин
+ZF,Тучные крысы цукера
+a-SMA,A-гладкомышечный актин
+c-Kit,Белковая тирозинкиназа kit
+c-Met,"Рецепторная тирозинкиназа, принадлежащую к семейству met (трансформирующий ген mnng hos)"
+ddI,Диданозин
+dp/dt,Скорость нарастания давления в левом желудочке в ранней фазе систолы
+eNOS,Эндотелиальной синтаза оксида азота(endothelial nitric oxide synthase)
+e’,Максимальная скорость подъёма основания сердца в раннюю диастолу
+fumic,"Фракция, не связанная в микросомах."
+gCV,Геометрический коэффициент вариации
+hBMNC,Мононуклеарные клетки костного мозга человека (human bone marrow mononuclear cells)
+hCES,Рекомбинантные человеческие ферменты-карбоксилэстеразы (human recombinant carboxylesterases)
+"hOAT1, hOAT3",Органические переносчики анионов
+hOAT3,Транспортер органических анионов человека третьего типа
+hPASMC,Клетки гладкой мускулатуры легочной артерии человека (human pulmonary artery smooth muscle cells)
+ka,Константа скорости всасывания первого порядка
+mRSS,Кожный индекс по роднану
+n,Число наблюдений
+n-3 ПНЖК,Омега-3 полиненасыщенные жирные кислоты
+pEGFR,Phosphorylated Epidermal Growth Factor Receptor (фосфорилированный рецептор эпидермального фактора роста)
+pKa,Константа диссоциации
+pRb,Retinoblastoma-Associated Protein (белок ретинобластомы)
+peg-IFN,Pegylated Interferon Alpha-2b (пегилированный интерферон альфа-2b)
+tmax,"Time to Maximum Concentration (время достижения максимальной концентрации): Время, за которое достигается максимальная концентрация лекарственного вещества в плазме крови"
+vWF,von Willebrand Factor (фактор фон Виллебранда)
+α,Граничная величина ошибки первого рода (уровень значимости)
+α1-AGP,Alpha-1-Acid Glycoprotein (α1-кислый гликопротеин)
+β,Граничная величина ошибки второго рода
+β-NAG,N-Acetylglucosaminidase (N-ацетилглюкозаминидаза)
+β-АБ,β-адреноблокаторы
+γ-ГТ,Гамма-глутамилтранспептидаза
+ГГТ,Гамма-глутамилтранспептидаза
+А,Пик скорости фазы систолы предсердий
+АА,Апластическая анемия
+ААГ,Α1-кислый гликопротеин
+ААК1,Ар2-ассоциированная протеинкиназа 1
+АБФ,Активированный белок фибробластов
+АВС,Активированное время свертывания
+АГЗ,Ассоциированное гематологическое заболевание
+АГЗ НТК,Ассоциированное клональное гематологическое заболевание не тучных клеток
+АГП,Α1-кислый гликопротеин
+АДА,Американская диабетическая ассоциация
+АДБ,Анемия Даймонда-Блэкфена
+АДТ,Андроген депривационная терапия
+АЗКЦ,Антителозависимая клеточно-опосредованная цитотоксичность
+АКМ,Соотношение экскреции альбумин/креатинин в моче
+АКТГ,Адренокортикотропный гормон
+АКШ,Аортокоронарное шунтирование
+АЛТР,Антагонисты лейкотриеновых рецепторов
+АМКР,Антагонисты минералокортикоидных рецепторов
+АМЛ,Ангиомиолипома
+АМФ,Аденозинмонофосфат
+АПФ,Ангиотензинпревращающий фермент
+АР,Андрогенный рецептор
+АРА,Антагонисты рецепторов ангиотензина II
+АРВП,Антиретровирусные препараты
+АРМЭ,"Процессы абсорбции, распределения, метаболизма и элиминации"
+АРНИ,Ангиотензиновых рецепторов и неприлизина ингибитор
+АРТ,Антиретровирусная терапия
+АРВТ,Антиретровирусная терапия
+АС,Анкилозирующий спондилоартрит
+АСА,Активная системная анафилаксия
+АСК,Ацетилсалициловая кислота
+АСМ,Агрессивный системный мастоцитоз
+АСРА,Антитела к циклическому цитруллинсодержащему пептиду
+АССЗ,Атеросклеротические сердечно-сосудистые заболевания
+AT-III,Antithrombin III (антитромбин III)
+AT-II,Angiotensin II (ангиотензин II)
+АФП,Альфа-фетопротеин
+АФС,Активная фармацевтическая субстанция
+АЦ,Аденилатциклаза
+АЧН,Абсолютное число нейтрофилов
+АЧТВ,Активированное частичное тромбопластиновое время
+Алло-ТГСК,Аллогенная трансплантация гемопоэтических стволовых клеток
+Анти-HCV,специфические иммуноглобулины классов IgM и IgG к белкам вируса гепатита C
+АпоB,Аполипопротеин B
+АпоE,Аполипопротеин E
+АрГПП-1,Агонисты рецепторов глюкагоноподобного пептида 1
+БА,Бронхиальная астма
+БАД,Биологически активная добавка
+БАЛЖ,Бронхоальвеолярная лаважная жидкость
+БИ,Брошюра исследователя
+БКК,Блокаторы кальциевых каналов
+БКР,Базальноклеточный рак кожи
+БЛНПГ,Блокада левой ножки пучка гиса
+БМАРП,Болезньмодифицирующие антиревматические препараты
+БМО,Большой молекулярный ответ
+PFS,Progression-Free Survival (беспрогрессивная выживаемость)
+БПВ,Беспрогрессивная выживаемость
+БРВ,Безрецидивная выживаемость
+БРРМЖ,Белок резистентности рака молочной железы
+БСК,Болезни системы кровообращения
+БЦО,Большой цитогенетический ответ
+В. квартиль,Верхний квартиль
+BIKE,"BMP-2 Inducible Kinase (киназа, индуцируемая BMP-2)"
+BA,Bioavailability (биодоступность)
+ВААРТ,Высокоактивная антиретровирусная терапия
+ВАБ,Выборка для анализа безопасности
+ВАШ,Визуальная аналоговая шкала
+ВБИЗ,Выживаемость без инвазивного заболевания
+ВБП(з),Выживаемость без прогрессирования (заболевания)
+ВВТТГ,Внутривенный тест толерантности к глюкозе
+ВГ,Вирусный гепатит
+ВГB,Вирусный гепатит B
+ВГC,Вирусный гепатит C
+ВГН,Верхняя граница нормы
+ВГТТ,Внутривенное болюсное введение глюкозы
+ВДПЗ,Время до прогрессирования заболевания
+ВЖД,Высокожировая диета
+ВЖХ,Высокоэффективная жидкостная хроматография
+ВИЧ-1,Вирус иммунодефицита человека типа 1
+ВКК,Верхний контроль качества
+ВМС,Внутриматочная спираль
+ВПЗ,Время до прогрессирования заболевания
+ВПЗО,Вторичные первичные злокачественные опуходи
+ВПКО,Верхний предел количественного определения
+ВПН,Верхний предел нормы
+ВС,Внутренний стандарт
+ВТЭО,Венозное тромбоэмболическое осложнение
+ВЧК,Внутричерепное кровоизлияние
+ВЭЖХ-МС,Высокоэффективная жидкостная хроматография с масс-спектрометрией
+ВЭЖХ/МС,Высокоэффективная жидкостная хроматография с масс-спектрометрией
+ВдО,Время до ответа на лечение
+ГАМК,Гамма-аминомасляная кислота
+ГГН,Гипоталамо-гипофизарно-надпочечниковая система
+ГИБП,Генно-инженерные биологические препараты
+ГКС,Глюкокортикостероиды
+ГЛФ,Готовая лекарственная форма
+ГМ-КСФ,Гранулоцитарно-макрофагальный колониестимулирующий фактор
+ГМГ-КоА,3-гидрокси-3-метилглутарил-кофермент А редуктаза
+ГПМЦ,Гидроксипропилметилцеллюлоза
+ГОСТ,Государственный стандарт
+GLP-1R,Glucagon-Like Peptide-1 Receptor (рецептор к глюкагоноподобному пептиду-1)
+ГРГ,Гонадотропин-рилизинг-гормон
+ГРЛС,Государственный реестр лекарственных средств
+ГТ,Генотип
+HTG,Hypertriglyceridemia (гипертриглицеридемия)
+ГТТ,Глюкозотолерантный тест
+ГУ,Гиперурикемия
+ГФ,Государственная фармакопея
+ГХ,Газовая хроматография
+ГЦК,Гепатоцеллюлярная карцинома
+ГЦР,Гепатоцеллюлярный рак
+ГЭБ,Гематоэнцефалический барьер
+ГЭС/ХЭЛ,Гиперэозинофильный синдром/хронический эозинофильный лейкоз
+ГнРГ,Гонадотропин-рилизинг гормон
+ДАД,Диастолическое артериальное давление
+ДАТ,Двойная антиагрегантная терапия
+ДБ,День беременности
+ДБЛС,Департамент безопасности лекарственных средств
+ДВККЛ,Диффузная B-крупноклеточная лимфома
+ДГ,День гестации
+ДГК,Докозагексаеновая кислота
+ДГТ,Дигидротестостерон
+ДД,Диастолическая дисфункция
+ДДБА,Длительнодействующие β2-агонисты
+ДКИ,Доклиническое исследование
+ДКТ,Длительная кислородотерапия
+ДЛ,День лактации
+ДЛП,Дислипидемии
+ДЛТ,Дозолимитирующая токсичность
+ДМ,Дерматомиозит
+ДМСО,Диметилсульфоксид
+ДН,Диабетическая нефропатия
+ДНК,Дезоксирибонуклеиновая кислота
+ДНФ,Динитрофенол
+ДО,Длительность ответа
+ДПД,Длительность потенциала действия
+ДПП,Дипептидилпептидаза
+ДПП-4,Дипептидилпептидаза-4
+ДРЩЖ,Дифференцированный рак щитовидной железы
+ДТ,Диспергируемые таблетки
+ДЭ,Депрессивный эпизод
+ЕЭС,Евразийский экономический союз
+EC50,"Median Effective Concentration (медианная эффективная концентрация): Концентрация вещества, при которой достигается 50% от его максимального эффекта"
+ЕЭК,Евразийская экономическая комиссия
+Ед,Единицы
+ЖА,Желудочковая аритмия
+ЖКТ,Желудочно-кишечный тракт
+ЖНВЛП,Жизненно необходимые и важнейшие лекарственные препараты
+ЖНЛВП,Жизненно необходимые и важнейшие лекарственные препараты
+ЖХ-МСМС,Жидкостная хроматография с тандемной масс-спектрометрией
+ЖХ/МС/МС,Жидкостная хроматография с тандемной масс-спектрометрией
+ЗД,Западная диета
+ЗПТ,Заместительная почечная терапия
+ЗРУ,Заявление на получение регистрационного удостоверения
+ЗСТ,Заболевания соединительной ткани
+ИАЛ,Инвазивный аспергиллез легких
+ИАПФ,Ингибиторы ангиотензинпревращающего фермента
+ИАТ,Ингибирование агрегации тромбоцитов
+ИБС,Ишемическая болезнь сердца
+ИВЛ,Искусственная вентиляция легких
+ИГХ,Иммуногистохимический анализ
+ИЗЛ-ССД,Интерстициальные заболевания легких при системной склеродермии
+ИИП,Идиопатические интерстициальные пневмонии
+ИК,Инфракрасный
+ИКН,Ингибиторы кальциневрина
+ИЛ,Интерлейкин
+ИЛ-6,Интерлейкин 6
+ИЛАГ,Идиопатическая легочная артериальная гипертензия
+ИЛФ,Идиопатический легочный фиброз
+ИМ,Инфаркт миокарда
+ИМПП,Инструкция по медицинскому применению препарата
+ИМТ,Индекс массы тела
+ИМбпST,Инфаркт миокарда без подъема сегмента ST
+ИМпST,Инфаркт миокарда с подъемом сегмента ST
+ИОТ,Ингибитор обратной транскриптазы
+ИПЦИ,Ингибитор переноса цепи интегразы
+ИРК,Индивидуальная регистрационная карта
+ИСМ,Индолентный системный мастоцитоз
+ИСТ,Иммуносупрессивная терапия
+ИТП,Иммунная тромбоцитопения
+ИФН,Интерферон
+ИХТ,Иммунохимиотерапия
+п/к,Подкожный путь введения
+п/о,Пероральный путь введения
+в/в,Внутривенный путь введения
+Ингал.,Ингаляционный путь введения
+ИЦ,Исследовательский центр
+Кel,Константа скорости элиминации
+КАК,Клинический анализ крови
+КВ,Коэффициент вариации
+КГП,Кислотный гликопротеин
+КДОЛЖ,Конечно-диастолический объем левого желудочка
+КЖ,Качество жизни
+КЖП,Канюлирование желчных протоков
+КИО,Контрактная исследовательская организация
+ККМГ,Каприлокапроилмакроголглицериды
+КМ,Кожный мастоцитоз
+КМД,Комитет по мониторингу данных
+КПА,Кожная пассивная анафилаксия
+КРР,Колоректальный рак
+КРРПЖ,Кастрационно-резистентный рак предстательной железы
+КС,Креатинин сыворотки
+КТ,Компьютерная томография
+КТВР,Компьютерная томография высокого разрешения
+КФД,Комбинация фиксированных доз
+ЛС,Лекарственное средство
+ЛСР,Лекарственное средство
+ЛАГ,Легочная артериальная гипертензия
+ЛВП,Липопротеиды высокой плотности
+ЛГ,Лютеинизирующий гормон
+ЛЖ,Левый желудочек
+ЛЖВ,"Люди, живущие с вич"
+ЛКМ,Лимфома из клеток мантии
+ЛМЗ,Лимфома маргинальной зоны
+ЛМЛ,Лимфома из малых лимфоцитов
+ЛП,Левое предсердие
+ЛПЛ,Липопротеинлипаза
+ЛПОНП,Липопротеины очень низкой плотности
+ЛПП,Лекарственное поражение печени
+ЛПУ,Лечебно-профилактическое учреждение
+ЛС,Лекарственное средство
+ЛСК,Лиганд-связывающий карман
+ЛСР,Лекарственное средство
+ЛСС,Легочное сосудистое сопротивление
+ЛСЭСП,Лекарственная сыпь с эозинофилией и системных проявлениями
+ЛТ,Лучевая терапия
+ЛЭК,Локальный этический комитет
+МА,Микроальбуминурия
+МВ,Макроглобулинемия Вальденстрема
+МД,Медицинская дирекция
+МДМА,Метилендиоксиметамфетамин
+МЕ,Международные единицы
+МИК,Минимальная ингибирующая концентрация
+МК,Мочевая кислота
+МКЛ,Мантийноклеточная лимфомома
+МКПК,Мононуклеарные клетки периферической крови
+МКТ,Монокроталин
+МЛВ,Межлекарственные взаимодействия
+МЛЛ,Мелкоклеточная лимфоцитарная лимфома
+МЛУ,Множественная лекарственная устойчивость
+ММ,Множественная миелома
+ММФ,Микофенолата мофетил
+МНК,Мононуклеарные клетки
+МНО,Международное нормализованное отношение
+МО,Молекулярный ответ
+МПЗ,Миелопролиферативные заболевания
+МПКТ,Минеральная плотность костной ткани
+МПН,Миелопролиферативное новообразование
+МПО,Максимальный переносимый объем
+MPE,Mean Photo Effect (средний фотоэффект)
+МРЛ,Местно-распространенный рак
+МРТ,Магнитно-резонансная томография
+МРЩЖ,Медуллярный рак щитовидной железы
+МС,Метаболический синдром
+МС НМГ,Международный стандарт низкомолекулярного гепарина
+MCP,Monocyte Chemotactic Protein (моноцитарный хемотаксический белок)
+МТХ,Метотрексат
+МФК,Минимальная фунгицидная концентрация
+МЦО,Малый цитогенетический ответ
+МЭД,Минимальная эффективная доза
+Макс,Максимальное значение
+Мин,Минимальное значение
+МЗ,Министерство Здравоохранения
+МкАТ,Моноклональные антитела
+Н. квартиль,Нижний квартиль
+H2RA,Histamine-2 Receptor Antagonists (антагонисты гистамин-2-рецепторов)
+HbA1c,Glycated Hemoglobin (гликированный гемоглобин)
+НАДФН,Никотинамидадениндинуклеотидфосфат
+НВЛ,Неинвазивная вентиляция легких
+НГЛТ-1,Натрий-глюкозный котранспортер 1-го типа
+НИЗиП,Национальное исследование здоровья и питания
+НИИ,Научно-исследовательский институт
+НКК,Нижний контроль качества
+НКУ,Независимое контрольное учреждение
+НМ-КРРПЖ,Неметастатический кастрационно-резистентный рак предстательной железы
+НМРК,Немеланомный рак кожи
+ННК,Независимый наблюдательный комитет
+ННР,Непредвиденная нежелательная реакция
+НОАК,Новые оральные антикоагулянты
+НПВ,Нижняя полая вена
+НПКО,Нижний предел количественного определения
+НПЭ,Неблагоприятные побочные эффекты
+НР,Нежелательная реакция
+СНР,Серьезная нежелательная реакция
+НС,Нестабильная стенокардия
+HCV,Hepatitis C Virus (вирус гепатита C)
+НУП,Натрийуретический пептид
+НФГ,Нефракционированный гепарин
+НХЛ,Неходжкинская лимфома
+НЭК,Независимый этический комитет
+НЭО,Нейроэндокринные опухоли
+НЯ,Нежелательное явление
+СНЯ,Серьезное нежелательное явление
+НтИОТ,Нуклеотидный ингибитор обратной транскриптазы
+ОА,Очаговая алопеция
+ОАК,Общий анализ крови
+ОАМ,Общий анализ мочи
+ОАТ,Переносчик органических анионов
+ОАТР,Переносчик органических анионов полипептида
+ОВ,Общая выживаемость
+ОГЭП,Острый генерализованный экзантематозный пустулез
+ОИ,Оппортунистические инфекции
+ОИМ,Острый инфаркт миокарда
+ОИП,Обычная интерстициальная пневмония
+ОКС,Острый коронарный синдром
+ОКСбпST,Острый коронарный синдром без подъема сегмента ST
+ОКСпST,Острый коронарный синдром с подъемом сегмента ST
+ОЛ,Острый лейкоз
+ОЛЛУ,Оценке локальных лимфатических узлов
+ОМД,Отдел медицинской документации
+ОНМК,Острое нарушение мозгового кровообращения
+ООО,Общество с ограниченной ответственностью
+ОПП,Острое почечное повреждение
+ОПСС,Общее периферическое сопротивление сосудов
+ОСН,Острая сердечная недостаточность
+ОСТ,Переносчик органических катионов
+ОТТС,Операция ортотопической трансплантации сердца
+ОФВ1,Объем форсированного выдоха за одну секунду
+ОФТ,Оптимизированная фоновая терапия
+ОХ,Общий холестерин
+ОЧО,Общая частота ответа
+ОШ,Отношение шансов
+EQ5D,European Quality of Life 5-Domain Scale (европейская шкала оценки качества жизни по пяти аспектам)
+ПАГ,Парааминогиппуровая кислота
+ПВА,Полная выборка анализов
+ПВДХ,Поливинилиденхлорид
+ПВП,Поливинилпирролидон
+ПВТ,Противовирусная терапия
+ПВХ,Поливинилхлорид
+ПГА2,Простагландин а2
+ПГГП,Пероральные гипогликемические препараты
+ПГД2,Простагландин д2
+ПГО,Полный гематологический ответ
+ПГТТ,Пероральный глюкозотолерантный тест
+ПД,Потенциал дейтсвия
+ПЖ,Поджелудочная железа
+ПЗ,Прогрессирование заболевания
+ПИН,Потреблители инъекционных наркотиков
+ПК,Периферическая кровь
+ПКТ,Первичная конечная точка
+ПЛЛ,Пациенто-лет лечения
+ПМЛ,Прогрессирующая множественная лейкоэнцефалопатия
+ПМО,Полный молекулярный ответ
+ПМТ,Прибавка массы тела
+ПМФ,Первичный миелофиброз
+ПНЖК,Полиненасыщенные жирные кислоты
+ПНМК,Переходящее нарушение мозгового кровообращения
+ПОЛ,Перекисное окисление липидов
+ППГ,Глюкоза в плазме крови после приема пищи
+ППД,Препарат прямого действия
+ПППД,Противовирусные препараты прямого действия
+ППТ,Площадь поверхности тела
+ПР,Полная ремиссия
+ПСВ,Пиковая скорость выдоха
+ПСМ,Производные сульфонилмочевины
+ПССП,Пероральные сахароснижающие препараты
+ПТ,Протромбиновое время
+ПТИ,Протромбиновый индекс
+ПТТГ,Пероральный тест толерантности к глюкозе
+ПХТ,Полихимиотерапия
+ПЦО,Полный цитогенетический ответ
+ПЦР-РВ,Реакция полимеразной цепной реакции в реальном времени
+ПЭ,Полный эффект
+ПЭГ,Полиэтиленгликоль
+ПЭП,Противоэпилептические препараты
+Пост-ИП МФ,Постполицитемический миелофиброз
+РА,Ревматоидный артрит
+РААС,Ренин-ангиотензин-альдостероновая система
+РБВ,Рибавирин
+РГЛГ,Рилизинг-гормон лютеинизирующего гормона
+РЙТ,Радиойодтерапия
+РМЖ,Рак молочной железы
+РН,Радикальная нефрэктомия
+РНК,Рибонуклеиновая кислота
+РНЛ,Ранее не леченный
+РПЖ,Рак предстательной железы
+РТМ,Рак тела матки
+РТПХ,Реакция «трансплантат против хозяина»
+PTX3,Pentraxin-3 (пентраксин-3)
+РУ,Регистрационное удостоверение
+РЩЖ,Рак щитовидной железы
+РЭ,Рак эндометрия
+C0,Initial Drug Concentration (начальная концентрация лекарственного препарата в крови)
+CL,"Clearance (клиренс): Показатель, характеризующий скорость выведения лекарственного вещества из плазмы крови"
+CYP,Cytochrome P450 (Цитохром P450)
+Cmax,"Maximum Concentration (максимальная концентрация): Наибольшая концентрация лекарственного вещества, достигаемая в плазме крови"
+САГК,Суберанилогидроксамовая кислота
+САР,Снижение абсолютных рисков
+САС,Симпатоадреналовая система
+СБН,Стимуляция блуждающего нерва
+СГ,Спонтанная гипертензия
+СД,Сахарный диабет
+СД 2,Сахарный диабет 2 типа
+СД1,Сахарный диабет 1 типа
+СД2Т,Сахарный диабет 2 типа
+СЖК,Свободные жирные кислоты
+СЖП,Содержание железа в печени
+СЗ,Стабилизация заболевания
+СЗОЭ,Синдром задней обратимой энцефалопатии
+СКВ,Системная красная волчанка
+СКК,Средний контроль качества
+СКФ,Скорость клубочковой фильтрации
+СМ-АГН,Системный мастоцитоз с ассоциированным гематологическим новообразованием
+СМЖ,Спинномозговая жидкость
+СН,Сердечная недостаточность
+СН-нФВ,Сердечная недостаточность с низкой фракцией выброса
+СННР,Серьезная непредвиденная нежелательная реакция
+СНсСФВ,Сердечная недостаточность с сохраненной фракцией выброса
+СОАС,Синдром обструктивного апноэ сна
+СОД,Суммарная доза облучения
+СОР,Снижение относительных рисков
+СОЭ,Скорость оседания эритроцитов
+СП,Санитарные правила
+CPAP,Continuous Positive Airway Pressure (терапия постоянным положительным давлением в дыхательных путях)
+CРБ,C-реактивный белок
+СС,Системный склероз
+CCL19,CC Motif Chemokine Ligand 19 (лиганд 19 хемокина с мотивом CC)
+ССД,Синдром Стивенса-Джонсона
+ССЗ,Сердечно-сосудистые заболевания
+ССЗОА,"Сердечно-сосудистое заболевание, обусловленное атеросклерозом"
+ССИ,Скорость секреции инсулина
+ССО,Сердечно-сосудистые осложнения
+ССП,Сахароснижающие препараты
+СТ,Стабилизация
+СТК,Саркома тучных клеток
+СТО,Стандартный образец
+СЧР,Совокупная частота рецидивов
+SEGA,Subependymal Giant Cell Astrocytoma (субэпендимальная гигантоклеточная астроцитома)
+СЭГА,Cубэпендимальная гигантоклеточная астроцитома
+T1/2,"Half-life (период полувыведения): Время, за которое концентрация вещества в плазме крови уменьшается на 50%"
+Tmax,"Time to Maximum Concentration (время достижения максимальной концентрации): Время, за которое достигается максимальная концентрация лекарственного вещества в плазме крови"
+ТАА,Тяжелая апластическая анемия
+ТБ,Туберкулез
+ТВ,Тромбиновое время
+ТГ,Триглицериды
+ТГВ,Тромбоз глубоких вен
+ТГСК,Трансплантация гемопоэтических стволовых клеток
+ТЕМ,Просвечивающая электронная микроскопия
+ТЗД,Тиазолидиндионы
+ТИА,Транзиторная ишемическая атака
+ТКИ,Ингибитор тирозинкиназа
+ТКЛ,Тучноклеточный лейкоз.
+ТКПО,"Таблетки кишечнорастворимые, покрытые оболочкой"
+ТКС,Топические кортикостероиды
+ТН,Торговое наименование
+ТНП,Терминальная почечная недостаточность
+ТНРМЖ,Трижды негативный рак молочной железы
+ТОССЗ,Тяжелые осложнения сердечно-сосудистых заболеваний
+ТПО,"Таблетки, покрытые пленочной оболочкой"
+ТППО,"Таблетки, покрытые пленочной оболочкой"
+ТС,Туберозный склероз
+ТСМ,Тлеющий системный мастоцитоз
+ТСПН,Терминальная стадия почеченой недостаточности
+ТТГ,Тиреотропный гормон
+ТТП,Тромботическая тромбоцитопеническая пурпура
+ТФ,Тканевой фактор
+ТФР,Трансформирующий фактор роста
+ТЭЛА,Тромбоэмболия легочной артерии
+ТЭН,Токсический эпидермальный некроз
+УВО,Устойчивый вирусологический ответ
+УВЭЖХ-qTOF/МС/МС,"Ультравысокоэффективная жидкостная хроматография с квадрупольной времяпролетной (qTOF, quadrupole time-of-flight) тандемной масс-спектрометрией (МС/МС, tandem mass spectrometry)"
+УДФ,Уридин-5-дифосфат
+УДФГТ,Уридин-5'-дифосфат-глюкуронозилтрансфераза
+УЗИ,Ультразвуковое исследование
+УКП,Улучшение клинических показателей
+УЛП,Ушко левого предсердия
+УФ,Ультрафиолет
+Уд/мин,Удары в минуту
+ФА,Фаза акселерации
+ФАБ,Франко-американо-британская классификация
+ФБУН,Федеральное бюджетное учреждение науки
+ФВ,Фракция выброса
+ФГА,Фитогемагглютинин
+ФГБУ,Федеральное государственное бюджетное учреждение
+ФДГ,Фтордезоксиглюкоза
+ФДЭ,Фосфодиэстераза
+ФЖ,Фибрилляция желудочков
+ФЗ,Федеральный закон
+ФКД,Фиксированная комбинация доз
+ФМА,Форболмиристатацетат
+ФНО,Фактор некроза опухоли
+ФНО-α,Фактор некроза опухоли альфа
+ФП,Фибрилляция предсердий
+ФР,Фактор риска
+ФСГ,Фолликулостимулирующий гормон
+ФТ,Фоновая терапия
+ФТП,Функциональные тесты печени
+Физиол. конц.,В пределах физиологической концентрации
+ХБП,Хроническая болезнь почек
+ХВГС,Хронический вирусный гепатит C
+ХГЧ,Хорионический гонадотропин человека
+ХЛЛ,Хронический лимфоцитарный лейкоз
+ХММЛ,Хронический миеломоноцитарный лейкоз
+ХПН,Хроническая почечная недостаточность
+ХСНпФВ,Хроническая сердечная недостаточность с промежуточной фракцией выброса левого желудочка
+ХСНсФВ,Хроническая сердечная недостаточность с сохранённой фракцией выброса левого желудочка
+ХФ,Хроническая фаза
+Хс-ЛПВП,Холестерин липопротеинов высокой плотности
+Хс-ЛПНП,Холестерин липопротеинов низкой плотности
+Хс-ЛПОНП,Холестерин липопротеинов очень низкой плотности
+ЦК,Цельная кровь
+ЦМВ,Цитомегаловирусная инфекция
+ЦОГ,Циклооксигеназа
+ЦОГ-1,Циклооксигеназа 1 типа
+ЦОГ-2,Циклооксигеназа 2 типа
+ЦП,Цирроз печени
+ЧБНЛ,Число больных необходимое для лечения
+ЧДД,Частота дыхательных движений
+ЧКЗ,Частота контроля заболевания
+ЧКУ,Частота клинического улучшения
+ЧКУ16,Частота клинического улучшения на сроке 16 недель
+ЧКУ24,Частота клинического улучшения на сроке 24 недели
+ЧО,Частичный ответ
+ЧП-ЭхоКГ,Чреспищеводная эхокардиография
+ЧСА,Человеческий сывороточный альбумин
+ЧСС,Частота сердечных сокращений
+ЧЭ,Частичный эффект
+ЩЖ,Щитовидная железа
+ЭД,Эффективная (пероральная) доза
+ЭПК,Эйкозапентаеновая кислота
+ЭСБКК,Эмболия сосудов большого круга кровообращения
+ЭХОКГ,Эхокардиография
+ЭЭ,Этинилэстрадиол
+ЭхоКГ,Эхокардиография
+ЮИА,Ювенильный идиопатический артрит
+ЮНЕЙДС,Объединенная программа Организации Объединенных Наций по ВИЧ/СПИДу
+ЯК,Язвенный колит
+ЯОП,Ядро одиночного пути
+ЯР,Ядерный рецептор
+анти-VEGF,Антитела к фактору роста эндотелия сосудов
+г,Грамм
+SGLT2,Sodium-Glucose Cotransporter 2 Inhibitor (ингибитор натрий-глюкозного котранспортера 2)
+иНГЛТ2,Ингибитор натрий-глюкозного котранспортера 2
+иДПП-4,Ингибиторы дипетидилпептидазы-4
+иНГЛТ-2,Ингибитор натрий-глюкозного котранспортера 2-го типа
+иНГЛТ-2/ НГЛТ-2,Ингибиторы натрий-глюкозного котранспортера 2-го типа
+иФДЭ-5,Ингибитор фосфодиэстеразы типа 5
+кг,Килограмм
+кфСРПВ,Каротиднофеморальная скорость распространения пульсовой волны
+л,Литр
+м,Метр
+мБКР,Метастатический базальноклеточный рак кожи
+мГРЧПЖ,Метастатический гормоночувствительный рак предстательной железы
+мГЧРПЖ,Метастатический гормон-чувствительный рак предстательной железы
+мКРПЖ,Метастатический кастрационный рак предстательной железы
+мКРРПЖ,Метастатический кастрационно-резистентный рак предстательной железы
+мКЧРПЖ,Метастатический кастрационно-чувствительный рак предстательной железы
+мПКР,Метастатический почечно-клеточный рак
+мРМЖ,Метастатический рак молочной железы
+мРНК,Матричная рибонуклеиновая кислота
+мг,Миллиграмм
+мес.,Месяц(ев)
+мин,Минута
+мкг,Микрограмм
+кг,Килограмм
+мкмоль,Микромоль
+мл,Миллилитр
+мм,Миллиметр
+ммоль,Миллимоль
+мрБКР,Местно-распространенный базальноклеточный рак кожи
+мтДНК,Митохондриальная дезоксирибонуклеиновая кислота
+нПКР,Несветлоклеточный почечно-клеточный рак
+нг,Нанограмм
+нмКРРПЖ,Неметастатический кастрационно-резистентный рак предстательной железы
+оРТПХ,Острая реакция «трансплантат против хозяина»
+п/з,Поле зрения
+п/к,Подкожный
+п/о,Пероральный
+пег-ИФН,Пегилированный интерферон
+пэг-ИФН,Пегилированный интерферон
+рН,Potentia Hydrogenii (вес водорода): Показатель кислотности
+рСКФ,Расчетная скорость клубочковой фильтрации
+рт.ст.,Ртутного столба
+сБПВП,Синтетические базисные противовоспалительные препараты
+сПКР,Светлоклеточный почечно-клеточный рак
+сЮА,Системный юношеский артрит
+сут,Сутки
+тппо,"Таблетки, покрытые пленочной оболочкой"
+тсБПВП,Таргетные синтетические базисные противовоспалительные препараты
+хРТПХ,Хроническая реакция «трансплантат против хозяина»
+цАМФ,Циклический аденозинмонофосфат
+цГМФ,Циклический гуанозинмонофосфат
+цНЭ,Циторедуктивная нефрэктомия
+ч,Час
+эИРК,Электронная версия индивидуальной регистрационной карты
