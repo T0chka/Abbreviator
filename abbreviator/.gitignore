@@ -28,12 +28,12 @@ venv/
 Thumbs.db
 
 # Also
-drafts/
-bkups/
-abb_examples/
-docs_examples/
-data/*
+abb_app/backend_scripts/drafts/
+abb_app/backend_scripts/bkups/
+abb_app/backend_scripts/abb_examples/
+abb_app/backend_scripts/docs_examples/
+abb_app/backend_scripts/data/*
 !data/abb_dict.csv
-notes for review.txt
-output/abbreviations_table.docx
-abbs_review.py
+abb_app/backend_scripts/notes for review.txt
+abb_app/backend_scripts/output/abbreviations_table.docx
+abb_app/backend_scripts/abbs_review.py
