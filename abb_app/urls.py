@@ -16,11 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from abb_app.views import upload_file, display_content
+from abb_app.views import upload_file, process_and_display, update_abbreviation, update_difference_section
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', upload_file, name='home'),
     path('upload/', upload_file, name='upload_file'),
-    path('content/', display_content, name='display_content'),
-]
+    path('process/', process_and_display, name='process_file'),
+    path('content/', process_and_display, name='display_content'),
+    path('update-abbreviation/', update_abbreviation, name='update_abbreviation'),
+    path('update-difference-section/', update_difference_section, name='update_difference_section'),
+] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

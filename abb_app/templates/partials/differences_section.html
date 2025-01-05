@@ -1,0 +1,23 @@
+<h2>Detected Differences Between the Existing and New Abbreviation Tables</h2>
+
+<h3>Abbreviations Present in the Initial Table but Missing in the New Table</h3>
+<ul>
+    {% if missing_abbs %}
+        {% for change in missing_abbs %}
+            <li>{{ change.abbreviation }} - {{ change.description }}</li>
+        {% endfor %}
+    {% else %}
+        <p>No missing abbreviations detected.</p>
+    {% endif %}
+</ul>
+
+<h3>Abbreviations Present in the New Table but Missing in the Initial Table</h3>
+<ul>
+    {% if new_found_abbs %}
+        {% for new in new_found_abbs %}
+            <li>{{ new.abbreviation }} - {{ new.description }}</li>
+        {% endfor %}
+    {% else %}
+        <p>No new abbreviations found.</p>
+    {% endif %}
+</ul>

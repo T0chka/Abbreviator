@@ -1,21 +1,74 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Document Content</title>
+    <title>Processed Document</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <script>
+        function updateAbbreviation(abb) {
+            let description = document.getElementById(`desc_${abb}`).value;
+            let url = `{% url 'update_abbreviation' %}?abbreviation=${encodeURIComponent(abb)}&description=${encodeURIComponent(description)}`;
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    abbreviation: abb,
+                    description: description
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`status_${abb}`).innerText = '✓ Updated';
+                    
+                    // Fetch and update the differences section
+                    fetch("{% url 'update_difference_section' %}", {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({})  // Empty object since we don't need to send data
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('differences-section').innerHTML = data.html;
+                    });
+                } else {
+                    document.getElementById(`status_${abb}`).innerText = '✗ Failed';
+                }
+            });
+        }
+    </script>
 </head>
 <body>
-    <h1>Uploaded Document Content</h1>
 
-    {% if content %}
-        <h2>First 10 Paragraphs:</h2>
-        {% for paragraph in content %}
-            <p>{{ paragraph }}</p>
-        {% endfor %}
-    {% else %}
-        <p>No content to display.</p>
-    {% endif %}
+    <div id="differences-section">
+        {% include 'partials/differences_section.html' %}
+    </div>
 
-    <hr>
-    <a href="{% url 'upload_file' %}">Upload Another File</a>
+    <div>
+        <h2>Add Custom Abbreviations</h2>
+        {% for abb in unmatched_abbs %}
+    <div class="abbreviation-item">
+        <h4>{{ abb.abbreviation }}</h4>
+        <div class="input-group">
+            <input type="text" id="desc_{{ abb.abbreviation }}" placeholder="Enter description">
+            <button onclick="updateAbbreviation('{{ abb.abbreviation }}')">Update</button>
+        </div>
+        <span id="status_{{ abb.abbreviation }}"></span>
+        <div class="contexts">
+            <h5>Found in contexts:</h5>
+            {% for context in abb.contexts %}
+                <div class="context-item">
+                    <p>...{{ context }}...</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endfor %}
+    </div>
 </body>
 </html>

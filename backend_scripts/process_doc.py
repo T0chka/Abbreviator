@@ -9,14 +9,17 @@ from thefuzz import process, fuzz
 from collections import Counter
 
 # Local imports
-from extract_abbs import (
+from .extract_abbs import (
     get_all_abbreviations,
     compare_abbreviations
 )
-from format_abbs import clean_and_sort_abbreviations
+from .format_abbs import clean_and_sort_abbreviations
 
-ABB_DICT_PATH = 'data/abb_dict.csv'
-DOC_PATH = "C:/Workspace/R-pharm/work/abbreviation_app/data/docs_examples"
+ABB_DICT_PATH = os.path.join(
+    os.path.dirname(__file__),
+    'data', 'abb_dict.csv'
+)
+# DOC_PATH = "C:/Workspace/R-pharm/work/abbreviation_app/data/docs_examples"
 
 # -----------------------------------------------------------------------------
 # Abbreviations and context extraction
@@ -793,8 +796,89 @@ def check_for_invalid_characters(df, stage="Unknown"):
         )
 
 # -----------------------------------------------------------------------------
+# Web
+# -----------------------------------------------------------------------------
+
+def get_custom_description_web(abb, abb_dict, matched_abbs, custom_desc=None):
+    """
+    Handle custom description for abbreviations from web form input.
+    """
+    if custom_desc:
+        # Check if the description already exists for another abbreviation
+        similar_pairs = get_similar_description(custom_desc, abb_dict)
+
+        if similar_pairs:
+            return {
+                'existing_pairs': similar_pairs,
+                'abbreviation': abb
+            }
+        
+        # If no similar pair exists, add new entry
+        new_entry = pd.DataFrame([{
+            'abbreviation': abb,
+            'description': custom_desc
+        }])
+        abb_dict.loc[len(abb_dict)] = new_entry.iloc[0]
+        matched_abbs = pd.concat([matched_abbs, new_entry], ignore_index=True)
+
+        clean_and_sort_abbreviations(abb_dict)
+        check_for_invalid_characters(abb_dict)
+        
+        return {
+            'matched_abbs': matched_abbs,
+            'message': f"New pair '{abb} - {custom_desc}' added."
+        }
+    else:
+        return {'error': f"No description provided for {abb}."}
+
+
+def check_and_correct_misstyped_abb_web(abb, abb_dict):
+    """
+    Check and correct mistyped abbreviations via web form input.
+    """
+    corrected_abb = check_and_correct_misstyped_abb(abb, abb_dict)
+    return corrected_abb
+
+
+def handle_multiple_descriptions_web(abb, descriptions, abb_dict, matched_abbs, chosen_index=None):
+    """
+    Let user pick or create a new description via web input.
+    """
+    if chosen_index is not None and 0 <= chosen_index < len(descriptions):
+        chosen_desc = descriptions[chosen_index]
+        matched_abbs = matched_abbs[
+            (matched_abbs['abbreviation'] != abb) |
+            (matched_abbs['description'] == chosen_desc)
+        ]
+        return {'matched_abbs': matched_abbs}
+
+    return {
+        'description_options': descriptions,
+        'abbreviation': abb
+    }
+
+# -----------------------------------------------------------------------------
 # Main script
 # -----------------------------------------------------------------------------
+
+def process_document(doc_path, abb_dict):
+    """
+    Core processing function for handling and analyzing uploaded documents.
+    """
+    print(f"[INFO] Processing document: {doc_path}")
+
+    doc = Document(doc_path)
+    text = extract_relevant_text(doc)
+    doc_abbs = extract_abbs_from_text(text)
+
+    matched_abbs = match_and_update_abbs(doc_abbs, abb_dict, text)
+    matched_abbs = search_abbs_in_text(text, matched_abbs, abb_dict)
+    matched_abbs = review_ola(matched_abbs, text, abb_dict)
+
+    # Return results for display in Django
+    return {
+        matched_abbs
+    }
 
 if __name__ == "__main__":
     doc_file = [f for f in os.listdir(DOC_PATH)

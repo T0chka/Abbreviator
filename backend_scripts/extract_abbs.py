@@ -4,7 +4,7 @@ import pandas as pd
 from docx import Document
 
 # Local imports
-from format_abbs import clean_and_sort_abbreviations
+from .format_abbs import clean_and_sort_abbreviations
 
 folder_path = "data/abb_examples/"
 ABB_DICT_PATH = "data/abb_dict.csv"
@@ -101,6 +101,33 @@ def get_all_abbreviations(folder_path, section_patterns=SECTION_PATTERNS):
   
     clean_and_sort_abbreviations(all_abbs)
     return all_abbs
+
+def get_init_abb_table(file_path, section_patterns=SECTION_PATTERNS):
+    """
+    Extract the relevant table from the doc, parse it,
+    and store in a single DataFrame with columns ['abbreviation', 'description'].
+    """
+    if not file_path.endswith('.docx'):
+        raise ValueError(f"Invalid file type: {file_path}. Expected a .docx file.")
+    
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+
+    doc = Document(file_path)
+    table_element = extract_abb_table(doc, section_patterns)
+    
+    if table_element is None:
+        print(f"[INFO] No relevant abbreviation table found in: {file_path}")
+        return df
+
+    df = parse_table(table_element)
+    if df is not None and not df.empty:
+        clean_and_sort_abbreviations(df)
+    else:
+        print(f"[WARNING] Table structure error or empty table in: {file_path}")
+  
+    
+    return df
 
 def compare_abbreviations(new_abbs, old_abbs, compare_missing=True, compare_new=True):
     results = {}
