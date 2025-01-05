@@ -13,25 +13,19 @@
             }
 
             const addBtn = document.getElementById(`add_btn_${abb}`);
-            const statusIcon = document.getElementById(`status_icon_${abb}`);
-            const action = (statusIcon.innerText === '✗') ? 'add' : 
-                          (addBtn.innerText.includes('Добавить') ? 'add' : 'edit');
+            const action = addBtn.innerText.includes('Добавить') ? 'add' : 'edit';
             
             updateAbbreviation(abb, action)
                 .then(() => {
-                    // Change button text only on first add
-                    if (addBtn.innerText.includes('Добавить')) {
-                        addBtn.innerText = '✓ Обновить';
-                    }
+                    // Update UI elements
+                    updateAbbreviationUI(abb, {
+                        buttonText: '✓ Обновить',
+                        statusIcon: '✓',
+                        description: `- ${description}`
+                    });
                     
-                    // Update status icon and description
-                    document.getElementById(`status_icon_${abb}`).innerText = '✓';
-                    document.getElementById(`description_text_${abb}`).innerText = `- ${description}`;
-                    
-                    // Collapse content
+                    // Collapse content and update differences
                     toggleAbbreviationContent(abb, true);
-                    
-                    // Update differences section
                     updateDifferenceSection();
                 });
         }
@@ -39,25 +33,20 @@
         function skipAbbreviation(abb) {
             updateAbbreviation(abb, 'skip')
                 .then(() => {
-                    // Reset the state completely
-                    document.getElementById(`status_icon_${abb}`).innerText = '✗';
-                    document.getElementById(`description_text_${abb}`).innerText = '- (убрано)';
+                    // Update UI elements
+                    updateAbbreviationUI(abb, {
+                        buttonText: '✓ Добавить',
+                        statusIcon: '✗',
+                        description: '- (убрано)'
+                    });
+                    
+                    // Clear input
                     document.getElementById(`desc_${abb}`).value = '';
-                    document.getElementById(`add_btn_${abb}`).innerText = '✓ Добавить';
                     
-                    // Collapse content
+                    // Collapse content and update differences
                     toggleAbbreviationContent(abb, true);
-                    
-                    // Update differences section
                     updateDifferenceSection();
                 });
-        }
-
-        function unSkipAbbreviation(abb) {
-            document.getElementById(`status_icon_${abb}`).innerText = '';
-            document.getElementById(`description_text_${abb}`).innerText = '';
-            document.getElementById(`add_btn_${abb}`).innerText = '✓ Добавить';
-            document.getElementById(`desc_${abb}`).value = '';
         }
 
         function updateAbbreviation(abb, action='add') {
@@ -134,6 +123,13 @@
                 console.error('Error:', error);
                 alert('Произошла ошибка при генерации таблицы: ' + (error.error || 'Неизвестная ошибка'));
             });
+        }
+
+        // New helper function to reduce code duplication
+        function updateAbbreviationUI(abb, {buttonText, statusIcon, description}) {
+            document.getElementById(`add_btn_${abb}`).innerText = buttonText;
+            document.getElementById(`status_icon_${abb}`).innerText = statusIcon;
+            document.getElementById(`description_text_${abb}`).innerText = description;
         }
     </script>
 </head>

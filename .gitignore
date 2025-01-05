@@ -44,8 +44,4 @@ Thumbs.db
 *.doc
 
 # Ignore Backup or Draft Data
-!backend_scripts/data/abb_dict.csv
-backend_scripts/data/bkups/
-backend_scripts/data/tmp/
-backend_scripts/drafts/
-backend_scripts/notes for review.txt
+backend_scripts/
