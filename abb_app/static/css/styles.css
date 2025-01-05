@@ -25,13 +25,18 @@ h3 {
 }
 .context-item { /* стили для контекста */
     margin: 10px 0; /* отступы сверху и снизу между элементами */
-    padding: 1px 15px 1px 15px; /* отступы внутри: сверху, справа, снизу, слева */
+    padding: 1px 15px; /* отступы внутри: сверху, справа, снизу, слева */
     background-color: #f5f5f5; /* цвет фона */
-    transition: all 0.3s ease; /* плавная анимация */
+    border-radius: 3px;
 }
 .context-item:hover { /* стили при наведении */
-    border-left-color: #2c5282; /* цвет границы при наведении */
-    background-color: #f8fafc; /* цвет фона при наведении */
+    background-color: #f5f5f5; /* тот же цвет, что и без наведения */
+}
+.context-header h5 {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin: 10px 0;
 }
 .contexts { /* стили для контекстов (на сером фоне) */
     margin-left: 0; /* отступ с лева */
@@ -42,12 +47,41 @@ h3 {
 }
 .abbreviation-item { /* стили для элемента с аббревиатурой */
     margin: 20px 0;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    padding: 10px;
+}
+.abb-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px;
+    border-radius: 4px;
+}
+.abb-title:hover {
+    background-color: #e3e3e3;  /* более светлый серый для заголовка */
+}
+.abb-title h4 {
+    flex-grow: 1;
+}
+.abb-title .toggle-btn {
+    border: none;
+}
+.status-icon {
+    width: 20px;
+    text-align: center;
+    flex-grow: 0;
+}
+.description-text {
+    color: #666;
+}
+.abb-content {
+    margin-top: 10px;
 }
 .input-group { /* стили для группы ввода */
     display: flex;
-    gap: 10px;
-    margin-bottom: 10px;
-    width: 100%;
+    gap: 5px;
+    margin-bottom: 5px;
 }
 .input-group input { /* стили для ввода */
     flex-grow: 1;
@@ -88,4 +122,19 @@ h3 {
 }
 [id^="status_"]:empty {
     display: none;
+}
+.toggle-btn {
+    flex-grow: 0;
+    margin-left: auto;
+}
+
+.abb-description {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex-grow: 0;
+}
+
+.abb-description h4 {
+    margin: 0;
 }

@@ -1,6 +1,6 @@
-<h2>Detected Differences Between the Existing and New Abbreviation Tables</h2>
+<h2>Различия между исходным и новым списками сокращений</h2>
 
-<h3>Abbreviations Present in the Initial Table but Missing in the New Table</h3>
+<h3>Есть в исходном списке, но нет в новом</h3>
 <ul>
     {% if missing_abbs %}
         {% for change in missing_abbs %}
@@ -11,7 +11,7 @@
     {% endif %}
 </ul>
 
-<h3>Abbreviations Present in the New Table but Missing in the Initial Table</h3>
+<h3>Есть в новом списке, но нет в исходном</h3>
 <ul>
     {% if new_found_abbs %}
         {% for new in new_found_abbs %}
