@@ -11,7 +11,8 @@ from backend_scripts.process_doc import (
     highlight_mixed_characters,
     compare_abbreviations,
     check_inconsistencies,
-    get_custom_description_web
+    get_custom_description_web,
+    generate_abbreviation_table
 )
 from backend_scripts.extract_abbs import (
     get_init_abb_table
@@ -19,7 +20,10 @@ from backend_scripts.extract_abbs import (
 import os
 import json
 import pandas as pd
-from django.http import JsonResponse
+from django.http import JsonResponse, FileResponse, HttpResponse
+import traceback
+from django.conf import settings
+import io
 
 def upload_file(request):
     if request.method == 'POST' and request.FILES.get('uploaded_file'):
@@ -28,7 +32,6 @@ def upload_file(request):
         file_path = fs.save(uploaded_file.name, uploaded_file)        
         request.session['uploaded_file_path'] = fs.path(file_path)
         return redirect('process_file')
-
     return render(request, 'upload.html')
 
 def separate_abbs(doc_abbs, abb_dict, text):
@@ -38,7 +41,8 @@ def separate_abbs(doc_abbs, abb_dict, text):
 
     unmatched_abbs = [
         {'abbreviation': abb,
-         'contexts': find_abbreviation_context(text, abb, find_all=True)} for abb in new_abbs
+         'contexts': find_abbreviation_context(text, abb, find_all=True)
+         } for abb in new_abbs
     ]
     return matched_abbs, unmatched_abbs
 
@@ -52,12 +56,13 @@ def update_abbreviation(request):
         if not abb or not description:
             return JsonResponse({'success': False, 'error': 'Invalid data'})
         
-        # Retrieve or initialize matched_abbs from session
         matched_abbs = request.session.get('matched_abbs', [])
 
         if action == 'skip':
-            matched_abbs = [item for item in matched_abbs 
-                          if item['abbreviation'] != abb]
+            matched_abbs = [
+                item for item in matched_abbs
+                if item['abbreviation'] != abb
+            ]
             
         elif action == 'edit':
             for item in matched_abbs:
@@ -79,9 +84,6 @@ def update_difference_section(request):
         initial_abbs = pd.DataFrame(request.session.get('initial_abbs', []))
         matched_abbs = pd.DataFrame(request.session.get('matched_abbs', []))
 
-        print("DEBUG: matched_abbs loaded in update_difference_section:\n", matched_abbs, flush=True)
-        print("DEBUG: initial_abbs in update_difference_section:\n", initial_abbs, flush=True)  
-    
         changes = compare_abbreviations(old_abbs=initial_abbs, new_abbs=matched_abbs)
         missing_abbs = changes.get('missing_abbs', pd.DataFrame())
         new_found_abbs = changes.get('new_found', pd.DataFrame())
@@ -138,3 +140,46 @@ def process_and_display(request):
             'unmatched_abbs': unmatched_abbs
         }
     )
+
+def make_abbreviation_table(request):
+    if request.method == 'POST':
+        try:
+            matched_abbs = request.session.get('matched_abbs', [])
+            print("DEBUG: Raw matched_abbs from session:", matched_abbs, flush=True)
+            
+            matched_abbs = pd.DataFrame(matched_abbs)
+            if matched_abbs.empty:
+                return JsonResponse({
+                    'success': False, 
+                    'error': 'Нет аббревиатур для генерации таблицы'
+                })
+
+            # Создаем файл в памяти
+            file_stream = io.BytesIO()
+            
+            # Генерируем таблицу
+            doc = generate_abbreviation_table(matched_abbs)
+            doc.save(file_stream)  # Сохраняем в память
+            file_stream.seek(0)
+            
+            # Создаем response для скачивания
+            response = HttpResponse(
+                file_stream.getvalue(),
+                content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            )
+            response['Content-Disposition'] = 'attachment; filename=abbreviation_table.docx'
+            
+            return response
+            
+        except Exception as e:
+            error_traceback = traceback.format_exc()
+            print("ERROR:", error_traceback, flush=True)
+            return JsonResponse({
+                'success': False, 
+                'error': f'Ошибка при генерации таблицы: {str(e)}\n{error_traceback}'
+            })
+    
+    return JsonResponse({
+        'success': False, 
+        'error': 'Метод не разрешен'
+    }, status=405)

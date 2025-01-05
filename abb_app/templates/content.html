@@ -106,6 +106,35 @@
                 toggleBtn.textContent = '▶';
             }
         }
+
+        function generateAbbreviationTable() {
+            fetch("{% url 'generate_abbreviation_table' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.blob();
+                }
+                return response.json().then(err => Promise.reject(err));
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'abbreviation_table.docx';
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при генерации таблицы: ' + (error.error || 'Неизвестная ошибка'));
+            });
+        }
     </script>
 </head>
 <body>
@@ -116,32 +145,42 @@
 
     <div>
         <h2>Добавление сокращений</h2>
-        {% for abb in unmatched_abbs %}
-    <div class="abbreviation-item" id="item_{{ abb.abbreviation }}">
-        <div class="abb-title" onclick="toggleAbbreviationContent('{{ abb.abbreviation }}')" style="cursor: pointer;">
-            <span class="status-icon" id="status_icon_{{ abb.abbreviation }}"></span>
-            <div class="abb-description">
-                <h4>{{ abb.abbreviation }}</h4>
-                <span class="description-text" id="description_text_{{ abb.abbreviation }}"></span>
-            </div>
-            <span class="toggle-btn" id="toggle_btn_{{ abb.abbreviation }}">▼</span>
-        </div>
-        <div class="abb-content" id="content_{{ abb.abbreviation }}">
-            <div class="input-group" id="input_group_{{ abb.abbreviation }}">
-                <input type="text" id="desc_{{ abb.abbreviation }}" placeholder="Введите расшифровку">
-                <button onclick="addAbbreviation('{{ abb.abbreviation }}')" id="add_btn_{{ abb.abbreviation }}">✓ Добавить</button>
-                <button onclick="skipAbbreviation('{{ abb.abbreviation }}')" id="skip_btn_{{ abb.abbreviation }}">✗ Убрать</button>
-            </div>
-            <div class="contexts" id="contexts_{{ abb.abbreviation }}">
-                {% for context in abb.contexts %}
-                    <div class="context-item">
-                        <p>...{{ context }}...</p>
+        <div class="abbreviation-list">
+            {% for abb in unmatched_abbs %}
+                <div class="abbreviation-item" id="item_{{ abb.abbreviation }}">
+                    <div class="abb-title" onclick="toggleAbbreviationContent('{{ abb.abbreviation }}')" style="cursor: pointer;">
+                        <div class="abb-title-left">
+                            <span class="status-icon" id="status_icon_{{ abb.abbreviation }}"></span>
+                            <div class="abb-description">
+                                <h4>{{ abb.abbreviation }}</h4>
+                                <span class="description-text" id="description_text_{{ abb.abbreviation }}"></span>
+                            </div>
+                        </div>
+                        <span class="toggle-btn" id="toggle_btn_{{ abb.abbreviation }}">▼</span>
                     </div>
-                {% endfor %}
-            </div>
+                    <div class="abb-content" id="content_{{ abb.abbreviation }}">
+                        <div class="input-group" id="input_group_{{ abb.abbreviation }}">
+                            <input type="text" id="desc_{{ abb.abbreviation }}" placeholder="Введите расшифровку">
+                            <button onclick="addAbbreviation('{{ abb.abbreviation }}')" id="add_btn_{{ abb.abbreviation }}">✓ Добавить</button>
+                            <button onclick="skipAbbreviation('{{ abb.abbreviation }}')" id="skip_btn_{{ abb.abbreviation }}">✗ Убрать</button>
+                        </div>
+                        <div class="contexts" id="contexts_{{ abb.abbreviation }}">
+                            {% for context in abb.contexts %}
+                                <div class="context-item">
+                                    <p>...{{ context }}...</p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
         </div>
     </div>
-{% endfor %}
+
+    <div class="generate-table-section">
+        <button onclick="generateAbbreviationTable()" class="generate-btn">
+            Сгенерировать таблицу аббревиатур
+        </button>
     </div>
 </body>
 </html>

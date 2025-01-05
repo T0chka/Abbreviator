@@ -15,8 +15,13 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
-from abb_app.views import upload_file, process_and_display, update_abbreviation, update_difference_section
+from django.urls import path, include
+from abb_app.views import (
+    upload_file, process_and_display,
+    update_abbreviation,
+    update_difference_section,
+    make_abbreviation_table
+)
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -28,4 +33,8 @@ urlpatterns = [
     path('content/', process_and_display, name='display_content'),
     path('update-abbreviation/', update_abbreviation, name='update_abbreviation'),
     path('update-difference-section/', update_difference_section, name='update_difference_section'),
+    path('generate-table/', make_abbreviation_table, name='generate_abbreviation_table'),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

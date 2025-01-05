@@ -644,6 +644,7 @@ def generate_abbreviation_table(matched_abbs):
     Generates a .docx file with only a table,
     with page margins set to top/bottom=2cm, left=3cm, right=1.5cm,
     and a fixed 3.7cm width for the first column.
+    Returns the Document object instead of saving it.
     """
     doc = Document()
 
@@ -687,11 +688,7 @@ def generate_abbreviation_table(matched_abbs):
         row.cells[0].width = Cm(3.7)
         row.cells[1].width = second_col_width
 
-    # Save
-    out_path = 'output/abbreviations_table.docx'
-    os.makedirs('output', exist_ok=True)
-    doc.save(out_path)
-    print(f"Abbreviation table saved to {out_path}")
+    return doc
 
 # -----------------------------------------------------------------------------
 # Additional Checks

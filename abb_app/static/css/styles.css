@@ -1,140 +1,216 @@
-body {
-    padding: 0 40px; /* отступы с боков */
-    max-width: 1200px; /* ширина контейнера */
-    margin: 0 auto; /* центрирование */
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* шрифт */
-    line-height: 1.6; /* высота строки */
-    color: #2d3748; /* цвет текста */
-}
-h2 {
-    color: #333;
-    padding-left: 0;
-    padding-bottom: 10px;
-    padding-top: 5px;
-    background-color: #abc32f;
-    text-align: center;
-    line-height: 2;     /* вертикальное центрирование */
-    height: 40px;       /* фиксированная высота */
-    display: flex;      /* включаем flex */
-    align-items: center; /* вертикальное центрирование для flex */
-    justify-content: center; /* горизонтальное центрирование для flex */
-}
-h3 {
-    color: #444;
-    margin-top: 20px;
-}
-.context-item { /* стили для контекста */
-    margin: 10px 0; /* отступы сверху и снизу между элементами */
-    padding: 1px 15px; /* отступы внутри: сверху, справа, снизу, слева */
-    background-color: #f5f5f5; /* цвет фона */
-    border-radius: 3px;
-}
-.context-item:hover { /* стили при наведении */
-    background-color: #f5f5f5; /* тот же цвет, что и без наведения */
-}
-.context-header h5 {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    margin: 10px 0;
-}
-.contexts { /* стили для контекстов (на сером фоне) */
-    margin-left: 0; /* отступ с лева */
+/* ==========================================================================
+   Variables
+   ========================================================================== */
+:root {
+    /* Colors */
+    --primary-color: #46413D;
+    --bg-light: #ffffff; 
+    --bg-accent: #f2eeec;
+    --bg-accent-hover: color-mix(in srgb, var(--bg-accent) 80%, black);
+    --text-primary: #46413d;
+    --border-color: var(--text-primary);
+    --success-color: #64a863;
+    --success-hover: color-mix(in srgb, var(--success-color) 80%, black);
+    --danger-color: #f44336;
+    --danger-hover: color-mix(in srgb, var(--danger-color) 80%, black);
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    
+    /* Transitions */
+    --transition-fast: 0.2s ease;
+    --transition-normal: 0.3s ease;
+    
+    /* Typography */
+    --font-stack: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    --border-radius: 0px;
 }
 
-.differences-container { /* стили для контейнера с различиями */
-    margin: 50px 0;
+/* ==========================================================================
+   Base Styles
+   ========================================================================== */
+body {
+    padding: 0 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: var(--font-stack);
+    line-height: 1.6;
+    color: var(--text-primary);
+    background-color: var(--bg-light);
 }
-.abbreviation-item { /* стили для элемента с аббревиатурой */
-    margin: 20px 0;
-    border: 1px solid #eee;
-    border-radius: 4px;
-    padding: 10px;
+
+/* ==========================================================================
+   Typography
+   ========================================================================== */
+h2 {
+    color: var(--bg-accent);
+    padding: 1rem;
+    background-color: var(--primary-color);
+    border-radius: var(--border-radius);
+    margin: 2rem 0;
+    font-weight: 600;
+    box-shadow: var(--shadow-md);
 }
+
+/* ==========================================================================
+   Abbreviation Cards
+   ========================================================================== */
+.abbreviation-item {
+    background: var(--bg-accent);
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-normal);
+}
+
+.abbreviation-item:hover {
+    box-shadow: var(--shadow-md);
+}   
+
+/* Card Header */
 .abb-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 5px;
-    border-radius: 4px;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    transition: background-color var(--transition-fast);
 }
-.abb-title:hover {
-    background-color: #e3e3e3;  /* более светлый серый для заголовка */
-}
-.abb-title h4 {
-    flex-grow: 1;
-}
-.abb-title .toggle-btn {
-    border: none;
-}
-.status-icon {
-    width: 20px;
-    text-align: center;
-    flex-grow: 0;
-}
-.description-text {
-    color: #666;
-}
-.abb-content {
-    margin-top: 10px;
-}
-.input-group { /* стили для группы ввода */
+
+.abb-title-left {
     display: flex;
-    gap: 5px;
-    margin-bottom: 5px;
+    align-items: center;
+    gap: 1rem;
 }
-.input-group input { /* стили для ввода */
-    flex-grow: 1;
-    padding: 5px;
-}
-.input-group input::placeholder { /* стили для плейсхолдера */
-    color: #d6dae0;
-    font-style: italic;
-}
-.input-group input:focus { /* стили при наведении */
-    outline: none;
-    border-color: #abc32f; /* цвет границы при наведении */
-}
-.input-group button { /* стили для кнопки */
-    padding: 5px 15px;
-    background-color: #d6dae0;
-    border: 1px solid #c2c4b9;
-    color: #1e344f;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-.input-group button:hover { /* стили при наведении */
-    background-color: #959690;
-    color: white;
-}
-.skipped-controls {
-    margin: 10px 0;
-    color: #666;
-}
-.skipped-controls button {
-    margin-right: 10px;
-}
-[id^="status_"] { /* стили для статуса */
-    display: inline-block;
-    margin-left: 10px;
-    font-size: 14px;
-}
-[id^="status_"]:empty {
-    display: none;
-}
-.toggle-btn {
-    flex-grow: 0;
-    margin-left: auto;
+
+.abb-title:hover {
+    background-color: var(--bg-accent-hover);
 }
 
 .abb-description {
     display: flex;
     align-items: center;
-    gap: 5px;
-    flex-grow: 0;
+    gap: 0.5rem;
 }
 
 .abb-description h4 {
     margin: 0;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.description-text {
+    color: var(--text-primary);
+}
+
+/* Card Content */
+.abb-content {
+    transition: var(--transition-normal);
+}
+
+/* Context Items */
+.context-item {
+    background-color: var(--bg-accent);
+    padding: 1px 15px;
+    margin: 1px 0;
+    border-radius: var(--border-radius);
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.context-item p {
+    margin: 0.5rem 0;
+}
+
+/* ==========================================================================
+   Forms and Inputs
+   ========================================================================== */
+.input-group {
+    display: flex;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: var(--bg-accent);
+    border-radius: var(--border-radius);
+}
+
+.input-group input {
+    flex-grow: 1;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-size: 0.95rem;
+    transition: border-color var(--transition-fast);
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--bg-accent-hover);
+    box-shadow: 0 0 0 3px rgba(166, 134, 106, 0.1);
+}
+
+/* ==========================================================================
+   Buttons
+   ========================================================================== */
+/* Base Button Styles */
+.btn-base, .input-group button, .generate-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--border-radius);
+    font-family: var(--font-stack);
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    letter-spacing: 0.5px;
+    color: var(--bg-light);
+}
+
+/* Action Buttons (Add/Remove) */
+.input-group button[onclick*="addAbbreviation"] {
+    background-color: var(--success-color);
+}
+
+.input-group button[onclick*="addAbbreviation"]:hover {
+    background-color: var(--success-hover);
+}
+
+.input-group button[onclick*="skipAbbreviation"] {
+    background-color: var(--danger-color);
+}
+
+.input-group button[onclick*="skipAbbreviation"]:hover {
+    background-color: var(--danger-hover);
+}
+
+/* Generate Table Section */
+.generate-table-section {
+    margin: 2rem 0;
+    text-align: center;
+}
+
+/* Generate Table Button */
+.generate-btn {
+    background-color: var(--success-color);
+    box-shadow: var(--shadow-sm);
+    font-size: 1rem;
+}
+
+.generate-btn:hover {
+    background-color: var(--success-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Status Icons
+   ========================================================================== */
+.status-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
 }
