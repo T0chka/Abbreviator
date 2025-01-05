@@ -74,6 +74,13 @@ h3 {
     background-color: #959690;
     color: white;
 }
+.skipped-controls {
+    margin: 10px 0;
+    color: #666;
+}
+.skipped-controls button {
+    margin-right: 10px;
+}
 [id^="status_"] { /* стили для статуса */
     display: inline-block;
     margin-left: 10px;

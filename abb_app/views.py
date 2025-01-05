@@ -47,14 +47,27 @@ def update_abbreviation(request):
         data = json.loads(request.body)
         abb = data.get('abbreviation')
         description = data.get('description')
+        action = data.get('action', 'add')  # 'add', 'skip', или 'edit'
 
         if not abb or not description:
             return JsonResponse({'success': False, 'error': 'Invalid data'})
         
         # Retrieve or initialize matched_abbs from session
         matched_abbs = request.session.get('matched_abbs', [])
-        new_entry = {'abbreviation': abb, 'description': description}
-        matched_abbs.append(new_entry)
+
+        if action == 'skip':
+            matched_abbs = [item for item in matched_abbs 
+                          if item['abbreviation'] != abb]
+            
+        elif action == 'edit':
+            for item in matched_abbs:
+                if item['abbreviation'] == abb:
+                    item['description'] = description
+                    break
+        else:
+            new_entry = {'abbreviation': abb, 'description': description}
+            matched_abbs.append(new_entry)
+        
         request.session['matched_abbs'] = matched_abbs
 
         return JsonResponse({'success': True})

@@ -5,9 +5,52 @@
     <title>Processed Document</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <script>
-        function updateAbbreviation(abb) {
+        function addAbbreviation(abb) {
             let description = document.getElementById(`desc_${abb}`).value;
-            let url = `{% url 'update_abbreviation' %}?abbreviation=${encodeURIComponent(abb)}&description=${encodeURIComponent(description)}`;
+            if (!description.trim()) {
+                document.getElementById(`status_${abb}`).innerText = '✗ Требуется описание';
+                return;
+            }
+
+            const addBtn = document.getElementById(`add_btn_${abb}`);
+            const action = addBtn.innerText === 'Добавить' ? 'add' : 'edit';
+            
+            updateAbbreviation(abb, action);
+            
+            // Change Add button to Update only on first add
+            if (addBtn.innerText === 'Добавить') {
+                addBtn.innerText = 'Обновить';
+            }
+        }
+
+        function skipAbbreviation(abb) {
+            // Hide the input group and contexts
+            document.getElementById(`input_group_${abb}`).style.display = 'none';
+            document.getElementById(`contexts_${abb}`).style.display = 'none';
+            
+            // Show the skipped controls
+            document.getElementById(`skipped_controls_${abb}`).style.display = 'block';
+            
+            // Clear any previous status message
+            document.getElementById(`status_${abb}`).innerText = '';
+            
+            updateAbbreviation(abb, 'skip');
+        }
+
+        function unSkipAbbreviation(abb) {
+            const inputGroup = document.getElementById(`input_group_${abb}`);
+            // Восстанавливаем display: flex для input-group
+            inputGroup.style.display = 'flex';
+            
+            document.getElementById(`contexts_${abb}`).style.display = 'block';
+            document.getElementById(`skipped_controls_${abb}`).style.display = 'none';
+            document.getElementById(`status_${abb}`).innerText = '';
+            document.getElementById(`add_btn_${abb}`).innerText = 'Добавить';
+        }
+
+        function updateAbbreviation(abb, action='add') {
+            let description = document.getElementById(`desc_${abb}`).value;
+            let url = `{% url 'update_abbreviation' %}?abbreviation=${encodeURIComponent(abb)}&description=${encodeURIComponent(description)}&action=${action}`;
 
             fetch(url, {
                 method: 'POST',
@@ -16,13 +59,16 @@
                 },
                 body: JSON.stringify({
                     abbreviation: abb,
-                    description: description
+                    description: description,
+                    action: action
                 })
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    document.getElementById(`status_${abb}`).innerText = '✓ Updated';
+                    if (action !== 'skip') {  // Показываем статус только для add/edit
+                        document.getElementById(`status_${abb}`).innerText = '✓ Обновлено';
+                    }
                     
                     // Fetch and update the differences section
                     fetch("{% url 'update_difference_section' %}", {
@@ -30,14 +76,14 @@
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({})  // Empty object since we don't need to send data
+                        body: JSON.stringify({})
                     })
                     .then(response => response.json())
                     .then(data => {
                         document.getElementById('differences-section').innerHTML = data.html;
                     });
-                } else {
-                    document.getElementById(`status_${abb}`).innerText = '✗ Failed';
+                } else if (action !== 'skip') {  // Показываем ошибку только для add/edit
+                    document.getElementById(`status_${abb}`).innerText = '✗ Ошибка';
                 }
             });
         }
@@ -52,15 +98,20 @@
     <div>
         <h2>Add Custom Abbreviations</h2>
         {% for abb in unmatched_abbs %}
-    <div class="abbreviation-item">
+    <div class="abbreviation-item" id="item_{{ abb.abbreviation }}">
         <h4>{{ abb.abbreviation }}</h4>
-        <div class="input-group">
+        <div class="input-group" id="input_group_{{ abb.abbreviation }}">
             <input type="text" id="desc_{{ abb.abbreviation }}" placeholder="Enter description">
-            <button onclick="updateAbbreviation('{{ abb.abbreviation }}')">Update</button>
+            <button onclick="addAbbreviation('{{ abb.abbreviation }}')" id="add_btn_{{ abb.abbreviation }}">Добавить</button>
+            <button onclick="skipAbbreviation('{{ abb.abbreviation }}')" id="skip_btn_{{ abb.abbreviation }}">Пропустить</button>
+        </div>
+        <div class="skipped-controls" id="skipped_controls_{{ abb.abbreviation }}" style="display: none;">
+            <button onclick="unSkipAbbreviation('{{ abb.abbreviation }}')">Добавить описание</button>
+            <span>(Пропущено)</span>
         </div>
         <span id="status_{{ abb.abbreviation }}"></span>
-        <div class="contexts">
-            <h5>Found in contexts:</h5>
+        <div class="contexts" id="contexts_{{ abb.abbreviation }}">
+            <h5>Контекст ({{ abb.contexts|length }}):</h5>
             {% for context in abb.contexts %}
                 <div class="context-item">
                     <p>...{{ context }}...</p>
