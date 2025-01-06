@@ -14,7 +14,7 @@ from datetime import datetime, timedelta
 from .utils import (
     extract_relevant_text,
     extract_abbs_from_text,
-    find_abbreviation_context,
+    separate_abbs,
     get_init_abb_table,
     load_abbreviation_dict,
     compare_abbreviations,
@@ -63,15 +63,6 @@ def upload_file(request):
         return redirect('process_file_with_session', session_id=session_id)
     return render(request, 'upload.html')
 
-def separate_abbs(doc_abbs, abb_dict, text):
-    freq_abbs = {abb: count for abb, count in doc_abbs.items() if count > 1}
-    matched_abbs = abb_dict[abb_dict['abbreviation'].isin(freq_abbs)].copy()
-    new_abbs = set(freq_abbs) - set(matched_abbs['abbreviation'])
-
-    return matched_abbs, [
-        {'abbreviation': abb, 'contexts': find_abbreviation_context(text, abb, find_all=True)}
-        for abb in new_abbs
-    ]
 
 def update_abbreviation(request):
     if request.method != 'POST':
@@ -123,20 +114,27 @@ def process_and_display(request, session_id=None):
         
         fs = FileSystemStorage()
         files = fs.listdir('')[1]
-        filename = next((f for f in files if f.startswith(session_id)), None)
+        filename = next(
+            (f for f in files if f.startswith(session_id)), 
+            None
+        )
         
         if filename:
             request.session['uploaded_file_path'] = filename
         else:
-            return render(request, 'upload.html', {
-                'error': 'Session file not found. Please upload a new file.'
-            })
+            return render(
+                request, 
+                'upload.html',
+                {'error': 'Файл не найден. Пожалуйста, загрузите новый файл.'}
+            )
 
     filename = request.session.get('uploaded_file_path')
     if not filename:
-        return render(request, 'upload.html', {
-            'error': 'No file was uploaded. Please upload a file.'
-        })
+        return render(
+            request, 
+            'upload.html',
+            {'error': 'Файл не найден. Пожалуйста, загрузите новый файл.'}
+        )
 
     fs = FileSystemStorage()
     file_path = fs.path(filename)
@@ -145,7 +143,7 @@ def process_and_display(request, session_id=None):
         request.session.pop('uploaded_file_path', None)
         request.session.pop('session_id', None)
         return render(request, 'upload.html', {
-            'error': 'The file no longer exists. Please upload a new file.'
+            'error': 'Файл больше не существует. Пожалуйста, загрузите новый файл.'
         })
 
     # Process document
@@ -172,7 +170,10 @@ def process_and_display(request, session_id=None):
 
 def make_abbreviation_table(request):
     if request.method != 'POST':
-        return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
+        return JsonResponse(
+            {'success': False, 'error': 'Method not allowed'}, 
+            status=405
+        )
     
     try:
         matched_abbs = pd.DataFrame(request.session.get('matched_abbs', []))
@@ -189,9 +190,14 @@ def make_abbreviation_table(request):
         
         response = HttpResponse(
             file_stream.getvalue(),
-            content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+            content_type=(
+                'application/vnd.openxmlformats-'
+                'officedocument.wordprocessingml.document'
+            )
         )
-        response['Content-Disposition'] = 'attachment; filename=abbreviation_table.docx'
+        response['Content-Disposition'] = (
+            'attachment; filename=abbreviation_table.docx'
+        )
         return response
     
     except Exception as e:

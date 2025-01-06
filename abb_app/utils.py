@@ -147,6 +147,22 @@ def find_abbreviation_context(text, abbreviation, window=50, find_all=False):
             return snippet
     return list(contexts)
 
+def separate_abbs(doc_abbs, abb_dict, text):
+    """
+    Separate abbreviations into matched and new ones.
+    """
+    freq_abbs = {abb: count for abb, count in doc_abbs.items() if count > 1}
+    matched_abbs = abb_dict[abb_dict['abbreviation'].isin(freq_abbs)].copy()
+    new_abbs = set(freq_abbs) - set(matched_abbs['abbreviation'])
+
+    return matched_abbs, [
+        {
+            'abbreviation': abb,
+            'contexts': find_abbreviation_context(text, abb, find_all=True)
+        }
+        for abb in new_abbs
+    ]
+
 # -----------------------------------------------------------------------------
 # Abbreviation table extraction
 # -----------------------------------------------------------------------------
