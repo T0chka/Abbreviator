@@ -371,6 +371,105 @@ def clean_and_sort_abbreviations(abb_dict: DataFrame) -> None:
     )
     abb_dict.reset_index(drop=True, inplace=True)
 
+# -----------------------------------------------------------------------------
+# Mistyped Abbreviation Checking
+# -----------------------------------------------------------------------------
+
+class CharacterValidator:
+    def __init__(self):
+        # Map for character-by-character conversion
+        self.cyr2lat = {
+            'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E',
+            'Н': 'H', 'К': 'K', 'М': 'M', 'О': 'O',
+            'Р': 'P', 'Т': 'T', 'У': 'Y', 'Х': 'X'
+        }
+        # Add lowercase mappings
+        self.cyr2lat.update({k.lower(): v.lower() 
+                            for k, v in self.cyr2lat.items()})
+        # Create reverse mapping
+        self.lat2cyr = {v: k for k, v in self.cyr2lat.items()}
+
+    def validate_abbreviation(self, abb: str, abb_dict: DataFrame = None) -> dict:
+        """
+        Validates an abbreviation for mixed characters.
+        If abb_dict is provided, checks for existing forms in the dictionary.
+        Returns a dict with validation info.
+        """
+        is_mixed = any(char in self.cyr2lat for char in abb) and \
+                   any(char in self.lat2cyr for char in abb)
+        
+        if not is_mixed:
+            return {
+                "is_mixed": False,
+                "original": abb,
+                "highlighted": abb,
+                "suggestions": [],
+                "matches": {}
+            }
+
+        possible_forms = self.generate_all_mixed_forms(abb)
+        highlighted = self.highlight_mixed_characters(abb)
+
+        matches = {}
+        if abb_dict is not None:
+            matches = {
+                form: list(rows['description'].unique())
+                for form in possible_forms
+                if not (rows := abb_dict[abb_dict['abbreviation'] == form]).empty
+            }
+
+        return {
+            "is_mixed": True,
+            "original": abb,
+            "highlighted": highlighted,
+            "suggestions": list(possible_forms),
+            "matches": matches
+        }
+
+    def generate_all_mixed_forms(self, abb: str) -> set:
+        """Generate all possible character combinations"""
+        results = set()
+        
+        # Add full conversions
+        results.add("".join(self.lat2cyr.get(ch, ch) for ch in abb))
+        results.add("".join(self.cyr2lat.get(ch, ch) for ch in abb))
+        
+        # Generate partial conversions
+        def backtrack(i: int, current: list):
+            if i == len(abb):
+                results.add("".join(current))
+                return
+
+            ch = abb[i]
+            # Original character
+            current.append(ch)
+            backtrack(i + 1, current)
+            current.pop()
+
+            # Convert if possible
+            if ch in self.cyr2lat:
+                current.append(self.cyr2lat[ch])
+                backtrack(i + 1, current)
+                current.pop()
+            if ch in self.lat2cyr:
+                current.append(self.lat2cyr[ch])
+                backtrack(i + 1, current)
+                current.pop()
+
+        backtrack(0, [])
+        return results - {abb}  # Exclude original form
+
+    def highlight_mixed_characters(self, abb: str) -> str:
+        """Marks each character with its script type"""
+        highlighted = []
+        for ch in abb:
+            if ch in self.cyr2lat:
+                highlighted.append(f"{ch}(Cyr)")
+            elif ch in self.lat2cyr:
+                highlighted.append(f"{ch}(Lat)")
+            else:
+                highlighted.append(ch)
+        return "".join(highlighted)
 
 # -----------------------------------------------------------------------------
 # Abbreviation comparison

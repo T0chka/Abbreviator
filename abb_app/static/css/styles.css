@@ -214,3 +214,88 @@ h2 {
     justify-content: center;
     font-size: 1.5rem;
 }
+
+/* ==========================================================================
+   Mixed Characters Validation
+   ========================================================================== */
+   .suggestions-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 1rem 0;
+}
+
+.suggestion-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-accent);
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+}
+
+.suggestion-btn:hover {
+    background: var(--bg-accent-hover);
+}
+
+.match-item {
+    width: 100%;
+}
+
+.mt-3 {
+    margin-top: 1rem;
+}
+
+/* ==========================================================================
+   Mixed Characters Section
+   ========================================================================== */
+.mixed-chars-item {
+    background: var(--bg-accent);
+    border-radius: var(--border-radius);
+    margin: 1rem 0;
+    padding: 1rem;
+    box-shadow: var(--shadow-sm);
+}
+
+.mixed-chars-item h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+.matches-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.match-btn {
+    padding: 0.75rem;
+    border: 1px solid var(--success-color);
+    background-color: var(--bg-light);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-stack);
+    transition: var(--transition-fast);
+}
+
+.match-btn:hover {
+    background-color: var(--bg-accent-hover);
+}
+
+.keep-original-btn {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-light);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    margin-top: 0.5rem;
+    font-family: var(--font-stack);
+    transition: var(--transition-fast);
+}
+
+.keep-original-btn:hover {
+    background-color: var(--bg-accent-hover);
+}

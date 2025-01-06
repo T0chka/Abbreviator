@@ -6,54 +6,31 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <script>
         function addAbbreviation(abb) {
-            let description = document.getElementById(`desc_${abb}`).value;
-            if (!description.trim()) {
-                document.getElementById(`status_${abb}`).innerText = '✗ Требуется описание';
-                return;
-            }
+            let description = document.getElementById(`desc_${abb}`).value.trim();
+            if (!description) return;
 
             const addBtn = document.getElementById(`add_btn_${abb}`);
             const action = addBtn.innerText.includes('Добавить') ? 'add' : 'edit';
             
-            updateAbbreviation(abb, action)
+            updateAbbreviation(abb, description, action)
                 .then(() => {
-                    // Update UI elements
-                    updateAbbreviationUI(abb, {
-                        buttonText: '✓ Обновить',
-                        statusIcon: '✓',
-                        description: `- ${description}`
-                    });
-                    
-                    // Collapse content and update differences
+                    updateAbbreviationUI(abb, description, action);
                     toggleAbbreviationContent(abb, true);
                     updateDifferenceSection();
                 });
         }
 
         function skipAbbreviation(abb) {
-            updateAbbreviation(abb, 'skip')
+            updateAbbreviation(abb, '', 'skip')
                 .then(() => {
-                    // Update UI elements
-                    updateAbbreviationUI(abb, {
-                        buttonText: '✓ Добавить',
-                        statusIcon: '✗',
-                        description: '- (убрано)'
-                    });
-                    
-                    // Clear input
-                    document.getElementById(`desc_${abb}`).value = '';
-                    
-                    // Collapse content and update differences
+                    updateAbbreviationUI(abb, '', 'skip');
                     toggleAbbreviationContent(abb, true);
                     updateDifferenceSection();
                 });
         }
 
-        function updateAbbreviation(abb, action='add') {
-            let description = document.getElementById(`desc_${abb}`).value;
-            let url = `{% url 'update_abbreviation' %}?abbreviation=${encodeURIComponent(abb)}&description=${encodeURIComponent(description)}&action=${action}`;
-
-            return fetch(url, {
+        function updateAbbreviation(abb, description, action='add') {
+            return fetch('{% url "update_abbreviation" %}', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -69,17 +46,11 @@
 
         function updateDifferenceSection() {
             fetch("{% url 'update_difference_section' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({})
+                method: 'POST'
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.html) {
-                    document.getElementById('differences-section').innerHTML = data.html;
-                }
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('differences-section').innerHTML = html;
             });
         }
 
@@ -87,7 +58,7 @@
             const content = document.getElementById(`content_${abb}`);
             const toggleBtn = document.getElementById(`toggle_btn_${abb}`);
             
-            if (content.style.display === 'none' && !forceCollapse) {
+            if (window.getComputedStyle(content).display === 'none' && !forceCollapse) {
                 content.style.display = 'block';
                 toggleBtn.textContent = '▼';
             } else {
@@ -98,16 +69,13 @@
 
         function generateAbbreviationTable() {
             fetch("{% url 'generate_abbreviation_table' %}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
+                method: 'POST'
             })
             .then(response => {
-                if (response.ok) {
-                    return response.blob();
+                if (!response.ok) {
+                    return response.json().then(err => Promise.reject(err));
                 }
-                return response.json().then(err => Promise.reject(err));
+                return response.blob();
             })
             .then(blob => {
                 const url = window.URL.createObjectURL(blob);
@@ -121,58 +89,200 @@
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Произошла ошибка при генерации таблицы: ' + (error.error || 'Неизвестная ошибка'));
+                alert('Произошла ошибка при генерации таблицы: ' + 
+                      (error.error || error.message || 'Неизвестная ошибка'));
             });
         }
 
-        // New helper function to reduce code duplication
-        function updateAbbreviationUI(abb, {buttonText, statusIcon, description}) {
-            document.getElementById(`add_btn_${abb}`).innerText = buttonText;
-            document.getElementById(`status_icon_${abb}`).innerText = statusIcon;
-            document.getElementById(`description_text_${abb}`).innerText = description;
+        // Helper function to reduce code duplication
+        function updateAbbreviationUI(abbreviation, description, action) {
+            const descriptionText = document.getElementById(`description_text_${abbreviation}`);
+            const statusIcon = document.getElementById(`status_icon_${abbreviation}`);
+            const addBtn = document.getElementById(`add_btn_${abbreviation}`);
+            
+            if (action === 'skip') {
+                descriptionText.textContent = '- (убрано)';
+                statusIcon.textContent = '✗';
+                addBtn.textContent = '✓ Добавить';
+            } else {  // add или edit
+                descriptionText.textContent = `- ${description}`;
+                statusIcon.textContent = '✓';
+                addBtn.textContent = '✓ Обновить';
+            }
+        }
+
+        // Use existing form from dictionary
+        function useExistingForm(originalAbb, form, description) {
+            console.log('Using existing form:', {originalAbb, form, description});
+            
+            updateAbbreviation(originalAbb, description, 'add')
+                .then(() => {
+                    document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
+                    
+                    if (checkMixedSection()) {
+                        console.log('All mixed items processed, checking unmatched state');
+                        fetch('{% url "move_to_unmatched" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                abbreviation: 'check_only'
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log('Check state response:', data);
+                            renderUnmatchedSection(data.unmatched_abbs);
+                        });
+                    } else {
+                        console.log('Still have mixed items visible');
+                    }
+                    
+                    updateDifferenceSection();
+                });
+        }
+
+        function checkMixedSection() {
+            const mixedSection = document.getElementById('mixed-chars-section');
+            if (!mixedSection) return false;
+            
+            const visibleItems = Array.from(mixedSection.getElementsByClassName('mixed-chars-item'))
+                .filter(item => window.getComputedStyle(item).display !== 'none');
+            
+            console.log('Mixed section items:', {
+                total: mixedSection.getElementsByClassName('mixed-chars-item').length,
+                visible: visibleItems.length,
+                items: visibleItems
+            });
+            
+            return visibleItems.length === 0;
+        }
+
+        function renderUnmatchedSection(unmatchedAbbs) {
+            console.log('Rendering unmatched section with:', unmatchedAbbs);
+            const mainContainer = document.querySelector('.section').parentElement;
+            
+            // Create the unmatched section
+            const unmatchedSection = document.createElement('div');
+            unmatchedSection.className = 'section';
+            unmatchedSection.id = 'unmatched-section';
+            
+            unmatchedSection.innerHTML = `
+                <h2>Добавление новых сокращений</h2>
+                <div class="abbreviation-list">
+                    ${unmatchedAbbs.map(abb => `
+                        <div class="abbreviation-item" id="item_${abb.abbreviation}">
+                            <div class="abb-title" onclick="toggleAbbreviationContent('${abb.abbreviation}')" style="cursor: pointer;">
+                                <div class="abb-title-left">
+                                    <span class="status-icon" id="status_icon_${abb.abbreviation}"></span>
+                                    <div class="abb-description">
+                                        <h4>${abb.abbreviation}</h4>
+                                        <span class="description-text" id="description_text_${abb.abbreviation}"></span>
+                                    </div>
+                                </div>
+                                <span class="toggle-btn" id="toggle_btn_${abb.abbreviation}">▼</span>
+                            </div>
+                            <div class="abb-content" id="content_${abb.abbreviation}">
+                                <div class="input-group" id="input_group_${abb.abbreviation}">
+                                    <input type="text" id="desc_${abb.abbreviation}" placeholder="Введите расшифровку">
+                                    <button onclick="addAbbreviation('${abb.abbreviation}')" id="add_btn_${abb.abbreviation}">✓ Добавить</button>
+                                    <button onclick="skipAbbreviation('${abb.abbreviation}')" id="skip_btn_${abb.abbreviation}">✗ Убрать</button>
+                                </div>
+                                <div class="contexts" id="contexts_${abb.abbreviation}">
+                                    ${abb.contexts.map(context => `
+                                        <div class="context-item">
+                                            <p>...${context}...</p>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            // Remove existing unmatched section if it exists
+            const existingUnmatched = document.getElementById('unmatched-section');
+            if (existingUnmatched) {
+                existingUnmatched.remove();
+            }
+            
+            // Move generate button to the end
+            const generateButton = document.querySelector('.generate-table-section');
+            if (generateButton) {
+                generateButton.remove();
+            }
+            
+            // Add the new section
+            mainContainer.appendChild(unmatchedSection);
+            
+            // Add generate button after unmatched section
+            if (generateButton) {
+                mainContainer.appendChild(generateButton);
+            }
+        }
+
+        function moveToUnmatched(originalAbb) {
+            console.log('Moving to unmatched:', originalAbb);
+            
+            fetch('{% url "move_to_unmatched" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    abbreviation: originalAbb
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response:', data);
+                if (data.success) {
+                    document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
+                    
+                    if (checkMixedSection()) {
+                        console.log('All mixed items processed, rendering unmatched section');
+                        renderUnmatchedSection(data.unmatched_abbs);
+                    } else {
+                        console.log('Still have mixed items visible');
+                    }
+                }
+            });
         }
     </script>
 </head>
 <body>
+    <div class="main-content">
+        <!-- Section with differences -->
+        <div id="differences-section">
+            {% include 'partials/differences_section.html' %}
+        </div>
 
-    <div id="differences-section">
-        {% include 'partials/differences_section.html' %}
-    </div>
-
-    <div>
-        <h2>Добавление сокращений</h2>
-        <div class="abbreviation-list">
-            {% for abb in unmatched_abbs %}
-                <div class="abbreviation-item" id="item_{{ abb.abbreviation }}">
-                    <div class="abb-title" onclick="toggleAbbreviationContent('{{ abb.abbreviation }}')" style="cursor: pointer;">
-                        <div class="abb-title-left">
-                            <span class="status-icon" id="status_icon_{{ abb.abbreviation }}"></span>
-                            <div class="abb-description">
-                                <h4>{{ abb.abbreviation }}</h4>
-                                <span class="description-text" id="description_text_{{ abb.abbreviation }}"></span>
-                            </div>
-                        </div>
-                        <span class="toggle-btn" id="toggle_btn_{{ abb.abbreviation }}">▼</span>
-                    </div>
-                    <div class="abb-content" id="content_{{ abb.abbreviation }}">
-                        <div class="input-group" id="input_group_{{ abb.abbreviation }}">
-                            <input type="text" id="desc_{{ abb.abbreviation }}" placeholder="Введите расшифровку">
-                            <button onclick="addAbbreviation('{{ abb.abbreviation }}')" id="add_btn_{{ abb.abbreviation }}">✓ Добавить</button>
-                            <button onclick="skipAbbreviation('{{ abb.abbreviation }}')" id="skip_btn_{{ abb.abbreviation }}">✗ Убрать</button>
-                        </div>
-                        <div class="contexts" id="contexts_{{ abb.abbreviation }}">
-                            {% for context in abb.contexts %}
-                                <div class="context-item">
-                                    <p>...{{ context }}...</p>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    </div>
+    <!-- Section with mixed characters abbreviations -->
+    <div class="section">
+        <h2>Выбор расшифровки</h2>
+        <div id="mixed-chars-section">
+            {% for abb in mixed_chars_abbs %}
+            <div class="mixed-chars-item" id="mixed_item_{{ abb.original }}">
+                <h4>{{ abb.highlighted }}</h4>
+                <div class="matches-container">
+                    {% for form, descriptions in abb.matches.items %}
+                    <button class="match-btn" 
+                            onclick="useExistingForm('{{ abb.original }}', '{{ form }}', '{{ descriptions.0 }}')">
+                        {{ form }} - {{ descriptions|join:', ' }}
+                    </button>
+                    {% endfor %}
+                    <button onclick="moveToUnmatched('{{ abb.original }}')" class="add-new-btn">
+                        Добавить новую
+                    </button>
                 </div>
+            </div>
             {% endfor %}
         </div>
     </div>
 
+    <!-- Section with generate table button -->
     <div class="generate-table-section">
         <button onclick="generateAbbreviationTable()" class="generate-btn">
             Сгенерировать таблицу аббревиатур
