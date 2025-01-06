@@ -21,9 +21,11 @@ from .utils import (
 
 def upload_file(request):
     if request.method == 'POST' and request.FILES.get('uploaded_file'):
+        uploaded_file = request.FILES['uploaded_file']
         fs = FileSystemStorage()
-        file_path = fs.save(request.FILES['uploaded_file'].name, request.FILES['uploaded_file'])        
-        request.session['uploaded_file_path'] = fs.path(file_path)
+
+        filename = fs.save(uploaded_file.name, uploaded_file)        
+        request.session['uploaded_file_path'] = filename
         return redirect('process_file')
     return render(request, 'upload.html')
 
@@ -82,8 +84,15 @@ def update_difference_section(request):
     return JsonResponse({'html': html})
 
 def process_and_display(request):
-    file_path = request.session.get('uploaded_file_path')
-    if not file_path or not os.path.exists(file_path):
+    filename = request.session.get('uploaded_file_path')
+    if not filename:
+        return render(request, 'upload.html', {
+            'error': 'No file was uploaded. Please upload a file.'
+        })
+    fs = FileSystemStorage()
+    file_path = fs.path(filename)
+    
+    if not os.path.exists(file_path):
         request.session.pop('uploaded_file_path', None)
         return render(request, 'upload.html', {
             'error': 'The file no longer exists. Please upload a new file.'

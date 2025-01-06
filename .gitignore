@@ -45,3 +45,4 @@ Thumbs.db
 
 # Ignore Backup or Draft Data
 backend_scripts/
+media/*

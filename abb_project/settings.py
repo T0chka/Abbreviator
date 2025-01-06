@@ -52,6 +52,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'abb_project.urls'
+WSGI_APPLICATION = 'abb_project.wsgi.application'
 
 TEMPLATES = [
     {
@@ -67,9 +68,6 @@ TEMPLATES = [
         },
     },
 ]
-
-WSGI_APPLICATION = 'abb_app.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
