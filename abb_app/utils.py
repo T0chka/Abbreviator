@@ -51,9 +51,9 @@ def load_abbreviation_dict() -> DataFrame:
     return pd.DataFrame(columns=["abbreviation", "description"])
 
 def extract_relevant_text(
-    doc: Document,
-    skip_sections: List[str] = SKIP_SECTIONS
-) -> str:
+        doc: Document,
+        skip_sections: List[str] = SKIP_SECTIONS
+        ) -> str:
     """
     Extracts text from the document, excluding sections like "СПИСОК ЛИТЕРАТУРЫ".
     The exclusion starts at the section title in bold or heading style
@@ -75,19 +75,19 @@ def extract_relevant_text(
 
         if any(t.upper() in para_text.upper() for t in skip_sections):
             print(
-                f"[DEBUG] Detected: {para_text} - "
+                f"[extract_relevant_text] Detected: {para_text[:100]} - "
                 f"Style: {para.style.name} - "
                 f"Is Bold: {is_bold} - Is Heading: {is_heading}"
             )
         if ((is_bold or is_heading)
             and any(t.upper() in para_text.upper() for t in skip_sections)
             ):
-            print("[DEBUG] Skipping this section")
+            print("[extract_relevant_text] Skipping this section")
             skip = True
 
         elif (is_bold or is_heading) and skip:
             print(
-                f"[DEBUG] Resuming search at section: {para_text}"
+                f"\n[extract_relevant_text] Resuming search at section: {para_text}"
             )
             skip = False
 
@@ -269,9 +269,9 @@ def parse_table(table_element: CT_Tbl) -> Optional[DataFrame]:
         return df
     
 def get_init_abb_table(
-    file_path: str,
-    section_patterns: List[str] = SECTION_PATTERNS
-) -> DataFrame:
+        file_path: str,
+        section_patterns: List[str] = SECTION_PATTERNS
+        ) -> DataFrame:
     """
     Extract the relevant table from the doc, parse it, and store
     in a single DataFrame with columns ['abbreviation', 'description'].
@@ -403,7 +403,6 @@ class CharacterValidator:
                 "is_mixed": False,
                 "original": abb,
                 "highlighted": abb,
-                "suggestions": [],
                 "matches": {}
             }
 
@@ -422,7 +421,6 @@ class CharacterValidator:
             "is_mixed": True,
             "original": abb,
             "highlighted": highlighted,
-            "suggestions": list(possible_forms),
             "matches": matches
         }
 
@@ -476,11 +474,11 @@ class CharacterValidator:
 # -----------------------------------------------------------------------------
 
 def compare_abbreviations(
-    new_abbs: DataFrame,
-    old_abbs: DataFrame,
-    compare_missing: bool = True,
-    compare_new: bool = True
-) -> Dict[str, DataFrame]:
+        new_abbs: DataFrame,
+        old_abbs: DataFrame,
+        compare_missing: bool = True,
+        compare_new: bool = True
+    ) -> Dict[str, DataFrame]:
     """
     Compare new and old abbreviation dictionaries.
     """
@@ -491,22 +489,13 @@ def compare_abbreviations(
             ~old_abbs['abbreviation'].isin(new_abbs['abbreviation'])
         ]
         results['missing_abbs'] = not_in_new
-        print(
-            "\n[INFO] In the old_abbs but NOT in the new_abbs: "
-            f"{len(not_in_new)}"
-        )
-        print(not_in_new)
 
     if compare_new:
         not_in_old = new_abbs[
             ~new_abbs['abbreviation'].isin(old_abbs['abbreviation'])
         ]
         results['new_found'] = not_in_old
-        print(
-            "\n[INFO] In the new_abbs but NOT in the old_abbs: "
-            f"{len(not_in_old)}"
-        )
-        print(not_in_old)
+    print( "\n\n\n[compare_abbreviations] results printed\n")
 
     return results
 

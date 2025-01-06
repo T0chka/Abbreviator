@@ -111,52 +111,52 @@
             }
         }
 
-        // Use existing form from dictionary
+        // for mixed_chars_abbs: use existing form from dictionary
         function useExistingForm(originalAbb, form, description) {
             console.log('Using existing form:', {originalAbb, form, description});
             
             updateAbbreviation(originalAbb, description, 'add')
-                .then(() => {
+            .then(data => {
+                console.log('Server response:', data);
+                if (data.success) {
+                    // Hide this abb on the UI
                     document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
-                    
-                    if (checkMixedSection()) {
-                        console.log('All mixed items processed, checking unmatched state');
-                        fetch('{% url "move_to_unmatched" %}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({
-                                abbreviation: 'check_only'
-                            })
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            console.log('Check state response:', data);
-                            renderUnmatchedSection(data.unmatched_abbs);
-                        });
-                    } else {
-                        console.log('Still have mixed items visible');
-                    }
-                    
                     updateDifferenceSection();
-                });
+                    
+                    // If backend says no more mixed abbreviations are left, render unmatched section
+                    if (data.mixed_chars_empty) {
+                        console.log('All mixed items processed, rendering unmatched section');
+                        renderUnmatchedSection(data.unmatched_abbs);
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
 
-        function checkMixedSection() {
-            const mixedSection = document.getElementById('mixed-chars-section');
-            if (!mixedSection) return false;
-            
-            const visibleItems = Array.from(mixedSection.getElementsByClassName('mixed-chars-item'))
-                .filter(item => window.getComputedStyle(item).display !== 'none');
-            
-            console.log('Mixed section items:', {
-                total: mixedSection.getElementsByClassName('mixed-chars-item').length,
-                visible: visibleItems.length,
-                items: visibleItems
-            });
-            
-            return visibleItems.length === 0;
+        // for mixed_chars_abbs: move to unmatched section
+        function moveToUnmatched(originalAbb) {
+            console.log('Moving to unmatched:', originalAbb);
+
+            fetch('{% url "move_to_unmatched" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ abbreviation: originalAbb })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Server response:', data);
+                if (data.success) {
+                    // Hide this abb on the UI
+                    document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
+
+                    // If backend says no more mixed abbreviations are left, render unmatched section
+                    if (data.mixed_chars_empty) {
+                        console.log('All mixed items processed, rendering unmatched section');
+                        renderUnmatchedSection(data.unmatched_abbs);
+                    }
+                }
+            })
+            .catch(error => console.error('Error:', error));
         }
 
         function renderUnmatchedSection(unmatchedAbbs) {
@@ -202,11 +202,11 @@
                 </div>
             `;
             
-            // Remove existing unmatched section if it exists
-            const existingUnmatched = document.getElementById('unmatched-section');
-            if (existingUnmatched) {
-                existingUnmatched.remove();
-            }
+            // // Remove existing unmatched section if it exists
+            // const existingUnmatched = document.getElementById('unmatched-section');
+            // if (existingUnmatched) {
+            //     existingUnmatched.remove();
+            // }
             
             // Move generate button to the end
             const generateButton = document.querySelector('.generate-table-section');
@@ -221,34 +221,6 @@
             if (generateButton) {
                 mainContainer.appendChild(generateButton);
             }
-        }
-
-        function moveToUnmatched(originalAbb) {
-            console.log('Moving to unmatched:', originalAbb);
-            
-            fetch('{% url "move_to_unmatched" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    abbreviation: originalAbb
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Server response:', data);
-                if (data.success) {
-                    document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
-                    
-                    if (checkMixedSection()) {
-                        console.log('All mixed items processed, rendering unmatched section');
-                        renderUnmatchedSection(data.unmatched_abbs);
-                    } else {
-                        console.log('Still have mixed items visible');
-                    }
-                }
-            });
         }
     </script>
 </head>
