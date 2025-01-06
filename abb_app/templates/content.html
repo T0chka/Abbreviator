@@ -120,7 +120,7 @@
                 console.log('Server response:', data);
                 if (data.success) {
                     // Hide this abb on the UI
-                    document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
+                    // document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
                     updateDifferenceSection();
                     
                     // If backend says no more mixed abbreviations are left, render unmatched section
@@ -147,7 +147,7 @@
                 console.log('Server response:', data);
                 if (data.success) {
                     // Hide this abb on the UI
-                    document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
+                    // document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
 
                     // If backend says no more mixed abbreviations are left, render unmatched section
                     if (data.mixed_chars_empty) {
@@ -237,12 +237,12 @@
         <div id="mixed-chars-section">
             {% for abb in mixed_chars_abbs %}
             <div class="mixed-chars-item" id="mixed_item_{{ abb.original }}">
-                <h4>{{ abb.highlighted }}</h4>
+                <h4> {{ abb.original }}: смешанные символы {{ abb.highlighted }}</h4>
                 <div class="matches-container">
                     {% for form, descriptions in abb.matches.items %}
                     <button class="match-btn" 
                             onclick="useExistingForm('{{ abb.original }}', '{{ form }}', '{{ descriptions.0 }}')">
-                        {{ form }} - {{ descriptions|join:', ' }}
+                        {{ descriptions|join:', ' }}
                     </button>
                     {% endfor %}
                     <button onclick="moveToUnmatched('{{ abb.original }}')" class="add-new-btn">
