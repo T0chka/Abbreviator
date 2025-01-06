@@ -8,6 +8,8 @@ from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect
 from django.core.files.storage import FileSystemStorage
 from django.template.loader import render_to_string
+import hashlib
+from datetime import datetime, timedelta
 
 from .utils import (
     extract_relevant_text,
@@ -19,14 +21,46 @@ from .utils import (
     generate_abbreviation_table
 )
 
+def generate_session_id(file):
+    """Generate unique session ID based on file name and timestamp"""
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    content = f"{file.name}{timestamp}".encode()
+    return hashlib.md5(content).hexdigest()[:12]
+
+def cleanup_old_files(max_age_hours=0):
+    """
+    Remove old files from media directory
+    """
+    fs = FileSystemStorage()
+    now = datetime.now()
+    files = fs.listdir('')[1]
+    
+    for filename in files:
+        file_path = fs.path(filename)
+        file_modified = datetime.fromtimestamp(os.path.getmtime(file_path))
+        
+        if now - file_modified > timedelta(hours=max_age_hours):
+            try:
+                fs.delete(filename)
+                print(f"[INFO] Deleted old file: {filename}")
+            except Exception as e:
+                print(f"[ERROR] Failed to delete {filename}: {str(e)}")
+
 def upload_file(request):
+    cleanup_old_files()
+    
     if request.method == 'POST' and request.FILES.get('uploaded_file'):
         uploaded_file = request.FILES['uploaded_file']
         fs = FileSystemStorage()
-
-        filename = fs.save(uploaded_file.name, uploaded_file)        
+        
+        session_id = generate_session_id(uploaded_file)
+        file_extension = os.path.splitext(uploaded_file.name)[1]
+        filename = fs.save(f"{session_id}{file_extension}", uploaded_file)
+        
+        request.session['session_id'] = session_id
         request.session['uploaded_file_path'] = filename
-        return redirect('process_file')
+        
+        return redirect('process_file_with_session', session_id=session_id)
     return render(request, 'upload.html')
 
 def separate_abbs(doc_abbs, abb_dict, text):
@@ -83,17 +117,33 @@ def update_difference_section(request):
     )
     return JsonResponse({'html': html})
 
-def process_and_display(request):
+def process_and_display(request, session_id=None):
+    if session_id and session_id != request.session.get('session_id'):
+        request.session['session_id'] = session_id
+        
+        fs = FileSystemStorage()
+        files = fs.listdir('')[1]
+        filename = next((f for f in files if f.startswith(session_id)), None)
+        
+        if filename:
+            request.session['uploaded_file_path'] = filename
+        else:
+            return render(request, 'upload.html', {
+                'error': 'Session file not found. Please upload a new file.'
+            })
+
     filename = request.session.get('uploaded_file_path')
     if not filename:
         return render(request, 'upload.html', {
             'error': 'No file was uploaded. Please upload a file.'
         })
+
     fs = FileSystemStorage()
     file_path = fs.path(filename)
     
     if not os.path.exists(file_path):
         request.session.pop('uploaded_file_path', None)
+        request.session.pop('session_id', None)
         return render(request, 'upload.html', {
             'error': 'The file no longer exists. Please upload a new file.'
         })
@@ -108,7 +158,6 @@ def process_and_display(request):
     doc_abbs = extract_abbs_from_text(text)
     matched_abbs, unmatched_abbs = separate_abbs(doc_abbs, load_abbreviation_dict(), text)
 
-    # Store in session and calculate changes
     request.session.update({
         'matched_abbs': matched_abbs.to_dict('records'),
         'initial_abbs': initial_abbs.to_dict('records')
@@ -124,7 +173,7 @@ def process_and_display(request):
 def make_abbreviation_table(request):
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Метод не разрешен'}, status=405)
-
+    
     try:
         matched_abbs = pd.DataFrame(request.session.get('matched_abbs', []))
         if matched_abbs.empty:
@@ -133,7 +182,6 @@ def make_abbreviation_table(request):
                 'error': 'Нет аббревиатур для генерации таблицы'
             })
 
-        # Generate table in memory
         file_stream = io.BytesIO()
         doc = generate_abbreviation_table(matched_abbs)
         doc.save(file_stream)
@@ -145,7 +193,7 @@ def make_abbreviation_table(request):
         )
         response['Content-Disposition'] = 'attachment; filename=abbreviation_table.docx'
         return response
-            
+    
     except Exception as e:
         return JsonResponse({
             'success': False, 

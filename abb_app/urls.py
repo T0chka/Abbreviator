@@ -12,6 +12,7 @@ from .views import (
 urlpatterns = [
     path('', upload_file, name='home'),
     path('upload/', upload_file, name='upload_file'),
+    path('process/<str:session_id>/', process_and_display, name='process_file_with_session'),
     path('process/', process_and_display, name='process_file'),
     path('update-abbreviation/', update_abbreviation, name='update_abbreviation'),
     path('update-difference-section/', update_difference_section, name='update_difference_section'),
