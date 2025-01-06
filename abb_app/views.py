@@ -148,9 +148,6 @@ def process_and_display(request, session_id=None):
 
     # Process document
     initial_abbs = get_init_abb_table(file_path)
-    if initial_abbs.empty:
-        initial_abbs = pd.DataFrame(columns=['abbreviation', 'description'])
-
     doc = Document(file_path)
     text = extract_relevant_text(doc)
     doc_abbs = extract_abbs_from_text(text)

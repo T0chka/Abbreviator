@@ -7,6 +7,15 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from thefuzz import process, fuzz
 from collections import Counter
+from typing import (
+    Union, List, Dict, Set, Counter, Optional, 
+    Tuple, Any, Iterator
+)
+from pandas import DataFrame
+from docx.table import _Cell, Table
+from docx.text.paragraph import Paragraph
+from docx.oxml.table import CT_Tbl
+from docx.oxml.text.paragraph import CT_P
 
 ABB_DICT_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -33,7 +42,7 @@ NAMESPACE = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 # Text, abbreviation, and context extraction
 # -----------------------------------------------------------------------------
 
-def load_abbreviation_dict():
+def load_abbreviation_dict() -> DataFrame:
     """
     Load abbreviations from CSV, or return empty DataFrame if not found.
     """
@@ -41,14 +50,17 @@ def load_abbreviation_dict():
         return pd.read_csv(ABB_DICT_PATH)
     return pd.DataFrame(columns=["abbreviation", "description"])
 
-def extract_relevant_text(doc, skip_sections=SKIP_SECTIONS):
+def extract_relevant_text(
+    doc: Document,
+    skip_sections: List[str] = SKIP_SECTIONS
+) -> str:
     """
     Extracts text from the document, excluding sections like "СПИСОК ЛИТЕРАТУРЫ".
     The exclusion starts at the section title in bold or heading style
     and resumes at the next bold or heading section.
     """
-    relevant_text = []
-    skip = False
+    relevant_text: List[str] = []
+    skip: bool = False
 
     for para in doc.paragraphs:
         para_text = para.text.strip()
@@ -84,14 +96,17 @@ def extract_relevant_text(doc, skip_sections=SKIP_SECTIONS):
 
     return " ".join(relevant_text)
 
-def extract_abbs_from_text(text:str, exclude_terms=EXCLUDE_TERMS)->Counter:
+def extract_abbs_from_text(
+    text: str,
+    exclude_terms: Set[str] = EXCLUDE_TERMS
+) -> Counter[str]:
     """
     Extracts uppercase and mixed-case abbreviations from the document.
     Stops searching at "Список литературы" if the style is Heading 1.
     Excludes pure Roman numerals, specific terms, and words in quotes,
     and abbs that are 9 or more characters long and contain only letters.
     """
-    doc_abbs = Counter()
+    doc_abbs: Counter[str] = Counter()
 
     roman_pattern = re.compile(
         r'^(?:[IVXLCDM]+(?:-[IVXLCDM]+)?)[A-Za-zА-Яа-яёЁ]*$',
@@ -127,12 +142,17 @@ def extract_abbs_from_text(text:str, exclude_terms=EXCLUDE_TERMS)->Counter:
             doc_abbs[clean_match] += 1
     return doc_abbs
 
-def find_abbreviation_context(text, abbreviation, window=50, find_all=False):
+def find_abbreviation_context(
+    text: str,
+    abbreviation: str,
+    window: int = 50,
+    find_all: bool = False
+) -> Union[str, List[str]]:
     """
     Finds and returns snippets of text around occurrences of the abbreviation.
     If `find_all` is False, returns the first occurrence; True returns all.
     """
-    contexts = set()
+    contexts: Set[str] = set()
     matches = re.finditer(
         rf'(?<!\w){re.escape(abbreviation)}(?!\w)', text
     )
@@ -147,11 +167,17 @@ def find_abbreviation_context(text, abbreviation, window=50, find_all=False):
             return snippet
     return list(contexts)
 
-def separate_abbs(doc_abbs, abb_dict, text):
+def separate_abbs(
+    doc_abbs: Counter[str],
+    abb_dict: DataFrame,
+    text: str
+) -> Tuple[DataFrame, List[Dict[str, Union[str, List[str]]]]]:
     """
     Separate abbreviations into matched and new ones.
     """
-    freq_abbs = {abb: count for abb, count in doc_abbs.items() if count > 1}
+    freq_abbs: Dict[str, int] = {
+        abb: count for abb, count in doc_abbs.items() if count > 1
+    }
     matched_abbs = abb_dict[abb_dict['abbreviation'].isin(freq_abbs)].copy()
     new_abbs = set(freq_abbs) - set(matched_abbs['abbreviation'])
 
@@ -167,14 +193,21 @@ def separate_abbs(doc_abbs, abb_dict, text):
 # Abbreviation table extraction
 # -----------------------------------------------------------------------------
 
-def extract_abb_table(doc, section_patterns=SECTION_PATTERNS):
+def extract_abb_table(
+    doc: Document,
+    section_patterns: List[str] = SECTION_PATTERNS
+) -> Optional[CT_Tbl]:
     """
-    Extract the first relevant table from the document.
-    - If the document contains a section matching `section_pattern`, extract the first table after it.
-    - If the document consists of a single table (without section headings), extract the first table directly.
+    Extract the first relevant table from the document. If the document contains
+    a section matching `section_pattern`, extract the first table after it,
+    if it consists of a single table (without section headings),
+    extract the first table directly.
     """
     # If the entire doc is just one table, return it
-    tables = [block for block in doc.element.body if block.tag.endswith('tbl')]
+    tables: List[CT_Tbl] = [
+        block for block in doc.element.body 
+        if block.tag.endswith('tbl')
+    ]
     if len(tables) == 1:
         return tables[0]
     
@@ -183,11 +216,14 @@ def extract_abb_table(doc, section_patterns=SECTION_PATTERNS):
     for block in doc.element.body:
         if block.tag.endswith('p'):
             para_text = ''.join(
-                node.text for node in block.findall('.//w:t', namespaces=NAMESPACE) if node.text
+                node.text for node in block.findall(
+                    './/w:t', namespaces=NAMESPACE
+                ) if node.text
             )
-            if any(pattern.casefold() in para_text.casefold() for pattern in section_patterns):
+            if any(pattern.casefold() in para_text.casefold() 
+                  for pattern in section_patterns):
                 
-                # Must NOT end with a digit (avoid "СПИСОК СОКРАЩЕНИЙ<page number>" in missformated ToC)
+                # Must NOT end with a digit (avoid missformated ToC)
                 if para_text.strip().endswith(tuple("0123456789")):
                     continue
                 # Must NOT have a hyperlink (avoid ToC lines)
@@ -206,12 +242,12 @@ def extract_abb_table(doc, section_patterns=SECTION_PATTERNS):
 
     return None
 
-def parse_table(table_element):
+def parse_table(table_element: CT_Tbl) -> Optional[DataFrame]:
     """
     Given an lxml table element, return a DataFrame. 
     Assumes the table has two columns: [abbreviation, description].
     """
-    rows_data = []
+    rows_data: List[List[str]] = []
     first_row = True
 
     for row in table_element.findall('.//w:tr', namespaces=NAMESPACE):
@@ -232,23 +268,19 @@ def parse_table(table_element):
         df.columns = ['abbreviation', 'description']
         return df
     
-def get_init_abb_table(file_path, section_patterns=SECTION_PATTERNS):
+def get_init_abb_table(
+    file_path: str,
+    section_patterns: List[str] = SECTION_PATTERNS
+) -> DataFrame:
     """
-    Extract the relevant table from the doc, parse it,
-    and store in a single DataFrame with columns ['abbreviation', 'description'].
+    Extract the relevant table from the doc, parse it, and store
+    in a single DataFrame with columns ['abbreviation', 'description'].
     """
-    if not file_path.endswith('.docx'):
-        raise ValueError(f"Invalid file type: {file_path}. Expected a .docx file.")
-    
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"File not found: {file_path}")
-
-    doc = Document(file_path)
-    table_element = extract_abb_table(doc, section_patterns)
-    
+    doc = Document(os.path.abspath(file_path))
+    table_element = extract_abb_table(doc, section_patterns)    
     if table_element is None:
         print(f"[INFO] No relevant abbreviation table found in: {file_path}")
-        return df
+        return pd.DataFrame(columns=['abbreviation', 'description'])
 
     df = parse_table(table_element)
     if df is not None and not df.empty:
@@ -261,14 +293,14 @@ def get_init_abb_table(file_path, section_patterns=SECTION_PATTERNS):
 # Abbreviation dictionary formatting
 # -----------------------------------------------------------------------------
 
-def format_abbreviation(row):
+def format_abbreviation(row: Dict[str, str]) -> str:
     """
     Format the 'description' so that each word whose first letter
     matches the *next* letter in 'abbreviation' is capitalized
     (in sequence, left to right).
     """
-    abbr = row['abbreviation']
-    desc = row['description']
+    abbr: str = row['abbreviation']
+    desc: str = row['description']
     
     # Split out any part part in first parentheses, if present
     parts = desc.split('(', 1)
@@ -293,19 +325,18 @@ def format_abbreviation(row):
         desc_list = list(english_desc)
 
         while abbr_idx < len(abbr_letters) and pos < len(desc_list):
-            if (desc_list[pos].lower() == abbr_letters[abbr_idx].lower() and
-                (pos == 0 or not desc_list[pos - 1].isalpha())):
+            if (desc_list[pos].lower() == abbr_letters[abbr_idx].lower()
+                    and (pos == 0 or not desc_list[pos - 1].isalpha())):
                 desc_list[pos] = desc_list[pos].upper()
                 abbr_idx += 1
             pos += 1
         return ''.join(desc_list)
     
     english_desc_cap = capitalize_by_abbreviation(english_desc, abbr_letters)
-    # Reconstruct the description (capitalize English part + Russian part if present)
     desc = f"{english_desc_cap} {russian_desc}".strip()
     return desc
 
-def clean_and_sort_abbreviations(abb_dict):
+def clean_and_sort_abbreviations(abb_dict: DataFrame) -> None:
     """
     Cleans, deduplicates, and sorts the abbreviation DataFrame in place.
     - Strips whitespace from 'abbreviation' and 'description'.
@@ -330,8 +361,14 @@ def clean_and_sort_abbreviations(abb_dict):
             lambda m: m.group(1) + m.group(2).upper(),
             value
         )
-    abb_dict.drop_duplicates(subset=['abbreviation', 'description'], inplace=True)
-    abb_dict.sort_values(by=['abbreviation', 'description'], inplace=True, ignore_index=True)
+    abb_dict.drop_duplicates(
+        subset=['abbreviation', 'description'],
+        inplace=True
+    )
+    abb_dict.sort_values(
+        by=['abbreviation', 'description'],
+        inplace=True, ignore_index=True
+    )
     abb_dict.reset_index(drop=True, inplace=True)
 
 
@@ -339,19 +376,37 @@ def clean_and_sort_abbreviations(abb_dict):
 # Abbreviation comparison
 # -----------------------------------------------------------------------------
 
-def compare_abbreviations(new_abbs, old_abbs, compare_missing=True, compare_new=True):
-    results = {}
+def compare_abbreviations(
+    new_abbs: DataFrame,
+    old_abbs: DataFrame,
+    compare_missing: bool = True,
+    compare_new: bool = True
+) -> Dict[str, DataFrame]:
+    """
+    Compare new and old abbreviation dictionaries.
+    """
+    results: Dict[str, DataFrame] = {}
 
     if compare_missing:
-        not_in_new = old_abbs[~old_abbs['abbreviation'].isin(new_abbs['abbreviation'])]
+        not_in_new = old_abbs[
+            ~old_abbs['abbreviation'].isin(new_abbs['abbreviation'])
+        ]
         results['missing_abbs'] = not_in_new
-        print(f"\n[INFO] Abbreviations in the old_abbs that are NOT in the new_abbs: {len(not_in_new)}")
+        print(
+            "\n[INFO] In the old_abbs but NOT in the new_abbs: "
+            f"{len(not_in_new)}"
+        )
         print(not_in_new)
 
     if compare_new:
-        not_in_old = new_abbs[~new_abbs['abbreviation'].isin(old_abbs['abbreviation'])]
+        not_in_old = new_abbs[
+            ~new_abbs['abbreviation'].isin(old_abbs['abbreviation'])
+        ]
         results['new_found'] = not_in_old
-        print(f"\n[INFO] Abbreviations in the new_abbs that are NOT in the old_abbs: {len(not_in_old)}")
+        print(
+            "\n[INFO] In the new_abbs but NOT in the old_abbs: "
+            f"{len(not_in_old)}"
+        )
         print(not_in_old)
 
     return results
@@ -360,7 +415,7 @@ def compare_abbreviations(new_abbs, old_abbs, compare_missing=True, compare_new=
 # Output generation
 # -----------------------------------------------------------------------------
 
-def set_cell_border(cell):
+def set_cell_border(cell: _Cell) -> None:
     """
     Sets black borders on all four sides of the given cell.
     """
@@ -373,7 +428,7 @@ def set_cell_border(cell):
         element.set(qn('w:color'), '000000')  # black color
         tcPr.append(element)
 
-def format_paragraph_spacing(cell):
+def format_paragraph_spacing(cell: _Cell) -> None:
     """
     Sets line spacing to single and spacing after to 0 for paragraphs in a cell.
     """
@@ -382,7 +437,7 @@ def format_paragraph_spacing(cell):
         paragraph.paragraph_format.space_after = Pt(0)    # No space after paragraph
         paragraph.paragraph_format.space_before = Pt(0)   # No space before paragraph
 
-def format_cell_text(cell, bold=False):
+def format_cell_text(cell: _Cell, bold: bool = False) -> None:
     """
     Formats text in the given cell with specified font and style.
     """
@@ -393,14 +448,14 @@ def format_cell_text(cell, bold=False):
             run.font.bold = bold
             run.font.color.rgb = RGBColor(0x00, 0x00, 0x00)
             
-def generate_abbreviation_table(matched_abbs):
+def generate_abbreviation_table(matched_abbs: DataFrame) -> Document:
     """
     Generates a .docx file with only a table,
     with page margins set to top/bottom=2cm, left=3cm, right=1.5cm,
     and a fixed 3.7cm width for the first column.
     Returns the Document object instead of saving it.
     """
-    doc = Document()
+    doc: Document = Document()
 
     # Set page margins
     for section in doc.sections:
