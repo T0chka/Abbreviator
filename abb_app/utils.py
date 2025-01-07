@@ -389,16 +389,19 @@ class CharacterValidator:
         # Create reverse mapping
         self.lat2cyr = {v: k for k, v in self.cyr2lat.items()}
 
-    def validate_abbreviation(self, abb: str, abb_dict: DataFrame = None) -> dict:
+    def validate_abbreviation(self, abb: str, abb_dict: DataFrame) -> dict:
         """
         Validates an abbreviation for mixed characters.
-        If abb_dict is provided, checks for existing forms in the dictionary.
+        Checks for existing forms in the dictionary.
         Returns a dict with validation info.
         """
-        is_mixed = any(char in self.cyr2lat for char in abb) and \
-                   any(char in self.lat2cyr for char in abb)
+        has_cyr_chars = any(char in self.cyr2lat for char in abb)
+        has_lat_chars = any(char in self.lat2cyr for char in abb)
         
-        if not is_mixed:
+        check_forms = has_cyr_chars or has_lat_chars
+        is_mixed = has_cyr_chars and has_lat_chars
+        
+        if not check_forms:
             return {
                 "is_mixed": False,
                 "original": abb,
@@ -407,18 +410,21 @@ class CharacterValidator:
             }
 
         possible_forms = self.generate_all_mixed_forms(abb)
-        highlighted = self.highlight_mixed_characters(abb)
-
-        matches = {}
-        if abb_dict is not None:
-            matches = {
-                form: list(rows['description'].unique())
-                for form in possible_forms
-                if not (rows := abb_dict[abb_dict['abbreviation'] == form]).empty
-            }
+        matched_rows = abb_dict[abb_dict['abbreviation'].isin(possible_forms)]
+        
+        if not matched_rows.empty:
+            dict_abbreviation = matched_rows['abbreviation'].iloc[0]
+            descriptions = list(matched_rows['description'].unique())
+            highlighted = self.highlight_mismatch_characters(
+                abb, dict_abbreviation
+            )
+            matches = {dict_abbreviation: descriptions}
+        else:
+            highlighted = self.highlight_mixed_characters(abb)
+            matches = {}
 
         return {
-            "is_mixed": True,
+            "is_mixed": is_mixed,
             "original": abb,
             "highlighted": highlighted,
             "matches": matches
@@ -457,6 +463,33 @@ class CharacterValidator:
         backtrack(0, [])
         return results - {abb}  # Exclude original form
 
+    def highlight_mismatch_characters(
+            self, user_abb: str, dict_abb: str
+            ) -> str:
+        """
+        Compare each character in 'abb' to the form from the dictionary and
+        wrap mismatched characters in a <span> with 'red' class and with
+        a tooltip explaining the mismatch (Cyrillic vs Latin).
+        """
+        highlighted = []
+        for ch_user, ch_dict in zip(user_abb, dict_abb):
+            if ch_user != ch_dict:
+                mismatch_type = (
+                    "кириллическая" if ch_user in self.cyr2lat else "латинская"
+                )
+                correct_type = (
+                    "латинская" if ch_dict in self.lat2cyr else "кириллическая"
+                )
+                tooltip_text = f"{ch_user} - {mismatch_type}, в словаре {ch_dict} - {correct_type}"
+                highlighted.append(
+                    f'<span class="tooltip red">{ch_user}'
+                    f'<span class="tooltiptext">{tooltip_text}</span>'
+                    f'</span>'
+                )
+            else:
+                highlighted.append(ch_user)
+        return "".join(highlighted)
+    
     def highlight_mixed_characters(self, abb: str) -> str:
         """Marks each character with its script type"""
         highlighted = []

@@ -132,8 +132,8 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
 
         return JsonResponse({
             'success': True, 
-            'mixed_chars_empty': len(mixed_chars_abbs) == 0,
-            'mixed_chars_abbs': mixed_chars_abbs,
+            'mixed_chars_empty': len(request.session.get('mixed_chars_abbs', [])) == 0,
+            'mixed_chars_abbs': request.session.get('mixed_chars_abbs', []),
             'unmatched_abbs': request.session.get('unmatched_abbs', [])
         })
     except json.JSONDecodeError:
@@ -182,7 +182,7 @@ def process_and_display(request: HttpRequest, session_id: Optional[str] = None) 
             
         validation_result = validator.validate_abbreviation(abb, abb_dict)
         print( "\n\n[process_and_display:validator] validation_result", validation_result)
-        if validation_result['is_mixed'] and validation_result['matches']:
+        if validation_result['matches']:
             mixed_chars_abbs.append(validation_result)
         else:
             remaining_abbs[abb] += count
@@ -196,8 +196,8 @@ def process_and_display(request: HttpRequest, session_id: Optional[str] = None) 
     request.session['unmatched_abbs'] = unmatched_abbs
     request.session['matched_abbs'] = matched_abbs.to_dict('records')
     
-    print( "\n\n[process_and_display] initial mixed_chars_abbs", 
-           request.session['mixed_chars_abbs'])
+    # print( "\n\n[process_and_display] initial mixed_chars_abbs", 
+    #        request.session['mixed_chars_abbs'])
     
     # Compare with initial abbreviations
     changes = compare_abbreviations(old_abbs=initial_abbs, new_abbs=matched_abbs)
