@@ -59,7 +59,8 @@ h2 {
 .abbreviation-item {
     background: var(--bg-accent);
     border-radius: var(--border-radius);
-    margin: 1rem 0;
+    margin: 0;
+    padding: 0;
     box-shadow: var(--shadow-sm);
     transition: var(--transition-normal);
 }
@@ -74,7 +75,7 @@ h2 {
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 1rem;
+    padding: 0;
     border-radius: var(--border-radius);
     transition: background-color var(--transition-fast);
 }
@@ -232,30 +233,32 @@ h2 {
    Mixed Characters Section
    ========================================================================== */
 
-#mixed-chars-section {
+
+.abbreviation-list {
     display: flex;
     flex-direction: column;
     gap: 1rem;  /* Adds space between flex items */
 }
-.mixed-chars-item {
+
+.abbreviation-item {
     background: var(--bg-accent);
     border-radius: var(--border-radius);
     padding: 1rem;
     box-shadow: var(--shadow-sm);
     transition: var(--transition-normal);
 }
-.mixed-chars-item:hover {
+.abbreviation-item:hover {
     box-shadow: var(--shadow-md);
 }  
 
-.mixed-chars-item h4 {
+.abbreviation-item h4 {
     padding: 0 0 0 16px;
     margin: 0px;
     font-weight: 600;
     color: var(--text-primary);
 }
 
-.matches-container {
+.description-options {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;

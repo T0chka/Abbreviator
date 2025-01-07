@@ -77,11 +77,22 @@ def move_to_unmatched(request: HttpRequest) -> JsonResponse:
     
     mixed_chars_abbs = request.session.get('mixed_chars_abbs', [])
     unmatched_abbs = request.session.get('unmatched_abbs', [])
+    multi_desc_abbs = request.session.get('multi_desc_abbs', [])
     text = request.session.get('document_text', '')
     
     for item in mixed_chars_abbs:
         if item['original'] == abb:
             mixed_chars_abbs.remove(item)
+            contexts = find_abbreviation_context(text, abb, find_all=True) if text else []
+            unmatched_abbs.append({
+                'abbreviation': abb,
+                'contexts': contexts
+            })
+            break
+
+    for item in multi_desc_abbs:
+        if item['abbreviation'] == abb:
+            multi_desc_abbs.remove(item)
             contexts = find_abbreviation_context(text, abb, find_all=True) if text else []
             unmatched_abbs.append({
                 'abbreviation': abb,
@@ -98,7 +109,8 @@ def move_to_unmatched(request: HttpRequest) -> JsonResponse:
     return JsonResponse({
         'success': True,
         'mixed_chars_empty': len(mixed_chars_abbs) == 0,
-        'unmatched_abbs': unmatched_abbs
+        'multi_desc_empty': len(multi_desc_abbs) == 0,
+        'unmatched_abbs': unmatched_abbs        
     })
 
 @require_http_methods(["POST"])
@@ -106,6 +118,7 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
     try:
         data: Dict[str, Any] = json.loads(request.body)
         abb: Optional[str] = data.get('abbreviation')
+        orig_form: Optional[str] = data.get('orig_form')
         description: Optional[str] = data.get('description')
         action: str = data.get('action', 'add')
 
@@ -119,20 +132,27 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
                     item['description'] = description
                     break
         else:  # action == 'add'
+            print( "\n\n[update_abbreviation] adding abb:", abb, "with description:", description)
             matched_abbs.append({'abbreviation': abb, 'description': description})
+
+            print( "\n\n[update_abbreviation] matched_abb added, now:", len(matched_abbs))
             
             # Remove from mixed_chars_abbs if found
             mixed_chars_abbs = request.session.get('mixed_chars_abbs', [])
-            print( "\n\n[update_abbreviation] mixed_chars_abbs before update", mixed_chars_abbs)
-            mixed_chars_abbs = [item for item in mixed_chars_abbs if item['original'] != abb]
-            print( "\n\n[update_abbreviation] mixed_chars_abbs after update", mixed_chars_abbs)
+            mixed_chars_abbs = [item for item in mixed_chars_abbs if item['original'] != orig_form]
             request.session['mixed_chars_abbs'] = mixed_chars_abbs
+
+            # Remove from multi_desc_abbs if found
+            multi_desc_abbs = request.session.get('multi_desc_abbs', [])
+            multi_desc_abbs = [item for item in multi_desc_abbs if item['abbreviation'] != abb]
+            request.session['multi_desc_abbs'] = multi_desc_abbs
         
-        request.session['matched_abbs'] = matched_abbs     
+        request.session['matched_abbs'] = matched_abbs
 
         return JsonResponse({
             'success': True, 
             'mixed_chars_empty': len(request.session.get('mixed_chars_abbs', [])) == 0,
+            'multi_desc_empty': len(request.session.get('multi_desc_abbs', [])) == 0,
             'mixed_chars_abbs': request.session.get('mixed_chars_abbs', []),
             'unmatched_abbs': request.session.get('unmatched_abbs', [])
         })
@@ -152,12 +172,15 @@ def update_difference_section(request: HttpRequest) -> HttpResponse:
         'new_found_abbs': changes.get('new_found', pd.DataFrame()).to_dict('records'),
     })
 
-def process_and_display(request: HttpRequest, session_id: Optional[str] = None) -> HttpResponse:
+def process_and_display(
+        request: HttpRequest,
+        session_id: Optional[str] = None
+        ) -> HttpResponse:
     # Get file path
     filename = request.session.get('uploaded_file_path')
     if not filename:
         return render(request, 'upload.html', 
-                     {'error': 'Файл не найден. Пожалуйста, загрузите новый файл.'})
+                     {'error': 'Пожалуйста, загрузите новый файл.'})
 
     fs = FileSystemStorage()
     file_path = fs.path(filename)
@@ -171,22 +194,34 @@ def process_and_display(request: HttpRequest, session_id: Optional[str] = None) 
     # Load dictionary and prepare collections
     abb_dict: DataFrame = load_abbreviation_dict()
     mixed_chars_abbs: List[Dict[str, Any]] = []
+    multi_desc_abbs: List[Dict[str, Any]] = []
     remaining_abbs: Counter[str] = Counter()
     
-    # Check for mixed characters only for new abbreviations
+    # Sort to multi_desc_abbs and remaining_abbs
     dict_abbs: set = set(abb_dict['abbreviation'])
     for abb, count in doc_abbs.items():
         if abb in dict_abbs:
-            remaining_abbs[abb] += count
+            # save abb and descriptions to multi_desc_abbs
+            if len(abb_dict[abb_dict['abbreviation'] == abb]) > 1:
+                multi_desc_abbs.append({
+                    'abbreviation': abb,
+                    'descriptions': abb_dict[
+                        abb_dict['abbreviation'] == abb
+                    ]['description'].tolist()
+                })
+            else:
+                remaining_abbs[abb] += count
             continue
             
+        # Check for mixed characters only for new abbreviations
         validation_result = validator.validate_abbreviation(abb, abb_dict)
-        print( "\n\n[process_and_display:validator] validation_result", validation_result)
-        if validation_result['matches']:
+        if validation_result['correct_form']:
             mixed_chars_abbs.append(validation_result)
         else:
             remaining_abbs[abb] += count
 
+    print( "\n\n[process_and_display] mixed_chars_abbs", mixed_chars_abbs)
+    print( "\n\n[process_and_display] multi_desc_abbs", multi_desc_abbs)
     # Separate pending abbreviations into matched and new
     matched_abbs, unmatched_abbs = separate_abbs(remaining_abbs, abb_dict, text)
     
@@ -194,6 +229,7 @@ def process_and_display(request: HttpRequest, session_id: Optional[str] = None) 
     request.session['document_text'] = text
     request.session['mixed_chars_abbs'] = mixed_chars_abbs
     request.session['unmatched_abbs'] = unmatched_abbs
+    request.session['multi_desc_abbs'] = multi_desc_abbs
     request.session['matched_abbs'] = matched_abbs.to_dict('records')
     
     # print( "\n\n[process_and_display] initial mixed_chars_abbs", 
@@ -206,6 +242,7 @@ def process_and_display(request: HttpRequest, session_id: Optional[str] = None) 
         'missing_abbs': changes.get('missing_abbs', pd.DataFrame()).to_dict('records'),
         'new_found_abbs': changes.get('new_found', pd.DataFrame()).to_dict('records'),
         'mixed_chars_abbs': mixed_chars_abbs,
+        'multi_desc_abbs': multi_desc_abbs,
         'unmatched_abbs': unmatched_abbs,
         'show_unmatched': False
     })

@@ -29,7 +29,7 @@
                 });
         }
 
-        function updateAbbreviation(abb, description, action='add') {
+        function updateAbbreviation(abb, description, action='add', orig_form='') {
             return fetch('{% url "update_abbreviation" %}', {
                 method: 'POST',
                 headers: {
@@ -38,7 +38,8 @@
                 body: JSON.stringify({
                     abbreviation: abb,
                     description: description,
-                    action: action
+                    action: action,
+                    orig_form: orig_form
                 })
             })
             .then(response => response.json());
@@ -112,19 +113,17 @@
         }
 
         // for mixed_chars_abbs: use existing form from dictionary
-        function useExistingForm(originalAbb, form, description) {
-            console.log('Using existing form:', {originalAbb, form, description});
-            
-            updateAbbreviation(originalAbb, description, 'add')
+        function useExistingForm(abbreviation, orig_form, description) {
+            updateAbbreviation(abbreviation, description, action='add', orig_form=orig_form)
             .then(data => {
                 console.log('Server response:', data);
                 if (data.success) {
                     // Hide this abb on the UI
-                    document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
+                    document.getElementById(`mixed_item_${orig_form}`).style.display = 'none';
                     updateDifferenceSection();
                     
-                    // If backend says no more mixed abbreviations are left, render unmatched section
-                    if (data.mixed_chars_empty) {
+                    // If backend says no more mixed abbs and multi_desc abbs are left, render unmatched section
+                    if (data.mixed_chars_empty && data.multi_desc_empty) {
                         console.log('All mixed items processed, rendering unmatched section');
                         renderUnmatchedSection(data.unmatched_abbs);
                     }
@@ -134,23 +133,23 @@
         }
 
         // for mixed_chars_abbs: move to unmatched section
-        function moveToUnmatched(originalAbb) {
-            console.log('Moving to unmatched:', originalAbb);
+        function moveToUnmatched(orig_form) {
+            console.log('Moving to unmatched:', orig_form);
 
             fetch('{% url "move_to_unmatched" %}', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ abbreviation: originalAbb })
+                body: JSON.stringify({ abbreviation: orig_form })
             })
             .then(response => response.json())
             .then(data => {
                 console.log('Server response:', data);
                 if (data.success) {
                     // Hide this abb on the UI
-                    document.getElementById(`mixed_item_${originalAbb}`).style.display = 'none';
+                    document.getElementById(`mixed_item_${orig_form}`).style.display = 'none';
 
                     // If backend says no more mixed abbreviations are left, render unmatched section
-                    if (data.mixed_chars_empty) {
+                    if (data.mixed_chars_empty && data.multi_desc_empty) {
                         console.log('All mixed items processed, rendering unmatched section');
                         renderUnmatchedSection(data.unmatched_abbs);
                     }
@@ -235,24 +234,51 @@
     <div class="section">
         <h2>Выбор расшифровки</h2>
         <h3>Аббревиатуры с символами из разных алфавитов (латиница/кириллица)</h3>                
-        <div id="mixed-chars-section">
+        <div id="mixed-chars-section" class="abbreviation-list">
             {% for abb in mixed_chars_abbs %}
-            <div class="mixed-chars-item" id="mixed_item_{{ abb.original }}">
-                <h4> {{ abb.highlighted|safe }}</h4>
-                <div class="matches-container">
-                    {% for form, descriptions in abb.matches.items %}
+            <div class="abbreviation-item" id="mixed_item_{{ abb.original }}">
+                <h4>{{ abb.highlighted|safe }}</h4>
+                <div class="description-options">
+                    {% for description in abb.descriptions %}
                     <button class="btn-select-option" 
-                            onclick="useExistingForm('{{ abb.original }}', '{{ form }}', '{{ descriptions.0 }}')">
-                        {{ descriptions|join:', ' }}
+                            onclick="useExistingForm(
+                                '{{ abb.correct_form }}', '{{ abb.original }}', '{{ description }}'
+                                )"> {{ description }}
                     </button>
                     {% endfor %}
-                    <button onclick="moveToUnmatched('{{ abb.original }}')" class="btn-select-option">
+                    <button class="btn-select-option"
+                            onclick="moveToUnmatched('{{ abb.original }}')">
                         Добавить новую
                     </button>
                 </div>
             </div>
             {% endfor %}
         </div>
+
+        <!-- Section for Multiple Possible Descriptions -->
+        <h3>Аббревиатуры с несколькими возможными расшифровками</h3>
+        <div id="multiple-descriptions-section" class="abbreviation-list">
+            {% for abb in multi_desc_abbs %}
+            <div class="abbreviation-item" id="mixed_item_{{ abb.abbreviation }}">
+                <h4> {{ abb.abbreviation }}</h4>
+                <div class="description-options">
+                    {% for description in abb.descriptions %}
+                    <button class="btn-select-option" 
+                            onclick="useExistingForm(
+                                '{{ abb.abbreviation }}', '{{ abb.abbreviation }}', '{{ description }}'
+                                )"> {{ description }}
+                    </button>
+                    {% endfor %}
+                    <button class="btn-select-option"
+                            onclick="moveToUnmatched('{{ abb.abbreviation }}')">
+                        Добавить новую
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+
     </div>
 
     <!-- Section with generate table button -->

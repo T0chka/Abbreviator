@@ -398,36 +398,38 @@ class CharacterValidator:
         has_cyr_chars = any(char in self.cyr2lat for char in abb)
         has_lat_chars = any(char in self.lat2cyr for char in abb)
         
-        check_forms = has_cyr_chars or has_lat_chars
-        is_mixed = has_cyr_chars and has_lat_chars
-        
-        if not check_forms:
+        if not has_cyr_chars and not has_lat_chars:
             return {
-                "is_mixed": False,
                 "original": abb,
                 "highlighted": abb,
-                "matches": {}
+                "correct_form": None,
+                "descriptions": []
             }
 
         possible_forms = self.generate_all_mixed_forms(abb)
         matched_rows = abb_dict[abb_dict['abbreviation'].isin(possible_forms)]
         
         if not matched_rows.empty:
-            dict_abbreviation = matched_rows['abbreviation'].iloc[0]
+            if len(matched_rows['abbreviation'].unique()) > 1:
+                raise ValueError(
+                    "[ERROR] Mixed-character abbreviations in the dictionary:"
+                    f"\n{matched_rows}"
+                )
+            correct_form = matched_rows['abbreviation'].iloc[0]
             descriptions = list(matched_rows['description'].unique())
             highlighted = self.highlight_mismatch_characters(
-                abb, dict_abbreviation
+                abb, correct_form
             )
-            matches = {dict_abbreviation: descriptions}
         else:
+            correct_form = None
+            descriptions = []
             highlighted = self.highlight_mixed_characters(abb)
-            matches = {}
 
         return {
-            "is_mixed": is_mixed,
             "original": abb,
             "highlighted": highlighted,
-            "matches": matches
+            "correct_form": correct_form,
+            "descriptions": descriptions
         }
 
     def generate_all_mixed_forms(self, abb: str) -> set:
@@ -480,7 +482,10 @@ class CharacterValidator:
                 correct_type = (
                     "латинская" if ch_dict in self.lat2cyr else "кириллическая"
                 )
-                tooltip_text = f"{ch_user} - {mismatch_type}, в словаре {ch_dict} - {correct_type}"
+                tooltip_text = (
+                    f"{ch_user} - {mismatch_type},"
+                    f"в словаре {ch_dict} - {correct_type}"
+                )
                 highlighted.append(
                     f'<span class="tooltip red">{ch_user}'
                     f'<span class="tooltiptext">{tooltip_text}</span>'
