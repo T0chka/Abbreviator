@@ -17,6 +17,7 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.core.files.uploadedfile import UploadedFile
 from pandas import DataFrame
 from collections import Counter
+import logging
 
 from .utils import (
     extract_relevant_text,
@@ -31,6 +32,11 @@ from .utils import (
 )
 
 validator = CharacterValidator()
+logger = logging.getLogger('abb_app')
+
+if not logger.hasHandlers():
+    logger.addHandler(logging.StreamHandler())
+    logger.setLevel(logging.DEBUG)
 
 def generate_session_id(file: UploadedFile) -> str:
     """Generate unique session ID based on file name and timestamp"""
@@ -153,10 +159,11 @@ def move_to_unmatched(request: HttpRequest) -> JsonResponse:
         'unmatched_abbs': unmatched_abbs
     })
     
-    print("\n\n[move_to_unmatched]: unmatched abbs in Session: after",
-          len(unmatched_abbs),
-          "\n[move_to_unmatched]: mixed_chars_abbs in Session: after",
-          len(mixed_chars_abbs)
+    logger.debug(
+        "\nmove_to_unmatched - Stats after operation:\nunmatched_abbs=%d,\nmixed_chars_abbs=%d,\nmulti_desc_abbs=%d\n",
+        len(unmatched_abbs),
+        len(mixed_chars_abbs),
+        len(multi_desc_abbs)
     )
     
     return JsonResponse({
@@ -194,7 +201,8 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
                 item['description'] = description
                 break
     else:  # action == 'add'
-        print( "\n\n[update_abbreviation] adding abb:", abb, "with description:", description)
+        logger.debug("\nupdate_abbreviation - Adding abbreviation:\n%s with description: %s", 
+                    abb, description)
         matched_abbs.append({'abbreviation': abb, 'description': description})
 
         # Remove from mixed_chars_abbs/multi_desc_abbs if found
@@ -206,10 +214,13 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
             'multi_desc_abbs': multi_desc_abbs
         })
 
-    print( "\n\n[update_abbreviation] matched_abbs:", len(matched_abbs),
-            "\n[update_abbreviation] unmatched_abbs:", len(unmatched_abbs),
-            "\n[update_abbreviation] mixed_chars_abbs:", len(mixed_chars_abbs),
-            "\n[update_abbreviation] multi_desc_abbs:", len(multi_desc_abbs))
+    logger.debug(
+        "\nupdate_abbreviation - Stats:\nmatched_abbs=%d,\nunmatched_abbs=%d,\nmixed_chars_abbs=%d,\nmulti_desc_abbs=%d\n",
+        len(matched_abbs),
+        len(unmatched_abbs),
+        len(mixed_chars_abbs),
+        len(multi_desc_abbs)
+    )
     
     set_session_data(request, {'matched_abbs': matched_abbs})
 
@@ -286,8 +297,6 @@ def process_and_display(
         else:
             remaining_abbs[abb] += count
 
-    print("\n\n[process_and_display] mixed_chars_abbs:", mixed_chars_abbs)
-    
     # Separate pending abbreviations into matched and new
     matched_abbs, unmatched_abbs = separate_abbs(remaining_abbs, abb_dict, text)
     
@@ -337,8 +346,8 @@ def make_abbreviation_table(
         return response
     
     except Exception as e:
-        print(f"[ERROR] Failed to generate table: {str(e)}")
-        print(traceback.format_exc())
+        logger.error("Failed to generate table: %s", str(e))
+        logger.error("Traceback: %s", traceback.format_exc())
         
         return JsonResponse({
             'success': False, 
