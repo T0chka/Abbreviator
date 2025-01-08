@@ -21,6 +21,7 @@
     /* Transitions */
     --transition-fast: 0.2s ease;
     --transition-normal: 0.3s ease;
+    --transition-slow: all 0.6s ease-in-out;
     
     /* Typography */
     --font-stack: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
@@ -51,6 +52,15 @@ h2 {
     margin: 2rem 0;
     font-weight: 600;
     box-shadow: var(--shadow-md);
+}
+
+/* ==========================================================================
+   Differences Section
+   ========================================================================== */
+#differences-section {
+    min-height: 200px;
+    max-height: 450px;
+    overflow-y: auto;
 }
 
 /* ==========================================================================
@@ -108,7 +118,8 @@ h2 {
 
 /* Card Content */
 .abb-content {
-    transition: var(--transition-normal);
+    transition: var(--transition-slow), opacity var(--transition-slow);
+    overflow: hidden;
 }
 
 /* Context Items */
@@ -154,7 +165,8 @@ h2 {
 /* ==========================================================================
    Buttons
    ========================================================================== */
-/* Base Button Styles */
+
+   /* Base Button Styles */
 .btn-base, .input-group button, .generate-btn, .btn-select-option {
     padding: 0.75rem 1.5rem;
     border: none;
@@ -232,8 +244,6 @@ h2 {
 /* ==========================================================================
    Mixed Characters Section
    ========================================================================== */
-
-
 .abbreviation-list {
     display: flex;
     flex-direction: column;
@@ -266,9 +276,12 @@ h2 {
     background-color: var(--bg-accent);
     border-radius: var(--border-radius);
 }
+
 .red {
     color: var(--danger-color);
 }
+
+/* Tooltip */
 .tooltip {
     position: relative;
     display: inline-block;
@@ -294,17 +307,6 @@ h2 {
     font-size: 0.875rem;
     pointer-events: none;
 }
-/* Tooltip Arrow */
-/* .tooltip .tooltiptext::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: var(--bg-accent-hover) transparent transparent transparent;
-} */
 
 .tooltip:hover .tooltiptext {
     visibility: visible;

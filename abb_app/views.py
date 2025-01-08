@@ -50,10 +50,11 @@ def cleanup_old_files(max_age_hours: int = 0) -> None:
         if now - file_modified > timedelta(hours=max_age_hours):
             fs.delete(filename)
 
+@require_http_methods(["GET", "POST"])
 def upload_file(request: HttpRequest) -> HttpResponse:
-    cleanup_old_files()
-    
     if request.method == 'POST':
+        cleanup_old_files()
+        
         try:
             uploaded_file = request.FILES['uploaded_file']
             fs = FileSystemStorage()
@@ -66,19 +67,66 @@ def upload_file(request: HttpRequest) -> HttpResponse:
             
             return redirect('process_file_with_session', session_id=session_id)
         except KeyError:
-            return render(request, 'upload.html', {'error': 'Файл не выбран'})
+            return render(request, 'upload.html', {'error': 'File not selected'})
     
     return render(request, 'upload.html')
 
+def parse_request_json(request: HttpRequest) -> Dict[str, Any]:
+    data: Dict[str, Any] = json.loads(request.body)
+    if not data:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON'})
+    return data
+
+@require_http_methods(["POST"])
+def get_unmatched_template(request: HttpRequest) -> HttpResponse:
+    data = parse_request_json(request)
+    unmatched_abbs = data.get('unmatched_abbs', [])         
+    
+    html = render_to_string('partials/unmatched_section.html', {
+        'unmatched_abbs': unmatched_abbs
+    })
+    return HttpResponse(html)
+
+def get_session_data(
+        request: HttpRequest,
+        keys: Union[str, List[str]],
+        default: Optional[Any] = []
+        ) -> Union[Any, Dict[str, Any]]:
+    """
+    Get data from session by one or several keys.
+    """
+    if isinstance(keys, list):
+        return {key: request.session.get(key, default) for key in keys}
+    return request.session.get(keys, default)
+
+
+def set_session_data(
+        request: HttpRequest,
+        data: Dict[str, Any]
+        ) -> None:
+    """
+    Set several values in session at once.
+    """
+    for key, value in data.items():
+        request.session[key] = value
+
 @require_http_methods(["POST"])
 def move_to_unmatched(request: HttpRequest) -> JsonResponse:
-    data = json.loads(request.body)
+    data = parse_request_json(request)
     abb = data['abbreviation']
-    
-    mixed_chars_abbs = request.session.get('mixed_chars_abbs', [])
-    unmatched_abbs = request.session.get('unmatched_abbs', [])
-    multi_desc_abbs = request.session.get('multi_desc_abbs', [])
-    text = request.session.get('document_text', '')
+
+    session_data = get_session_data(request, [
+        'matched_abbs',
+        'unmatched_abbs',
+        'multi_desc_abbs',
+        'mixed_chars_abbs',
+        'document_text'
+    ])
+
+    mixed_chars_abbs = session_data['mixed_chars_abbs']
+    multi_desc_abbs = session_data['multi_desc_abbs']
+    unmatched_abbs = session_data['unmatched_abbs']
+    text = session_data['document_text']
     
     for item in mixed_chars_abbs:
         if item['original'] == abb:
@@ -99,12 +147,17 @@ def move_to_unmatched(request: HttpRequest) -> JsonResponse:
                 'contexts': contexts
             })
             break
-        
-    request.session['mixed_chars_abbs'] = mixed_chars_abbs
-    request.session['unmatched_abbs'] = unmatched_abbs
+    
+    set_session_data(request, {
+        'mixed_chars_abbs': mixed_chars_abbs,
+        'unmatched_abbs': unmatched_abbs
+    })
     
     print("\n\n[move_to_unmatched]: unmatched abbs in Session: after",
-          request.session.get('unmatched_abbs', []))
+          len(unmatched_abbs),
+          "\n[move_to_unmatched]: mixed_chars_abbs in Session: after",
+          len(mixed_chars_abbs)
+    )
     
     return JsonResponse({
         'success': True,
@@ -115,54 +168,67 @@ def move_to_unmatched(request: HttpRequest) -> JsonResponse:
 
 @require_http_methods(["POST"])
 def update_abbreviation(request: HttpRequest) -> JsonResponse:
-    try:
-        data: Dict[str, Any] = json.loads(request.body)
-        abb: Optional[str] = data.get('abbreviation')
-        orig_form: Optional[str] = data.get('orig_form')
-        description: Optional[str] = data.get('description')
-        action: str = data.get('action', 'add')
+    data = parse_request_json(request)
+    abb = data.get('abbreviation')
+    orig_form = data.get('orig_form')
+    description = data.get('description')
+    action = data.get('action', 'add')
 
-        matched_abbs: List[Dict[str, str]] = request.session.get('matched_abbs', [])
+    session_data = get_session_data(request, [
+        'matched_abbs',
+        'unmatched_abbs',
+        'multi_desc_abbs',
+        'mixed_chars_abbs'
+    ])
+
+    matched_abbs = session_data['matched_abbs']
+    unmatched_abbs = session_data['unmatched_abbs']
+    mixed_chars_abbs = session_data['mixed_chars_abbs']
+    multi_desc_abbs = session_data['multi_desc_abbs']
+    
+    if action == 'skip':
+        pass
+    elif action == 'edit':
+        for item in matched_abbs:
+            if item['abbreviation'] == abb:
+                item['description'] = description
+                break
+    else:  # action == 'add'
+        print( "\n\n[update_abbreviation] adding abb:", abb, "with description:", description)
+        matched_abbs.append({'abbreviation': abb, 'description': description})
+
+        # Remove from mixed_chars_abbs/multi_desc_abbs if found
+        mixed_chars_abbs = [item for item in mixed_chars_abbs if item['original'] != orig_form]
+        multi_desc_abbs = [item for item in multi_desc_abbs if item['abbreviation'] != abb]
         
-        if action == 'skip':
-            matched_abbs = [item for item in matched_abbs if item['abbreviation'] != abb]
-        elif action == 'edit':
-            for item in matched_abbs:
-                if item['abbreviation'] == abb:
-                    item['description'] = description
-                    break
-        else:  # action == 'add'
-            print( "\n\n[update_abbreviation] adding abb:", abb, "with description:", description)
-            matched_abbs.append({'abbreviation': abb, 'description': description})
-
-            print( "\n\n[update_abbreviation] matched_abb added, now:", len(matched_abbs))
-            
-            # Remove from mixed_chars_abbs if found
-            mixed_chars_abbs = request.session.get('mixed_chars_abbs', [])
-            mixed_chars_abbs = [item for item in mixed_chars_abbs if item['original'] != orig_form]
-            request.session['mixed_chars_abbs'] = mixed_chars_abbs
-
-            # Remove from multi_desc_abbs if found
-            multi_desc_abbs = request.session.get('multi_desc_abbs', [])
-            multi_desc_abbs = [item for item in multi_desc_abbs if item['abbreviation'] != abb]
-            request.session['multi_desc_abbs'] = multi_desc_abbs
-        
-        request.session['matched_abbs'] = matched_abbs
-
-        return JsonResponse({
-            'success': True, 
-            'mixed_chars_empty': len(request.session.get('mixed_chars_abbs', [])) == 0,
-            'multi_desc_empty': len(request.session.get('multi_desc_abbs', [])) == 0,
-            'mixed_chars_abbs': request.session.get('mixed_chars_abbs', []),
-            'unmatched_abbs': request.session.get('unmatched_abbs', [])
+        set_session_data(request, {
+            'mixed_chars_abbs': mixed_chars_abbs,
+            'multi_desc_abbs': multi_desc_abbs
         })
-    except json.JSONDecodeError:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON'})
+
+    print( "\n\n[update_abbreviation] matched_abbs:", len(matched_abbs),
+            "\n[update_abbreviation] unmatched_abbs:", len(unmatched_abbs),
+            "\n[update_abbreviation] mixed_chars_abbs:", len(mixed_chars_abbs),
+            "\n[update_abbreviation] multi_desc_abbs:", len(multi_desc_abbs))
+    
+    set_session_data(request, {'matched_abbs': matched_abbs})
+
+    return JsonResponse({
+        'success': True, 
+        'mixed_chars_empty': len(mixed_chars_abbs) == 0,
+        'multi_desc_empty': len(multi_desc_abbs) == 0,
+        'mixed_chars_abbs': mixed_chars_abbs,
+        'unmatched_abbs': unmatched_abbs
+    })
 
 @require_http_methods(["POST"])
 def update_difference_section(request: HttpRequest) -> HttpResponse:
-    initial_abbs = pd.DataFrame(request.session.get('initial_abbs', []))
-    matched_abbs = pd.DataFrame(request.session.get('matched_abbs', []))
+    session_data = get_session_data(request, [
+        'initial_abbs',
+        'matched_abbs'
+    ])
+    initial_abbs = pd.DataFrame(session_data['initial_abbs'])
+    matched_abbs = pd.DataFrame(session_data['matched_abbs'])
     
     # Compare with initial abbreviations
     changes = compare_abbreviations(old_abbs=initial_abbs, new_abbs=matched_abbs)
@@ -220,20 +286,17 @@ def process_and_display(
         else:
             remaining_abbs[abb] += count
 
-    print( "\n\n[process_and_display] mixed_chars_abbs", mixed_chars_abbs)
-    print( "\n\n[process_and_display] multi_desc_abbs", multi_desc_abbs)
     # Separate pending abbreviations into matched and new
     matched_abbs, unmatched_abbs = separate_abbs(remaining_abbs, abb_dict, text)
     
     # Store variables in session
-    request.session['document_text'] = text
-    request.session['mixed_chars_abbs'] = mixed_chars_abbs
-    request.session['unmatched_abbs'] = unmatched_abbs
-    request.session['multi_desc_abbs'] = multi_desc_abbs
-    request.session['matched_abbs'] = matched_abbs.to_dict('records')
-    
-    # print( "\n\n[process_and_display] initial mixed_chars_abbs", 
-    #        request.session['mixed_chars_abbs'])
+    set_session_data(request, {
+        'document_text': text,
+        'mixed_chars_abbs': mixed_chars_abbs,
+        'unmatched_abbs': unmatched_abbs,
+        'multi_desc_abbs': multi_desc_abbs,
+        'matched_abbs': matched_abbs.to_dict('records')
+    })
     
     # Compare with initial abbreviations
     changes = compare_abbreviations(old_abbs=initial_abbs, new_abbs=matched_abbs)
@@ -248,14 +311,16 @@ def process_and_display(
     })
 
 @require_http_methods(["POST"])
-def make_abbreviation_table(request: HttpRequest) -> JsonResponse:
+def make_abbreviation_table(
+    request: HttpRequest
+    ) -> Union[HttpResponse, JsonResponse]:
     try:
-        matched_abbs = pd.DataFrame(request.session.get('matched_abbs', []))
+        matched_abbs = pd.DataFrame(get_session_data(request, 'matched_abbs'))
         if matched_abbs.empty:
             return JsonResponse({
                 'success': False, 
                 'error': 'Нет аббревиатур для генерации таблицы'
-            })
+            }, status=400)
 
         file_stream = io.BytesIO()
         doc = generate_abbreviation_table(matched_abbs)
@@ -276,4 +341,4 @@ def make_abbreviation_table(request: HttpRequest) -> JsonResponse:
         return JsonResponse({
             'success': False, 
             'error': 'Ошибка при генерации таблицы'
-        })
+        }, status=500)

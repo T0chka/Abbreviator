@@ -483,7 +483,7 @@ class CharacterValidator:
                     "латинская" if ch_dict in self.lat2cyr else "кириллическая"
                 )
                 tooltip_text = (
-                    f"{ch_user} - {mismatch_type},"
+                    f"{ch_user} - {mismatch_type}, "
                     f"в словаре {ch_dict} - {correct_type}"
                 )
                 highlighted.append(
@@ -533,7 +533,6 @@ def compare_abbreviations(
             ~new_abbs['abbreviation'].isin(old_abbs['abbreviation'])
         ]
         results['new_found'] = not_in_old
-    print( "\n\n\n[compare_abbreviations] results printed\n")
 
     return results
 

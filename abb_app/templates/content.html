@@ -5,98 +5,119 @@
     <title>Processed Document</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <script>
-        function addAbbreviation(abb) {
-            let description = document.getElementById(`desc_${abb}`).value.trim();
-            if (!description) return;
-
-            const addBtn = document.getElementById(`add_btn_${abb}`);
-            const action = addBtn.innerText.includes('Добавить') ? 'add' : 'edit';
-            
-            updateAbbreviation(abb, description, action)
-                .then(() => {
-                    updateAbbreviationUI(abb, description, action);
-                    toggleAbbreviationContent(abb, true);
-                    updateDifferenceSection();
-                });
-        }
-
-        function skipAbbreviation(abb) {
-            updateAbbreviation(abb, '', 'skip')
-                .then(() => {
-                    updateAbbreviationUI(abb, '', 'skip');
-                    toggleAbbreviationContent(abb, true);
-                    updateDifferenceSection();
-                });
-        }
-
-        function updateAbbreviation(abb, description, action='add', orig_form='') {
-            return fetch('{% url "update_abbreviation" %}', {
+        async function fetchWrapper(url, data = null) {
+            console.log('[fetchWrapper] called with URL:', url, 'and data:', data);
+            const options = {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    abbreviation: abb,
-                    description: description,
-                    action: action,
-                    orig_form: orig_form
-                })
-            })
-            .then(response => response.json());
-        }
+                    'Content-Type': 'application/json'
+                }
+            };
 
-        function updateDifferenceSection() {
-            fetch("{% url 'update_difference_section' %}", {
-                method: 'POST'
-            })
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('differences-section').innerHTML = html;
-            });
-        }
-
-        function toggleAbbreviationContent(abb, forceCollapse = false) {
-            const content = document.getElementById(`content_${abb}`);
-            const toggleBtn = document.getElementById(`toggle_btn_${abb}`);
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
             
-            if (window.getComputedStyle(content).display === 'none' && !forceCollapse) {
-                content.style.display = 'block';
-                toggleBtn.textContent = '▼';
-            } else {
-                content.style.display = 'none';
-                toggleBtn.textContent = '▶';
+            try {
+                const response = await fetch(url, options);
+                const contentType = response.headers.get('content-type');
+                
+                let responseData;
+                if (contentType && contentType.includes('application/json')) {
+                    responseData = await response.json();
+                } else if (contentType && contentType.includes(
+                    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                )) {
+                    responseData = await response.blob();
+                } else {
+                    responseData = await response.text();
+                }
+
+                return {
+                    ok: response.ok,
+                    status: response.status,
+                    data: responseData,
+                    contentType
+                };
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
             }
         }
 
-        function generateAbbreviationTable() {
-            fetch("{% url 'generate_abbreviation_table' %}", {
-                method: 'POST'
-            })
-            .then(response => {
-                if (!response.ok) {
-                    return response.json().then(err => Promise.reject(err));
+        async function updateDifferenceSection() {
+            console.log('[updateDifferenceSection] called');
+            try {
+                const response = await fetchWrapper("{% url 'update_difference_section' %}");
+                if (response.ok) {
+                    document.getElementById('differences-section').innerHTML = response.data;
+                } else {
+                    throw new Error('Update difference section failed, wrong response');
                 }
-                return response.blob();
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'abbreviation_table.docx';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Произошла ошибка при генерации таблицы: ' + 
-                      (error.error || error.message || 'Неизвестная ошибка'));
+            } catch (error) {
+                alert(`Failed to update difference section: ${error.message}`);
+            }
+        }        
+
+        async function updateAbbreviation(abb, description, action='add', orig_form='') {
+            console.log('[updateAbbreviation] called with:', {
+                abb, description, action, orig_form
+            });
+            return await fetchWrapper('{% url "update_abbreviation" %}', {
+                abbreviation: abb,
+                description: description,
+                action: action,
+                orig_form: orig_form
             });
         }
 
-        // Helper function to reduce code duplication
+        async function useExistingForm(abbreviation, orig_form, description) {
+            console.log('[useExistingForm] abbreviation:',
+            abbreviation, 'orig_form:', orig_form, 'description:', description);
+            try {
+                const response = await updateAbbreviation(abbreviation, description, 'add', orig_form);
+                console.log('[useExistingForm] response:', response);
+                
+                if (response.ok) {
+                    document.getElementById(`mixed_item_${orig_form}`).style.display = 'none';
+                    await updateDifferenceSection();
+                    
+                    if (response.data.mixed_chars_empty && response.data.multi_desc_empty) {
+                        console.log('[useExistingForm] unmatched_abbs:', response.data.unmatched_abbs);
+                        await renderUnmatchedSection(response.data.unmatched_abbs);
+                    }
+                } else {
+                    throw new Error('Use existing description failed, wrong response');
+                }
+            } catch (error) {
+                alert(`Failed to use existing description: ${error.message}`);
+            }
+        }
+
+        async function moveToUnmatched(orig_form) {
+            console.log('[moveToUnmatched] called with orig_form:', orig_form);
+            try {
+                const response = await fetchWrapper('{% url "move_to_unmatched" %}', {
+                    abbreviation: orig_form
+                });
+                
+                if (response.ok) {
+                    document.getElementById(`mixed_item_${orig_form}`).style.display = 'none';
+                    
+                    if (response.data.mixed_chars_empty && response.data.multi_desc_empty) {
+                        await renderUnmatchedSection(response.data.unmatched_abbs);
+                    }
+                } else {
+                    throw new Error('Move to unmatched failed, wrong response');
+                }
+            } catch (error) {
+                alert(`Failed to move to unmatched: ${error.message}`);
+            }
+        }
+
         function updateAbbreviationUI(abbreviation, description, action) {
+            console.log('[updateAbbreviationUI] abbreviation:', abbreviation,
+            'description:', description, 'action:', action);
             const descriptionText = document.getElementById(`description_text_${abbreviation}`);
             const statusIcon = document.getElementById(`status_icon_${abbreviation}`);
             const addBtn = document.getElementById(`add_btn_${abbreviation}`);
@@ -112,54 +133,75 @@
             }
         }
 
-        // for mixed_chars_abbs: use existing form from dictionary
-        function useExistingForm(abbreviation, orig_form, description) {
-            updateAbbreviation(abbreviation, description, action='add', orig_form=orig_form)
-            .then(data => {
-                console.log('Server response:', data);
-                if (data.success) {
-                    // Hide this abb on the UI
-                    document.getElementById(`mixed_item_${orig_form}`).style.display = 'none';
-                    updateDifferenceSection();
-                    
-                    // If backend says no more mixed abbs and multi_desc abbs are left, render unmatched section
-                    if (data.mixed_chars_empty && data.multi_desc_empty) {
-                        console.log('All mixed items processed, rendering unmatched section');
-                        renderUnmatchedSection(data.unmatched_abbs);
-                    }
-                }
-            })
-            .catch(error => console.error('Error:', error));
+        async function addAbbreviation(abb) {
+            console.log('[addAbbreviation] called with abb:', abb);
+            let description = document.getElementById(`desc_${abb}`).value.trim();
+            if (!description) return;
+
+            const addBtn = document.getElementById(`add_btn_${abb}`);
+            const action = addBtn.innerText.includes('Добавить') ? 'add' : 'edit';
+            
+            try {
+                await updateAbbreviation(abb, description, action);
+                updateAbbreviationUI(abb, description, action);
+                toggleAbbreviationContent(abb, true);
+                await updateDifferenceSection();
+            } catch (error) {
+                alert(`Failed to add/update abbreviation: ${error.message}`);
+            }
         }
 
-        // for mixed_chars_abbs: move to unmatched section
-        function moveToUnmatched(orig_form) {
-            console.log('Moving to unmatched:', orig_form);
-
-            fetch('{% url "move_to_unmatched" %}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ abbreviation: orig_form })
-            })
-            .then(response => response.json())
-            .then(data => {
-                console.log('Server response:', data);
-                if (data.success) {
-                    // Hide this abb on the UI
-                    document.getElementById(`mixed_item_${orig_form}`).style.display = 'none';
-
-                    // If backend says no more mixed abbreviations are left, render unmatched section
-                    if (data.mixed_chars_empty && data.multi_desc_empty) {
-                        console.log('All mixed items processed, rendering unmatched section');
-                        renderUnmatchedSection(data.unmatched_abbs);
-                    }
-                }
-            })
-            .catch(error => console.error('Error:', error));
+        async function skipAbbreviation(abb) {
+            console.log('[skipAbbreviation] called with abb:', abb);
+            try {
+                await updateAbbreviation(abb, '', 'skip');
+                updateAbbreviationUI(abb, '', 'skip');
+                toggleAbbreviationContent(abb, true);
+                await updateDifferenceSection();
+            } catch (error) {
+                alert(`Failed to skip abbreviation: ${error.message}`);
+            }
         }
 
-        function renderUnmatchedSection(unmatchedAbbs) {
-            console.log('Rendering unmatched section with:', unmatchedAbbs);
+        function toggleAbbreviationContent(abb, forceCollapse = false) {
+            console.log('[toggleAbbreviationContent] called with abb:', abb, 'forceCollapse:', forceCollapse);
+            const content = document.getElementById(`content_${abb}`);
+            const toggleBtn = document.getElementById(`toggle_btn_${abb}`);
+            
+            if (window.getComputedStyle(content).display === 'none' && !forceCollapse) {
+                content.style.display = 'block';
+                toggleBtn.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggleBtn.textContent = '▶';
+            }
+        }
+
+        async function generateAbbreviationTable() {
+            console.log('[generateAbbreviationTable] called');
+            try {
+                const response = await fetchWrapper("{% url 'generate_abbreviation_table' %}");
+                console.log('[generateAbbreviationTable] response:', response);
+                
+                if (response.ok && response.data instanceof Blob) {
+                    const url = window.URL.createObjectURL(response.data);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'abbreviation_table.docx';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                } else {
+                    throw new Error('Wrong response format, not a Blob');
+                }
+            } catch (error) {
+                alert(`Failed to generate table: ${error.message}`);
+            }
+        }
+
+        async function renderUnmatchedSection(unmatchedAbbs) {
+            console.log('[renderUnmatchedSection] called with unmatchedAbbs:', unmatchedAbbs);
             const mainContainer = document.querySelector('.section').parentElement;
             
             // Create the unmatched section
@@ -167,58 +209,33 @@
             unmatchedSection.className = 'section';
             unmatchedSection.id = 'unmatched-section';
             
-            unmatchedSection.innerHTML = `
-                <h2>Добавление новых сокращений</h2>
-                <div class="abbreviation-list">
-                    ${unmatchedAbbs.map(abb => `
-                        <div class="abbreviation-item" id="item_${abb.abbreviation}">
-                            <div class="abb-title" onclick="toggleAbbreviationContent('${abb.abbreviation}')" style="cursor: pointer;">
-                                <div class="abb-title-left">
-                                    <span class="status-icon" id="status_icon_${abb.abbreviation}"></span>
-                                    <div class="abb-description">
-                                        <h4>${abb.abbreviation}</h4>
-                                        <span class="description-text" id="description_text_${abb.abbreviation}"></span>
-                                    </div>
-                                </div>
-                                <span class="toggle-btn" id="toggle_btn_${abb.abbreviation}">▼</span>
-                            </div>
-                            <div class="abb-content" id="content_${abb.abbreviation}">
-                                <div class="input-group" id="input_group_${abb.abbreviation}">
-                                    <input type="text" id="desc_${abb.abbreviation}" placeholder="Введите расшифровку">
-                                    <button onclick="addAbbreviation('${abb.abbreviation}')" id="add_btn_${abb.abbreviation}">✓ Добавить</button>
-                                    <button onclick="skipAbbreviation('${abb.abbreviation}')" id="skip_btn_${abb.abbreviation}">✗ Убрать</button>
-                                </div>
-                                <div class="contexts" id="contexts_${abb.abbreviation}">
-                                    ${abb.contexts.map(context => `
-                                        <div class="context-item">
-                                            <p>...${context}...</p>
-                                        </div>
-                                    `).join('')}
-                                </div>
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-            
-            // // Remove existing unmatched section if it exists
-            // const existingUnmatched = document.getElementById('unmatched-section');
-            // if (existingUnmatched) {
-            //     existingUnmatched.remove();
-            // }
-            
-            // Move generate button to the end
-            const generateButton = document.querySelector('.generate-table-section');
-            if (generateButton) {
-                generateButton.remove();
-            }
-            
-            // Add the new section
-            mainContainer.appendChild(unmatchedSection);
-            
-            // Add generate button after unmatched section
-            if (generateButton) {
-                mainContainer.appendChild(generateButton);
+            try {
+                // Fetch the partial template
+                const response = await fetch("{% url 'get_unmatched_template' %}", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ unmatched_abbs: unmatchedAbbs })
+                });
+                const partialHtml = await response.text();
+                unmatchedSection.innerHTML = partialHtml;
+                
+                // Move generate button to the end
+                const generateButton = document.querySelector('.generate-table-section');
+                if (generateButton) {
+                    generateButton.remove();
+                }
+                
+                // Add the new section
+                mainContainer.appendChild(unmatchedSection);
+                
+                // Add generate button after unmatched section
+                if (generateButton) {
+                    mainContainer.appendChild(generateButton);
+                }
+            } catch (error) {
+                console.error('Error loading unmatched section:', error);
             }
         }
     </script>
