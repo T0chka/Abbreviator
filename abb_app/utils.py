@@ -469,9 +469,8 @@ class CharacterValidator:
             self, user_abb: str, dict_abb: str
             ) -> str:
         """
-        Compare each character in 'abb' to the form from the dictionary and
-        wrap mismatched characters in a <span> with 'red' class and with
-        a tooltip explaining the mismatch (Cyrillic vs Latin).
+        Compare each character and return a list of dictionaries
+        with mismatch information for template rendering.
         """
         highlighted = []
         for ch_user, ch_dict in zip(user_abb, dict_abb):
@@ -486,14 +485,17 @@ class CharacterValidator:
                     f"{ch_user} - {mismatch_type}, "
                     f"в словаре {ch_dict} - {correct_type}"
                 )
-                highlighted.append(
-                    f'<span class="tooltip red">{ch_user}'
-                    f'<span class="tooltiptext">{tooltip_text}</span>'
-                    f'</span>'
-                )
+                highlighted.append({
+                    "char": ch_user,
+                    "tooltip": tooltip_text,
+                    "mismatch": True
+                })
             else:
-                highlighted.append(ch_user)
-        return "".join(highlighted)
+                highlighted.append({
+                    "char": ch_user,
+                    "mismatch": False
+                })
+        return highlighted
     
     def highlight_mixed_characters(self, abb: str) -> str:
         """Marks each character with its script type"""

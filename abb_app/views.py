@@ -286,6 +286,8 @@ def process_and_display(
         else:
             remaining_abbs[abb] += count
 
+    print("\n\n[process_and_display] mixed_chars_abbs:", mixed_chars_abbs)
+    
     # Separate pending abbreviations into matched and new
     matched_abbs, unmatched_abbs = separate_abbs(remaining_abbs, abb_dict, text)
     

@@ -254,7 +254,17 @@
         <div id="mixed-chars-section" class="abbreviation-list">
             {% for abb in mixed_chars_abbs %}
             <div class="abbreviation-item" id="mixed_item_{{ abb.original }}">
-                <h4>{{ abb.highlighted|safe }}</h4>
+                <h4>
+                    {% spaceless %}
+                    {% for char in abb.highlighted %}
+                        {% if char.mismatch %}
+                            <span class="tooltip red">{{ char.char }}<span class="tooltiptext">{{ char.tooltip }}</span></span>
+                        {% else %}
+                            <span>{{ char.char }}</span>
+                        {% endif %}
+                    {% endfor %}
+                    {% endspaceless %}
+                </h4>
                 <div class="description-options">
                     {% for description in abb.descriptions %}
                     <button class="btn-select-option" 
