@@ -178,6 +178,7 @@ h2 {
     transition: var(--transition-fast);
     letter-spacing: 0.5px;
     color: var(--bg-light);
+    text-decoration: none;
 }
 
 /* Action Buttons (Add/Remove) */
@@ -312,4 +313,85 @@ h2 {
     visibility: visible;
     opacity: 1;
     transform: translateX(2%) translateY(0px);  /* Slight raise effect */
+}
+
+/* ==========================================================================
+   Share Section
+   ========================================================================== */
+.upload-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--border-color);
+    padding: 40px;
+    margin: 50px auto;
+    width: 500px;
+    border-radius: 12px;
+    background-color: var(--bg-light);
+    text-align: center;
+}
+
+.upload-container:hover {
+    background-color: var(--bg-accent);
+}
+
+.upload-container svg {
+    stroke: var(--primary-color);
+    transition: var(--transition-fast);
+}
+
+.upload-container:hover svg {
+    transform: scale(1.1);
+}
+
+.upload-container p {
+    margin: 10px 0;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.upload-container .highlight {
+    color: #007bff;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.upload-container input[type="file"] {
+    display: none;
+}
+
+/* ==========================================================================
+   Loading Overlay
+   ========================================================================== */
+   #loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--bg-light);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.loading-content {
+    text-align: center;
+}
+
+.progress-bar {
+    width: 300px;
+    height: 20px;
+    background: var(--bg-accent);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 20px auto;
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background: var(--success-color);
+    transition: var(--transition-slow);
 }
