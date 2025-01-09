@@ -32,8 +32,9 @@ EXCLUDE_TERMS = {
     'ДИЗАЙН', 'ГЛАВНЫЙ', 'СПИСОК', 'ПРЯМОЙ', 'ПРИЕМ', 'ПРОТОКОЛ', 'ОТБОР',
     'КАЧЕСТВА', 'ПЕРИОД', 'ВЕДЕНИЕ', 'ЭТАП', 'ЭТИКА', 'СИНОПСИС', 'ЛИСТ',
     'ЦЕЛИ', 'РАБОТА', 'ИСТОРИЯ', 'ОЦЕНКА', 'СПОНСОР', 'ЗАДАЧИ', 'ДОСТУП',
-    'КОНТРОЛЬ', 'ТЕРМИНОВ', 'ЗАПИСЕЙ', 'ГИПОТЕЗА', 'ДАННЫМИ',
-    'ДАННЫМ/ДОКУМЕНТАЦИИ'
+    'КОНТРОЛЬ', 'ТЕРМИНОВ', 'ЗАПИСЕЙ', 'ГИПОТЕЗА', 'ДАННЫМИ', 'ДЕЙСТВИЕ',
+    'ДАННЫМ/ДОКУМЕНТАЦИИ', 'ДЛЯ', 'ФОРМА', 'ВВЕДЕНИЕ', 'СВОЙСТВА', 'РЕЗЮМЕ',
+    'ДАННЫХ', 'ЧЕЛОВЕКА'
 }
 
 NAMESPACE = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
@@ -113,7 +114,7 @@ def extract_abbs_from_text(
         re.IGNORECASE
     )
     # Remove quoted words
-    text_no_quotes = re.compile(r'«\S+»').sub('', text)
+    text_no_quotes = re.compile(r'«\S+?»|\"[^\"]+\"').sub('', text)
     words = text_no_quotes.split()
 
     # Find words with at least 2 uppercase (Latin or Cyrillic) letters
