@@ -116,14 +116,26 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
-    BASE_DIR / "abb_app/static",
+    os.path.join(BASE_DIR, 'abb_app', 'static'),
 ]
+
+# Media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Maximum size of the entire request body (in bytes)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB (default 2.5MB)
+
+# Maximum size of request body per file (in bytes)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB (default 2.5MB)
+
+# Temporary folder for file uploads
+FILE_UPLOAD_TEMP_DIR = None  # Uses system default temp directory
+
+# Maximum number of files that can be uploaded simultaneously
+DATA_UPLOAD_MAX_NUMBER_FILES = 10
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-# Media files
-MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
