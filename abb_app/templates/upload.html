@@ -1,25 +1,119 @@
+{% load static %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Upload and View Document</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
-    <h1>Upload a Word Document</h1>
-    <form method="post" enctype="multipart/form-data" action="{% url 'upload_file' %}">
-        {% csrf_token %}
-        <input type="file" name="uploaded_file" required>
-        <button type="submit">Upload</button>
-    </form>
 
-    <hr>
+    <div class="main-content">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
 
-    {% if content %}
-        <h2>File Content:</h2>
-        {% for paragraph in content %}
-            <p>{{ paragraph }}</p>
-        {% endfor %}
-    {% elif error %}
-        <p style="color: red;">Error: {{ error }}</p>
-    {% endif %}
+        <!-- Upload Section -->
+        <div class="section">
+            <h2>Добро пожаловать в Аббревиатор!</h2>
+            <div class="upload-container">
+                <label for="fileInput">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"></path>
+                        <polyline points="16 6 12 2 8 6"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                    </svg>
+                    <p>Перетащите в это поле файл .docx</p>
+                    <p>или <span class="highlight">выберите файл</span></p>
+                    <p>или <a href="{% url 'process_file_with_session' session_id=demo_session_id %}" class="highlight">запустите тест-драйв</a></p>
+                </label>
+                <form method="post" enctype="multipart/form-data" id="uploadForm" action="{% url 'upload_file' %}">
+                    {% csrf_token %}
+                    <input type="file" name="uploaded_file" id="fileInput" required style="display: none;" onchange="autoSubmitForm()">
+                </form>
+            </div>
+
+            <!-- Options Section -->
+            <div class="description-options">
+                {% if session_id %}
+                    {% with share_url=request.scheme|add:'://'|add:request.get_host|add:'/process/'|add:session_id %}
+                        <input type="hidden" value="{{ share_url }}" id="shareLink">
+                        <button onclick="copyShareLink()" class="btn-select-option">
+                            Поделиться ссылкой на загруженный файл
+                        </button>
+                        <a href="{% url 'process_file_with_session' session_id=session_id %}" class="btn-select-option process-button">
+                            Перейти к обработке файла
+                        </a>
+                    {% endwith %}
+                {% endif %}
+            </div>
+
+            <!-- Loading Overlay -->    
+            <div id="loading-overlay" style="display: none;">
+                <div class="loading-content">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <p>Обработка файла...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+<script>
+    const uploadBox = document.querySelector('.upload-container');
+
+    uploadBox.addEventListener('dragover', (e) => {
+        e.preventDefault();
+    });
+
+    uploadBox.addEventListener('dragleave', () => {
+    });
+
+    uploadBox.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        document.getElementById('fileInput').files = files;
+        alert(`File "${files[0].name}" selected.`);
+    });
+
+    function copyShareLink() {
+        const shareLink = document.getElementById('shareLink');
+        shareLink.select();
+        document.execCommand('copy');
+        alert('Ссылка скопирована!');
+    }
+    function autoSubmitForm() {
+        document.getElementById('uploadForm').submit();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const processButton = document.querySelector('.process-button');
+        if (processButton) {
+            processButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                const loadingOverlay = document.getElementById('loading-overlay');
+                const progressFill = document.querySelector('.progress-fill');
+
+                loadingOverlay.style.display = 'flex';
+                
+                let progress = 0;
+                const interval = setInterval(() => {
+                    if (progress < 90) {
+                        progress += Math.random() * 15;
+                        progressFill.style.width = `${Math.min(progress, 90)}%`;
+                    }
+                }, 500);
+
+                window.location.href = this.href;
+            });
+        }
+    });
+</script>
+
 </body>
 </html>
