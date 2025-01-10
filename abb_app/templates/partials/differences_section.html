@@ -1,23 +1,27 @@
-<h2>Различия между исходным и новым списками сокращений</h2>
+<h2>Различия между исходным и новым списками аббревиатур</h2>
 
 <h3>Есть в исходном списке, но нет в новом</h3>
 <ul>
     {% if missing_abbs %}
-        {% for change in missing_abbs %}
-            <li>{{ change.abbreviation }} - {{ change.description }}</li>
+        {% for old_abb in missing_abbs %}
+            <li>{{ old_abb.abbreviation }} - {{ old_abb.descriptions|join:", " }}</li>
         {% endfor %}
     {% else %}
-        <p>No missing abbreviations detected.</p>
+        <p>Все аббревиатуры из исходного списка присутствуют в новом списке</p>
     {% endif %}
 </ul>
 
 <h3>Есть в новом списке, но нет в исходном</h3>
 <ul>
-    {% if new_found_abbs %}
-        {% for new in new_found_abbs %}
-            <li>{{ new.abbreviation }} - {{ new.description }}</li>
-        {% endfor %}
+    {% if new_found is not None %}
+        {% if new_found %}
+            {% for new in new_found %}
+                <li>{{ new.abbreviation }} - {{ new.descriptions|join:", " }}</li>
+            {% endfor %}
+        {% else %}
+            <p>Все аббревиатуры из нового списка присутствуют в исходном списке</p>
+        {% endif %}
     {% else %}
-        <p>No new abbreviations found.</p>
-    {% endif %}
+    <p>В новом списке еще нет ни одной аббревиатуры</p>
+{% endif %}
 </ul>
