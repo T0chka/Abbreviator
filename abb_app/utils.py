@@ -1,21 +1,17 @@
 import os
 import re
-import pandas as pd
 from docx import Document
 from docx.shared import Pt, RGBColor, Cm
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from thefuzz import process, fuzz
 from collections import Counter
-from typing import (
-    Union, List, Dict, Set, Counter, Optional, 
-    Tuple, Any, Iterator
-)
-from pandas import DataFrame
 from docx.table import _Cell, Table
-from docx.text.paragraph import Paragraph
 from docx.oxml.table import CT_Tbl
-from docx.oxml.text.paragraph import CT_P
+from typing import (
+    TypedDict, Union, List, Dict, Set, Counter, Optional
+)
+from thefuzz import process, fuzz
+import logging
 
 ABB_DICT_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -37,24 +33,48 @@ EXCLUDE_TERMS = {
     'ДАННЫХ', 'ЧЕЛОВЕКА'
 }
 
-def load_abbreviation_dict() -> DataFrame:
-    """
-    Load abbreviations from CSV, or return empty DataFrame if not found.
-    """
-    if os.path.exists(ABB_DICT_PATH):
-        return pd.read_csv(ABB_DICT_PATH)
-    else:
-        print(
-            f"[WARNING] Abbreviation dictionary not found at: {ABB_DICT_PATH}.",
-            "Returning empty DataFrame."
-        )
-        return pd.DataFrame(columns=["abbreviation", "description"])
+class Abbreviation(TypedDict):
+    """Universal abbreviation structure"""
+    abbreviation: str
+    descriptions: List[str]  # All possible descriptions
+    selected_description: Optional[str]  # User selected or entered description
+    count: Optional[int]  # Number of occurrences in text
+    contexts: Optional[List[str]]  # Context snippets
+    correct_form: Optional[str]  # For mixed-character cases
+    highlighted: Optional[List[Dict]]  # For display
+    status: Optional[str]  # For tracking state
+
+def load_abbreviation_dict() -> List[Abbreviation]:
+    """Load abbreviations from CSV into list of Abbreviation"""
+    abb_dict: Dict[str, List[str]] = {}
+    
+    if not os.path.exists(ABB_DICT_PATH):
+        print(f"[WARNING] Abbreviation dictionary not found at: {ABB_DICT_PATH}")
+        return []
+        
+    with open(ABB_DICT_PATH, 'r', encoding='utf-8') as f:
+        next(f)
+        for line in f:
+            abb, desc = line.strip().split(',', 1)
+            if abb in abb_dict:
+                abb_dict[abb].append(desc)
+            else:
+                abb_dict[abb] = [desc]
+    
+    return [
+        {
+            'abbreviation': abb,
+            'descriptions': descriptions
+        }
+        for abb, descriptions in abb_dict.items()
+    ]
 
 # -----------------------------------------------------------------------------
 # Abbreviation table extraction
 # -----------------------------------------------------------------------------
 
 class AbbreviationTableExtractor:
+    """Class for extracting abbreviation table from a Word document."""
     NS = {
         'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
     }
@@ -62,7 +82,20 @@ class AbbreviationTableExtractor:
     def __init__(self, section_patterns: List[str] = SECTION_PATTERNS):
         self.section_patterns = section_patterns
 
-    def extract_table_element(self, doc: Document) -> Optional[CT_Tbl]:
+    def get_abbreviation_table(self, doc: Document) -> List[Abbreviation]:
+        """Extract abbreviations table from document"""
+        table_element = self._extract_table_element(doc)
+        if table_element is None:
+            print(f"[INFO] No relevant abbreviation table found")
+            return []
+        
+        print("[INFO] Found table with",
+              f"{len(table_element.findall('.//w:tr', namespaces=self.NS))} rows"
+              )
+            
+        return self._parse_table(table_element)
+    
+    def _extract_table_element(self, doc: Document) -> Optional[CT_Tbl]:
         """
         Extract the first table following a section matching `section_patterns`.
         Returns the block containing the table, or None if not found.
@@ -99,61 +132,55 @@ class AbbreviationTableExtractor:
                 return block
 
         return None
-
-    def parse_table(self,table_element: CT_Tbl) -> DataFrame:
-        """
-        Parse an lxml table element, and return it as a DataFrame
-        with two columns: [abbreviation, description].
-        """
-        rows_data: List[List[str]] = []
-        first_row = True
-
-        for row in table_element.findall('.//w:tr', namespaces=self.NS):
-            cell_texts = []
-            for cell in row.findall('.//w:tc', namespaces=self.NS):
-                texts = [
-                    t.text for t in cell.findall('.//w:t', namespaces=self.NS)
-                    if t.text
-                ]
-                cell_text = ''.join(texts).strip()
-                cell_texts.append(cell_text)
-
-            if first_row and cell_texts[:2] == ["Аббревиатура", "Расшифровка"]:
-                first_row = False
+        
+    def _parse_table(self, table_element: CT_Tbl) -> List[Abbreviation]:
+        """Parse table into list of abbreviation entries"""
+        abb_entries: Dict[str, List[str]] = {}
+        rows = table_element.findall('.//w:tr', namespaces=self.NS)
+        header_cells = rows[0].findall('.//w:tc', namespaces=self.NS)
+        header_texts = [
+            ''.join(t.text for t in cell.findall('.//w:t', namespaces=self.NS) if t.text).strip()
+            for cell in header_cells
+        ]
+        print(f"[INFO] Header: {header_texts}")
+        
+        for idx, row in enumerate(rows):
+            cell_values = [
+                ''.join(
+                    t.text for t in cell.findall('.//w:t', namespaces=self.NS) if t.text
+                ).strip()
+                for cell in row.findall('.//w:tc', namespaces=self.NS)
+            ]
+            if idx == 0 and set(cell_values[:2]) == {"Аббревиатура", "Расшифровка"}:
                 continue
 
-            rows_data.append(cell_texts)
+            if len(cell_values) == 2:
+                abb, description = cell_values
+                if abb in abb_entries:
+                    if description not in abb_entries[abb]:
+                        abb_entries[abb].append(description)
+                else:
+                    abb_entries[abb] = [description]
+            else:
+                print(f"[WARNING] Unexpected row structure: {cell_values}")
 
-        if len(rows_data) > 0 and len(rows_data[0]) == 2:
-            return pd.DataFrame(rows_data, columns=['abbreviation', 'description'])
-        else:
-            return pd.DataFrame(columns=['abbreviation', 'description'])
-        
-    def get_abbreviation_table(self, file_path: str) -> DataFrame:
-        """
-        Extract, parse, clean, and return the relevant table from the doc,
-        as a DataFrame with columns ['abbreviation', 'description'].
-        """
-        doc = Document(os.path.abspath(file_path))
-        table_element = self.extract_table_element(doc)
-
-        if table_element is None:
-            print(f"[INFO] No relevant abbreviation table found in: {file_path}")
-            return pd.DataFrame(columns=['abbreviation', 'description'])
-
-        df = self.parse_table(table_element)
-        if df.empty:
-            print(
-                "[WARNING] Parsed table was malformed",
-                f"returning empty DataFrame for: {file_path}"
-            )
-        return df
+        return [
+            {
+                'abbreviation': abb,
+                'descriptions': descriptions
+            }
+            for abb, descriptions in abb_entries.items()
+        ]
 
 # -----------------------------------------------------------------------------
 # Text, abbreviation, and context extraction
 # -----------------------------------------------------------------------------
 
 class TextProcessor:
+    """
+    Class for extracting a relevant text, abbreviations and their contexts from
+    a Word document.
+    """
     def __init__(
             self,
             skip_sections: List[str] = SKIP_SECTIONS,
@@ -278,13 +305,59 @@ class TextProcessor:
         return list(contexts)
 
 # -----------------------------------------------------------------------------
-# Helper functions
+# Preparation of abbreviations
+# -----------------------------------------------------------------------------
+
+def process_abbreviations(
+        doc: Document,
+        abb_dict: List[Abbreviation]
+    ) -> List[Abbreviation]:
+    """Process abbreviations found in document"""
+    text_processor = TextProcessor()
+    validator = CharacterValidator()
+    
+    # Get abbreviations from document text
+    text = text_processor.extract_relevant_text(doc)
+    raw_abbs = text_processor.extract_abbreviations(text)
+    
+    processed_abbs: List[Abbreviation] = []
+    for abb, count in raw_abbs.items():
+        # Find matching dictionary entry
+        dict_entry = next(
+            (entry for entry in abb_dict 
+             if entry['abbreviation'] == abb),
+            None
+        )
+        
+        processed_abb: Abbreviation = {
+            'abbreviation': abb,
+            'descriptions': dict_entry['descriptions'] if dict_entry else [],
+            'selected_description': None,  # Will be set by user
+            'count': count,
+            'contexts': text_processor.find_abbreviation_context(text, abb),
+            'correct_form': None,
+            'highlighted': None,
+            'status': None
+        }
+        
+        # Validate and update if needed
+        validation_result = validator.validate_abbreviation(abb, abb_dict)
+        if validation_result.get('correct_form'):
+            processed_abb['correct_form'] = validation_result['correct_form']
+            processed_abb['highlighted'] = validation_result['highlighted']
+            processed_abb['descriptions'] = validation_result['descriptions']
+            
+        processed_abbs.append(processed_abb)
+    
+    return processed_abbs
+
+# -----------------------------------------------------------------------------
+# Formatting functions
 # -----------------------------------------------------------------------------
 
 class AbbreviationFormatter:
-    """Class for formatting and cleaning abbreviation DataFrames."""
+    """Class for formatting and cleaning abbreviation entries."""
     
-    # Greek to Latin letter mapping for descriptions formatting
     GREEK_TO_LATIN = {
         'α': 'A', 'β': 'B', 'γ': 'G', 'δ': 'D',
         'ε': 'E', 'ζ': 'Z', 'η': 'H', 'θ': 'TH',
@@ -294,13 +367,13 @@ class AbbreviationFormatter:
         'φ': 'PH', 'χ': 'CH', 'ψ': 'PS', 'ω': 'O'
     }
 
-    def format_description(self, row: Dict[str, str]) -> str:
+    def format_description(self, entry: Abbreviation) -> str:
         """
-        Format the description by capitalizing words that correspond
-        to abbreviation letters.
+        Format description by capitalizing words that correspond to abbreviation
+        letters.
         """
-        abbreviation: str = row['abbreviation']
-        description: str = row['description']
+        abbreviation: str = entry['abbreviation']
+        description: str = entry['description']
         
         # Split description into English and Russian parts
         parts = description.split('(', 1)
@@ -318,12 +391,49 @@ class AbbreviationFormatter:
         )
         return f"{english_part_capitalized} {russian_part}".strip()
 
+    def clean_and_sort_abbreviations(
+            self, abbreviations: List[Abbreviation]
+        ) -> List[Abbreviation]:
+        """
+        Clean and sort abbreviations:
+        - Strips whitespace
+        - Formats descriptions for abbreviations with English letters
+        - Capitalizes first letters after digits
+        - Removes duplicates
+        - Sorts by abbreviation and description
+        """
+        # Create a copy to avoid modifying the original
+        cleaned: List[Abbreviation] = []
+        seen = set()  # For duplicate detection
+        
+        for entry in abbreviations:
+            # Strip whitespace
+            abb = entry['abbreviation'].strip()
+            desc = entry['description'].strip()
+            
+            # Format if contains English letters
+            if re.search(r'[A-Za-z]', abb):
+                desc = self.format_description({'abbreviation': abb, 'description': desc})
+            
+            # Capitalize after digits
+            desc = self._capitalize_after_digits(desc)
+            
+            # Create unique key for deduplication
+            unique_key = (abb, desc)
+            if unique_key not in seen:
+                seen.add(unique_key)
+                cleaned.append({
+                    'abbreviation': abb,
+                    'description': desc
+                })
+        
+        # Sort by abbreviation and description
+        return sorted(cleaned, key=lambda x: (x['abbreviation'], x['description']))
+
     def _capitalize_by_abbreviation(
             self, text: str, abbr_letters: str
         ) -> str:
-        """
-        Capitalize words in text based on abbreviation letters.
-        """
+        """Capitalize words in text based on abbreviation letters."""
         abbr_index = 0  # Position in the abbreviation
         text_pos = 0  # Position in the text
         text_chars = list(text)
@@ -338,45 +448,8 @@ class AbbreviationFormatter:
             
         return ''.join(text_chars)
 
-    def clean_and_sort_abbreviations(
-            self, abbreviations_df: DataFrame
-        ) -> DataFrame:
-        """
-        Clean and sort abbreviations DataFrame:
-        - Strips whitespace from all fields
-        - Formats descriptions for abbreviations with English letters
-        - Capitalizes first letters after digits
-        - Removes duplicates
-        - Sorts by abbreviation and description
-        """
-        # Create a copy to avoid modifying the original DataFrame
-        df = abbreviations_df.copy()
-        
-        # Strip whitespace
-        for column in ['abbreviation', 'description']:
-            df[column] = df[column].astype(str).str.strip()
-
-        # Format descriptions for entries with English letters
-        english_mask = df['abbreviation'].str.contains(r'[A-Za-z]')
-        formatted_descriptions = df[english_mask].apply(
-            self.format_description, axis=1
-        )
-        df.loc[english_mask, 'description'] = formatted_descriptions
-
-        # Capitalize first letter after digits
-        df['description'] = df['description'].apply(self._capitalize_after_digits)
-
-        # Remove duplicates and sort
-        df = (df.drop_duplicates(subset=['abbreviation', 'description'])
-              .sort_values(by=['abbreviation', 'description'])
-              .reset_index(drop=True))
-        
-        return df
-
     def _capitalize_after_digits(self, text: str) -> str:
-        """
-        Capitalize the first letter following any leading digits.
-        """
+        """Capitalize the first letter following any leading digits."""
         return re.sub(
             r'^(\d*)([a-zA-ZА-Яа-яЁё])',
             lambda m: m.group(1) + m.group(2).upper(),
@@ -401,7 +474,11 @@ class CharacterValidator:
         # Create reverse mapping
         self.lat2cyr = {v: k for k, v in self.cyr2lat.items()}
 
-    def validate_abbreviation(self, abb: str, abb_dict: DataFrame) -> dict:
+    def validate_abbreviation(
+            self, 
+            abb: str, 
+            abb_dict: List[Abbreviation]
+        ) -> dict:
         """
         Validates an abbreviation for mixed characters.
         Checks for existing forms in the dictionary.
@@ -418,24 +495,30 @@ class CharacterValidator:
                 "descriptions": []
             }
 
-        possible_forms = self.generate_all_mixed_forms(abb)
-        matched_rows = abb_dict[abb_dict['abbreviation'].isin(possible_forms)]
+        possible_forms = self._generate_all_mixed_forms(abb)
         
-        if not matched_rows.empty:
-            if len(matched_rows['abbreviation'].unique()) > 1:
+        # Find matching entries in dictionary
+        matched_entries = [
+            entry for entry in abb_dict 
+            if entry['abbreviation'] in possible_forms
+        ]
+        
+        if matched_entries:
+            if len(set(entry['abbreviation'] for entry in matched_entries)) > 1:
                 raise ValueError(
                     "[ERROR] Mixed-character abbreviations in the dictionary:"
-                    f"\n{matched_rows}"
+                    f"\n{matched_entries}"
                 )
-            correct_form = matched_rows['abbreviation'].iloc[0]
-            descriptions = list(matched_rows['description'].unique())
-            highlighted = self.highlight_mismatch_characters(
+            
+            correct_form = matched_entries[0]['abbreviation']
+            descriptions = matched_entries[0]['descriptions']
+            highlighted = self._highlight_mismatch_characters(
                 abb, correct_form
             )
         else:
             correct_form = None
             descriptions = []
-            highlighted = self.highlight_mixed_characters(abb)
+            highlighted = self._highlight_mixed_characters(abb)
 
         return {
             "original": abb,
@@ -444,7 +527,7 @@ class CharacterValidator:
             "descriptions": descriptions
         }
 
-    def generate_all_mixed_forms(self, abb: str) -> set:
+    def _generate_all_mixed_forms(self, abb: str) -> set:
         """Generate all possible character combinations"""
         results = set()
         
@@ -477,7 +560,7 @@ class CharacterValidator:
         backtrack(0, [])
         return results - {abb}  # Exclude original form
 
-    def highlight_mismatch_characters(
+    def _highlight_mismatch_characters(
             self, user_abb: str, dict_abb: str
             ) -> str:
         """
@@ -509,7 +592,7 @@ class CharacterValidator:
                 })
         return highlighted
     
-    def highlight_mixed_characters(self, abb: str) -> str:
+    def _highlight_mixed_characters(self, abb: str) -> str:
         """Marks each character with its script type"""
         highlighted = []
         for ch in abb:
@@ -526,27 +609,43 @@ class CharacterValidator:
 # -----------------------------------------------------------------------------
 
 def compare_abbreviations(
-        new_abbs: DataFrame,
-        old_abbs: DataFrame,
+        old_abbs: List[Abbreviation],
+        new_abbs: List[Abbreviation],
         compare_missing: bool = True,
         compare_new: bool = True
-    ) -> Dict[str, DataFrame]:
+    ) -> Dict[str, List[Abbreviation]]:
     """
-    Compare new and old abbreviation dictionaries.
+    Compare new and old abbreviation tables.
+    Returns dictionary with:
+        - 'missing_abbs': abbreviations present in old but not in new
+        - 'new_found': abbreviations present in new but not in old
     """
-    results: Dict[str, DataFrame] = {}
+    results: Dict[str, List[Abbreviation]] = {}
+
+    if not new_abbs:
+        results['missing_abbs'] = old_abbs
+        results['new_found'] = []
+        return results
+    
+    # Create sets of abbreviations for efficient comparison
+    old_abb_set = {abb['abbreviation'] for abb in old_abbs}
+    new_abb_set = {abb['abbreviation'] for abb in new_abbs}
 
     if compare_missing:
-        not_in_new = old_abbs[
-            ~old_abbs['abbreviation'].isin(new_abbs['abbreviation'])
+        # Find abbreviations that are in old but not in new
+        missing_abbs = [
+            abb for abb in old_abbs 
+            if abb['abbreviation'] not in new_abb_set
         ]
-        results['missing_abbs'] = not_in_new
+        results['missing_abbs'] = missing_abbs
 
     if compare_new:
-        not_in_old = new_abbs[
-            ~new_abbs['abbreviation'].isin(old_abbs['abbreviation'])
+        # Find abbreviations that are in new but not in old
+        new_found = [
+            abb for abb in new_abbs 
+            if abb['abbreviation'] not in old_abb_set
         ]
-        results['new_found'] = not_in_old
+        results['new_found'] = new_found
 
     return results
 
@@ -568,6 +667,58 @@ class AbbreviationTableGenerator:
         self.font_name = 'Times New Roman'
         self.font_size = 12  # pt
 
+    def generate_document(self, table_entries: List[Abbreviation]) -> Document:
+        """
+        Generate a Word document with formatted abbreviation table.
+        """
+        doc = Document()
+
+        # Set page margins
+        for section in doc.sections:
+            section.top_margin = Cm(self.margins['top'])
+            section.bottom_margin = Cm(self.margins['bottom'])
+            section.left_margin = Cm(self.margins['left'])
+            section.right_margin = Cm(self.margins['right'])
+
+            # Calculate second column width
+            total_width = (
+                section.page_width 
+                - section.left_margin 
+                - section.right_margin
+            )
+            self.second_column_width = total_width - Cm(self.first_column_width)
+
+        # Create and format table
+        table = self._create_table(doc, table_entries)
+        self._set_column_widths(table)
+
+        return doc
+
+    def _create_table(self, doc: Document, table_entries: List[Abbreviation]) -> Table:
+        """Create and format table with header and data rows."""
+        # Create table with header
+        table = doc.add_table(rows=1, cols=2)
+        header_cells = table.rows[0].cells
+        
+        # Set header text
+        header_cells[0].text = 'Аббревиатура'
+        header_cells[1].text = 'Расшифровка'
+
+        # Format header cells
+        for cell in header_cells:
+            self._format_cell(cell, bold=True)
+
+        # Add and format data rows
+        for entry in table_entries:
+            row_cells = table.add_row().cells
+            row_cells[0].text = entry['abbreviation']
+            row_cells[1].text = entry['description']
+
+            for cell in row_cells:
+                self._format_cell(cell, bold=False)
+
+        return table
+    
     def _set_cell_border(self, cell: _Cell) -> None:
         """Set black borders on all four sides of the given cell."""
         tc = cell._tc
@@ -601,58 +752,6 @@ class AbbreviationTableGenerator:
         self._set_cell_border(cell)
         self._format_paragraph_spacing(cell)
         self._format_cell_text(cell, bold)
-
-    def generate_document(self, matched_abbs: DataFrame) -> Document:
-        """
-        Generate a Word document with formatted abbreviation table.
-        """
-        doc = Document()
-
-        # Set page margins
-        for section in doc.sections:
-            section.top_margin = Cm(self.margins['top'])
-            section.bottom_margin = Cm(self.margins['bottom'])
-            section.left_margin = Cm(self.margins['left'])
-            section.right_margin = Cm(self.margins['right'])
-
-            # Calculate second column width
-            total_width = (
-                section.page_width 
-                - section.left_margin 
-                - section.right_margin
-            )
-            self.second_column_width = total_width - Cm(self.first_column_width)
-
-        # Create and format table
-        table = self._create_table(doc, matched_abbs)
-        self._set_column_widths(table)
-
-        return doc
-
-    def _create_table(self, doc: Document, data: DataFrame) -> Table:
-        """Create and format table with header and data rows."""
-        # Create table with header
-        table = doc.add_table(rows=1, cols=2)
-        header_cells = table.rows[0].cells
-        
-        # Set header text
-        header_cells[0].text = 'Аббревиатура'
-        header_cells[1].text = 'Расшифровка'
-
-        # Format header cells
-        for cell in header_cells:
-            self._format_cell(cell, bold=True)
-
-        # Add and format data rows
-        for _, row_data in data.iterrows():
-            row_cells = table.add_row().cells
-            row_cells[0].text = row_data['abbreviation']
-            row_cells[1].text = str(row_data['description'])
-
-            for cell in row_cells:
-                self._format_cell(cell, bold=False)
-
-        return table
 
     def _set_column_widths(self, table: Table) -> None:
         """Set fixed widths for table columns."""
