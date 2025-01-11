@@ -137,13 +137,18 @@ class AbbreviationTableExtractor:
         """Parse table into list of abbreviation entries"""
         abb_entries: Dict[str, List[str]] = {}
         rows = table_element.findall('.//w:tr', namespaces=self.NS)
+        
+        # TMP: debugging
         header_cells = rows[0].findall('.//w:tc', namespaces=self.NS)
         header_texts = [
-            ''.join(t.text for t in cell.findall('.//w:t', namespaces=self.NS) if t.text).strip()
+            ''.join(
+                t.text for t in cell.findall('.//w:t', namespaces=self.NS) if t.text
+                ).strip()
             for cell in header_cells
         ]
         print(f"[INFO] Header: {header_texts}")
         
+        # Get abbreviations and descriptions
         for idx, row in enumerate(rows):
             cell_values = [
                 ''.join(
@@ -367,7 +372,7 @@ class AbbreviationFormatter:
         'φ': 'PH', 'χ': 'CH', 'ψ': 'PS', 'ω': 'O'
     }
 
-    def format_description(self, entry: Abbreviation) -> str:
+    def format_description(self, entry: Dict[str, str]  ) -> str:
         """
         Format description by capitalizing words that correspond to abbreviation
         letters.
@@ -392,8 +397,8 @@ class AbbreviationFormatter:
         return f"{english_part_capitalized} {russian_part}".strip()
 
     def clean_and_sort_abbreviations(
-            self, abbreviations: List[Abbreviation]
-        ) -> List[Abbreviation]:
+            self, abbreviations: List[Dict[str, str]]
+        ) -> List[Dict[str, str]]:
         """
         Clean and sort abbreviations:
         - Strips whitespace
@@ -403,7 +408,7 @@ class AbbreviationFormatter:
         - Sorts by abbreviation and description
         """
         # Create a copy to avoid modifying the original
-        cleaned: List[Abbreviation] = []
+        cleaned: List[Dict[str, str]] = []
         seen = set()  # For duplicate detection
         
         for entry in abbreviations:
@@ -413,7 +418,9 @@ class AbbreviationFormatter:
             
             # Format if contains English letters
             if re.search(r'[A-Za-z]', abb):
-                desc = self.format_description({'abbreviation': abb, 'description': desc})
+                desc = self.format_description(
+                    {'abbreviation': abb, 'description': desc}
+                )
             
             # Capitalize after digits
             desc = self._capitalize_after_digits(desc)
@@ -646,7 +653,9 @@ def compare_abbreviations(
 # -----------------------------------------------------------------------------
 
 class AbbreviationTableGenerator:
-    """Class for generating formatted Word document tables with abbreviations."""
+    """
+    Class for generating formatted Word document tables with abbreviations.
+    """
 
     def __init__(self):
         self.margins = {

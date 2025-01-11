@@ -1,7 +1,6 @@
 import io
 import os
 import json
-import traceback
 import hashlib
 import logging
 
@@ -15,7 +14,7 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.conf import settings
 
-from typing import Dict, List, Optional, Union, Any
+from typing import Dict, List, Union, Any
 from datetime import datetime, timedelta
 
 from .utils import (
@@ -33,9 +32,7 @@ from .utils import (
 DEMO_SESSION_ID = 'test_drive'
 
 extractor = AbbreviationTableExtractor()
-text_processor = TextProcessor()
 formatter = AbbreviationFormatter()
-validator = CharacterValidator()
 generator = AbbreviationTableGenerator()
 logger = logging.getLogger('abb_app')
 
@@ -73,11 +70,15 @@ def upload_file(request: HttpRequest) -> HttpResponse:
         
         try:
             uploaded_file = request.FILES['uploaded_file']
-            logger.info(f"Uploading file: {uploaded_file.name}, size: {uploaded_file.size} bytes")
+            logger.info(f"Uploading file: {uploaded_file.name},",
+                        f"size: {uploaded_file.size} bytes")
             
             if uploaded_file.size > settings.FILE_UPLOAD_MAX_MEMORY_SIZE:
                 return render(request, 'upload.html', {
-                    'error': f'Файл слишком большой. Максимальный размер: {settings.FILE_UPLOAD_MAX_MEMORY_SIZE/1048576:.1f}MB',
+                    'error': (
+                        f'Файл слишком большой. Максимальный размер: '
+                        f'{settings.FILE_UPLOAD_MAX_MEMORY_SIZE / 1048576:.1f}MB'
+                        ),
                     'demo_session_id': DEMO_SESSION_ID
                 })
 
@@ -99,10 +100,14 @@ def upload_file(request: HttpRequest) -> HttpResponse:
             })
     
     # For GET request
-    session_id = request.session.get('uploaded_file_path', '').split('.')[0] if request.session.get('uploaded_file_path') else None
+    session_id = request.session.get(
+        'uploaded_file_path', ''
+        ).split('.')[0] if request.session.get(
+            'uploaded_file_path'
+            ) else None
     return render(request, 'upload.html', {
         'session_id': session_id,
-        'demo_session_id': DEMO_SESSION_ID  # Always pass demo_session_id
+        'demo_session_id': DEMO_SESSION_ID
     })
 
 @require_http_methods(["GET"])
@@ -160,9 +165,11 @@ def update_difference_section(request: HttpRequest) -> HttpResponse:
             'missing_abbs': initial_abbs
         })
 
-    changes = compare_abbreviations(old_abbs=initial_abbs, new_abbs=processed_doc_abbs)
+    changes = compare_abbreviations(
+        old_abbs=initial_abbs,
+        new_abbs=processed_doc_abbs
+    )
 
-    logger.debug(f"[update_difference_section] changes: {changes}")
     return render(request, 'partials/differences_section.html', {
         'missing_abbs': changes.get('missing_abbs', []),
         'new_found': changes.get('new_found', []),
@@ -191,8 +198,9 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
     
 
 def process_and_display(request: HttpRequest) -> HttpResponse:
-    logger.debug(f"[process_and_display] Session ID: {request.session.session_key}")
-    logger.debug("[process_and_display] Session data lengths: %s", {
+    logger.debug(f"process_and_display function called")
+    logger.debug(f"Session ID: {request.session.session_key}")
+    logger.debug("Session data lengths: %s", {
         key: len(value) if hasattr(value, '__len__') else 'Not measurable'
         for key, value in request.session.items()
     })
@@ -210,23 +218,22 @@ def process_and_display(request: HttpRequest) -> HttpResponse:
     
     # Get full path to file
     file_path = FileSystemStorage().path(file_path)
-    logger.debug(f"[process_and_display] Processing file: {file_path}")
+    logger.debug(f"Processing file: {file_path}")
 
     # Load dictionary
     abb_dict = load_abbreviation_dict()
     logger.debug(
-        "[process_and_display] Loaded abbreviation dictionary:"
+        "Loaded abbreviation dictionary:"
         f"{len(abb_dict)}"
     )
     
     # Extract initial table with abbreviations from document
     doc = Document(file_path)
     initial_abbs = extractor.get_abbreviation_table(doc)
-    logger.debug(f"[process_and_display] Loaded initial abbreviations: {len(initial_abbs)}")
+    logger.debug(f"Loaded initial abbreviations: {len(initial_abbs)}")
     
     # Process abbreviations
     doc_abbs: List[Abbreviation] = process_abbreviations(doc, abb_dict)
-    logger.debug(f"[process_and_display] Abbreviations objects created: {len(doc_abbs)}")
     
     # Store variables in session
     request.session['doc_abbs'] = doc_abbs
@@ -240,9 +247,9 @@ def process_and_display(request: HttpRequest) -> HttpResponse:
 def make_abbreviation_table(
     request: HttpRequest
     ) -> Union[HttpResponse, JsonResponse]:
+    logger.debug(f"make_abbreviation_table function called")
     try:
         processed_doc_abbs = get_processed_doc_abbs(request)
-        logger.debug(f"[make_abbreviation_table] processed_doc_abbs: {processed_doc_abbs}")
         
         if not processed_doc_abbs:
             return JsonResponse({
@@ -250,6 +257,9 @@ def make_abbreviation_table(
                 'error': 'Нет аббревиатур для генерации таблицы'
             }, status=400)
 
+        processed_doc_abbs = formatter.clean_and_sort_abbreviations(
+            processed_doc_abbs
+        )
         # Generate document
         file_stream = io.BytesIO()
         doc = generator.generate_document(processed_doc_abbs)
