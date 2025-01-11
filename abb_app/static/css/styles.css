@@ -46,7 +46,7 @@ body {
    ========================================================================== */
 h2 {
     color: var(--bg-accent);
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     background-color: var(--primary-color);
     border-radius: var(--border-radius);
     margin: 2rem 0;
@@ -66,6 +66,14 @@ h2 {
 /* ==========================================================================
    Abbreviation Cards
    ========================================================================== */
+
+/*Card*/
+.abbreviation-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;  /* Adds space between flex items */
+}
+
 .abbreviation-item {
     background: var(--bg-accent);
     border-radius: var(--border-radius);
@@ -80,20 +88,40 @@ h2 {
 }   
 
 /* Card Header */
-.abb-title {
+.abb-title { 
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0;
     border-radius: var(--border-radius);
     transition: background-color var(--transition-fast);
 }
 
 .abb-title-left {
     display: flex;
+    white-space: nowrap;
     align-items: center;
-    gap: 1rem;
+    transition: padding-left var(--transition-fast);
+}
+
+.abb-title-left.moved {
+    padding-left: 16px; 
+}
+
+.status-icon {
+    width: 24px;
+    height: 24px;
+    padding: 0 8px 0 0;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+
+.abb-title-left.moved .status-icon {
+    opacity: 1;
 }
 
 .abb-title:hover {
@@ -112,20 +140,21 @@ h2 {
     color: var(--text-primary);
 }
 
-.description-text {
-    color: var(--text-primary);
+.description-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
-/* Card Content */
-.abb-content {
-    transition: var(--transition-slow), opacity var(--transition-slow);
-    overflow: hidden;
+.description-text {
+    white-space: normal;
+    padding: 0 0 0 8px;
 }
 
 /* Context Items */
 .context-item {
     background-color: var(--bg-accent);
-    padding: 1px 15px;
+    padding: 0 24px;
     margin: 1px 0;
     border-radius: var(--border-radius);
     font-size: 0.95rem;
@@ -133,7 +162,7 @@ h2 {
 }
 
 .context-item p {
-    margin: 0.5rem 0;
+    margin: 8px 0px;
 }
 
 /* ==========================================================================
@@ -142,14 +171,14 @@ h2 {
 .input-group {
     display: flex;
     gap: 0.5rem;
-    padding: 1rem;
+    margin: 0 24px;
     background-color: var(--bg-accent);
     border-radius: var(--border-radius);
 }
 
 .input-group input {
     flex-grow: 1;
-    padding: 0.75rem;
+    padding: 0.75rem 1.5rem;
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     font-size: 0.95rem;
@@ -159,13 +188,22 @@ h2 {
 .input-group input:focus {
     outline: none;
     border-color: var(--bg-accent-hover);
-    box-shadow: 0 0 0 3px rgba(166, 134, 106, 0.1);
+    box-shadow: var(--shadow-sm);
 }
 
 /* ==========================================================================
    Buttons
    ========================================================================== */
 
+/* Toggle button */
+.toggle-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 16px 24px;
+    color: var(--text-primary);
+}
    /* Base Button Styles */
 .btn-base, .input-group button, .generate-btn, .btn-select-option {
     padding: 0.75rem 1.5rem;
@@ -178,11 +216,26 @@ h2 {
     transition: var(--transition-fast);
     letter-spacing: 0.5px;
     color: var(--bg-light);
-    text-decoration: none;
 }
 
 /* Action Buttons (Add/Remove) */
-.input-group button[onclick*="addAbbreviation"] {
+.btn-success {
+    background-color: var(--success-color);
+}
+
+.btn-success:hover {
+    background-color: var(--success-hover);
+}
+
+.btn-skip {
+    background-color: var(--danger-color);
+}
+
+.btn-skip:hover {
+    background-color: var(--danger-hover);
+}
+
+/* .input-group button[onclick*="addAbbreviation"] {
     background-color: var(--success-color);
 }
 
@@ -196,7 +249,7 @@ h2 {
 
 .input-group button[onclick*="skipAbbreviation"]:hover {
     background-color: var(--danger-hover);
-}
+} */
 
 /* Generate Table Section */
 .generate-table-section {
@@ -219,11 +272,14 @@ h2 {
 
 /* Select Option Buttons */
 .btn-select-option {
+    text-align: left;
     background-color: var(--bg-light);
     border: 1px solid var(--border-color);
-    text-align: left;
-    transition: background-color 0.3s;
+    border-radius: var(--border-radius);
     color: var(--text-primary);
+    cursor: pointer;
+    transition: background-color 0.3s;
+    margin: 0 24px;
 }
 
 .btn-select-option:hover {
@@ -231,52 +287,8 @@ h2 {
 }
 
 /* ==========================================================================
-   Status Icons
+   Tooltip
    ========================================================================== */
-.status-icon {
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-}
-
-/* ==========================================================================
-   Mixed Characters Section
-   ========================================================================== */
-.abbreviation-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;  /* Adds space between flex items */
-}
-
-.abbreviation-item {
-    background: var(--bg-accent);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    box-shadow: var(--shadow-sm);
-    transition: var(--transition-normal);
-}
-.abbreviation-item:hover {
-    box-shadow: var(--shadow-md);
-}  
-
-.abbreviation-item h4 {
-    padding: 0 0 0 16px;
-    margin: 0px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.description-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    padding: 1rem;
-    background-color: var(--bg-accent);
-    border-radius: var(--border-radius);
-}
 
 .red {
     color: var(--danger-color);
@@ -291,7 +303,7 @@ h2 {
 
 .tooltip .tooltiptext {
     visibility: hidden;
-    background-color: var(--bg-accent-hover);
+    background-color: var(--primary-color);
     color: var(--bg-light);
     text-align: center;
     border-radius: 8px;
@@ -300,8 +312,8 @@ h2 {
     z-index: 1;
     bottom: 120%;  /* Space between text and tooltip */
     left: 50%;
-    transform: translateX(0%);
-    opacity: 0;
+    transform: translateY(10%);
+    opacity: 10;
     transition: opacity var(--transition-fast), transform var(--transition-fast);
     white-space: nowrap;
     box-shadow: var(--shadow-md);
@@ -316,7 +328,7 @@ h2 {
 }
 
 /* ==========================================================================
-   Share Section
+   Upload Section
    ========================================================================== */
 .upload-container {
     display: flex;

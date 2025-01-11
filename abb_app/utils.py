@@ -296,7 +296,7 @@ class TextProcessor:
         for match in matches:
             start = max(0, match.start() - window)
             end = min(len(text), match.end() + window)
-            snippet = text[start:end]
+            snippet = "..." + text[start:end] + "..."
             
             if find_all:
                 contexts.add(snippet)
@@ -610,9 +610,7 @@ class CharacterValidator:
 
 def compare_abbreviations(
         old_abbs: List[Abbreviation],
-        new_abbs: List[Abbreviation],
-        compare_missing: bool = True,
-        compare_new: bool = True
+        new_abbs: List[Dict[str, str]],
     ) -> Dict[str, List[Abbreviation]]:
     """
     Compare new and old abbreviation tables.
@@ -622,31 +620,25 @@ def compare_abbreviations(
     """
     results: Dict[str, List[Abbreviation]] = {}
 
-    if not new_abbs:
-        results['missing_abbs'] = old_abbs
-        results['new_found'] = []
-        return results
-    
     # Create sets of abbreviations for efficient comparison
     old_abb_set = {abb['abbreviation'] for abb in old_abbs}
     new_abb_set = {abb['abbreviation'] for abb in new_abbs}
 
-    if compare_missing:
-        # Find abbreviations that are in old but not in new
-        missing_abbs = [
-            abb for abb in old_abbs 
-            if abb['abbreviation'] not in new_abb_set
-        ]
-        results['missing_abbs'] = missing_abbs
-
-    if compare_new:
-        # Find abbreviations that are in new but not in old
-        new_found = [
-            abb for abb in new_abbs 
-            if abb['abbreviation'] not in old_abb_set
-        ]
-        results['new_found'] = new_found
-
+    # Find abbreviations that are in old but not in new
+    results['missing_abbs'] = [
+        abb for abb in old_abbs 
+        if abb['abbreviation'] not in new_abb_set
+    ]
+    # Wrap description in a list to match the structure of old_abbs
+    results['new_found'] = [
+        {
+            'abbreviation': abb['abbreviation'],
+            'descriptions': [abb['description']]  
+        }
+        for abb in new_abbs 
+        if abb['abbreviation'] not in old_abb_set
+    ]
+    
     return results
 
 # -----------------------------------------------------------------------------

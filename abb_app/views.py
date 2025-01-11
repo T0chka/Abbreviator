@@ -19,6 +19,7 @@ from typing import Dict, List, Optional, Union, Any
 from datetime import datetime, timedelta
 
 from .utils import (
+    Abbreviation,
     load_abbreviation_dict,
     AbbreviationTableExtractor,
     TextProcessor,
@@ -130,39 +131,15 @@ def parse_request_json(request: HttpRequest) -> Dict[str, Any]:
         return JsonResponse({'success': False, 'error': 'Invalid JSON'})
     return data
 
-def get_session_data(
-        request: HttpRequest,
-        keys: Union[str, List[str]],
-        default: Optional[Any] = []
-        ) -> Union[Any, Dict[str, Any]]:
-    """
-    Get data from session by one or several keys.
-    """
-    if isinstance(keys, list):
-        return {key: request.session.get(key, default) for key in keys}
-    return request.session.get(keys, default)
-
-def set_session_data(
-        request: HttpRequest,
-        data: Dict[str, Any]
-        ) -> None:
-    """
-    Set several values in session at once.
-    """
-    for key, value in data.items():
-        request.session[key] = value
-
 def get_processed_doc_abbs(request: HttpRequest) -> List[Dict[str, Any]]:
     """
     Extract and process abbreviations with selected descriptions from session.
     """
-    session_data = get_session_data(request, ['doc_abbs'])
-    doc_abbs = session_data.get('doc_abbs', [])
-    
+    doc_abbs = request.session.get('doc_abbs', [])    
     processed_doc_abbs = [
         {
             'abbreviation': abb['abbreviation'],
-            'description': abb['selected_description']
+            'description': abb['selected_description'] 
         }
         for abb in doc_abbs
         if abb.get('selected_description') is not None
@@ -172,10 +149,7 @@ def get_processed_doc_abbs(request: HttpRequest) -> List[Dict[str, Any]]:
 
 @require_http_methods(["POST"])
 def update_difference_section(request: HttpRequest) -> HttpResponse:
-    session_data = get_session_data(request, [
-        'initial_abbs'
-    ])
-    initial_abbs = session_data['initial_abbs']
+    initial_abbs: List[Abbreviation] = request.session.get('initial_abbs', [])
 
     # Compare abbs with descriptions with initial abbreviations
     processed_doc_abbs = get_processed_doc_abbs(request)
@@ -187,11 +161,34 @@ def update_difference_section(request: HttpRequest) -> HttpResponse:
         })
 
     changes = compare_abbreviations(old_abbs=initial_abbs, new_abbs=processed_doc_abbs)
-    
+
+    logger.debug(f"[update_difference_section] changes: {changes}")
     return render(request, 'partials/differences_section.html', {
         'missing_abbs': changes.get('missing_abbs', []),
         'new_found': changes.get('new_found', []),
     })
+
+def update_abbreviation(request: HttpRequest) -> JsonResponse:
+    data = parse_request_json(request)
+    abb = data.get('abbreviation')
+    description = data.get('description')
+    action = data.get('action')
+
+    doc_abbs: List[Abbreviation] = request.session.get('doc_abbs', [])
+    abb_entry = next(
+        (entry for entry in doc_abbs if entry['abbreviation'] == abb), None
+    )
+
+    if action == 'add':
+        abb_entry['selected_description'] = description
+
+    elif action == 'skip':
+        abb_entry['selected_description'] = None
+
+    request.session['doc_abbs'] = doc_abbs
+
+    return JsonResponse({'success': True})
+    
 
 def process_and_display(request: HttpRequest) -> HttpResponse:
     logger.debug(f"[process_and_display] Session ID: {request.session.session_key}")
@@ -228,14 +225,12 @@ def process_and_display(request: HttpRequest) -> HttpResponse:
     logger.debug(f"[process_and_display] Loaded initial abbreviations: {len(initial_abbs)}")
     
     # Process abbreviations
-    doc_abbs = process_abbreviations(doc, abb_dict)
+    doc_abbs: List[Abbreviation] = process_abbreviations(doc, abb_dict)
     logger.debug(f"[process_and_display] Abbreviations objects created: {len(doc_abbs)}")
     
     # Store variables in session
-    set_session_data(request, {
-        'doc_abbs': doc_abbs,
-        'initial_abbs': initial_abbs
-    })
+    request.session['doc_abbs'] = doc_abbs
+    request.session['initial_abbs'] = initial_abbs
     
     return render(request, 'content.html', {
         'doc_abbs': doc_abbs
@@ -247,6 +242,8 @@ def make_abbreviation_table(
     ) -> Union[HttpResponse, JsonResponse]:
     try:
         processed_doc_abbs = get_processed_doc_abbs(request)
+        logger.debug(f"[make_abbreviation_table] processed_doc_abbs: {processed_doc_abbs}")
+        
         if not processed_doc_abbs:
             return JsonResponse({
                 'success': False, 

@@ -57,7 +57,75 @@
             } catch (error) {
                 alert(`Failed to update difference section: ${error.message}`);
             }
-        }        
+        }
+
+        async function handleAbbreviation(abb, description = null, action) {
+            console.log('[handleAbbreviation] called with:', {abb, description, action});
+            
+            if (action === 'add' && !description) {
+                description = document.getElementById(`desc_${abb}`).value.trim();
+                if (!description) return;
+            }
+
+            try {
+                const response = await fetchWrapper('{% url "update_abbreviation" %}', {
+                    abbreviation: abb,
+                    description: description,
+                    action: action
+                });
+
+                if (response.ok) {
+                    updateAbbreviationUI(abb, description, action);
+                    toggleAbbreviationContent(abb, true);
+                    await updateDifferenceSection();
+                } else {
+                    throw new Error(response.data?.error || 'Failed to update abbreviation');
+                }
+            } catch (error) {
+                alert(`Failed to handle abbreviation: ${error.message}`);
+            }
+        }
+        
+        function updateAbbreviationUI(abbreviation, description, action) {
+            console.log('[updateAbbreviationUI] abbreviation:', abbreviation,
+            'description:', description, 'action:', action);
+            const descriptionText = document.getElementById(`description_text_${abbreviation}`);
+            const statusIcon = document.getElementById(`status_icon_${abbreviation}`);
+            const addBtn = document.getElementById(`add_btn_${abbreviation}`);
+            const titleLeft = document.querySelector(`.abb-title-left[data-abb="${abbreviation}"]`);
+            const content = document.getElementById(`content_${abbreviation}`);
+            
+            if (action === 'skip') {
+                descriptionText.textContent = '- (убрано)';
+                statusIcon.textContent = '✗';
+                addBtn.textContent = '✓';
+            } else {  // add или edit
+                descriptionText.textContent = `- ${description}`;
+                statusIcon.textContent = '✓';
+                addBtn.textContent = '✓';
+            }
+            // Collapse the section and move the title
+            content.style.display = 'none';
+            titleLeft.classList.add('moved');
+            document.getElementById(`toggle_btn_${abbreviation}`).textContent = '▶';
+        }
+
+        function toggleAbbreviationContent(abb, forceCollapse = false) {
+            console.log('[toggleAbbreviationContent] called with abb:', abb, 'forceCollapse:', forceCollapse);
+            const content = document.getElementById(`content_${abb}`);
+            const toggleBtn = document.getElementById(`toggle_btn_${abb}`);
+            const titleLeft = document.querySelector(`.abb-title-left[data-abb="${abb}"]`);
+            
+            if (window.getComputedStyle(content).display === 'none' && !forceCollapse) {
+                content.style.display = 'block';
+                toggleBtn.textContent = '▼';
+                titleLeft.classList.remove('moved');
+            } else {
+                content.style.display = 'none';
+                toggleBtn.textContent = '▶';
+                titleLeft.classList.add('moved');
+            }
+        }
 
         async function generateAbbreviationTable() {
             console.log('[generateAbbreviationTable] called');
@@ -67,6 +135,7 @@
 
                 if (!response.ok) {
                     throw new Error(response.data?.error || 'Неизвестная ошибка');
+                    console.log(response.data);
                 }
 
                 const url = window.URL.createObjectURL(response.data);
@@ -81,6 +150,7 @@
                 alert(`Не удалось сгенерировать таблицу: ${error.message}`);
             }
         }
+
     </script>
 </head>
 <body>
@@ -89,12 +159,104 @@
         <div id="differences-section">
             {% include 'partials/differences_section.html' %}
         </div>
+
         <script>
+            // Call updateDifferenceSection when the page loads
             document.addEventListener('DOMContentLoaded', async () => {
-                await updateDifferenceSection();
+                try {
+                    await updateDifferenceSection();
+                } catch (error) {
+                    console.error('Failed to load initial difference section:', error);
+                }
             });
         </script>
     </div>
+
+    <!-- Section with abbreviation list -->
+    <h2>Добавление сокращений и расшифровок</h2>
+    <div class="abbreviation-list">
+        {% for abb in doc_abbs %}
+        <div class="abbreviation-item">
+            <!-- Clickable title area -->
+            <div class="abb-title" onclick="toggleAbbreviationContent('{{ abb.abbreviation }}')">
+                <div class="abb-title-left" data-abb="{{ abb.abbreviation }}">
+                    <!-- Status icon -->
+                    <span class="status-icon" id="status_icon_{{ abb.abbreviation }}">
+                        {% if abb.selected_description %}✓{% endif %}
+                    </span>
+
+                    <!-- Abbreviation with tooltip if highlighted exists -->
+                    {% if abb.highlighted %}
+                    <div class="abb-description">
+                        <h4>
+                            {% spaceless %}
+                            {% for char in abb.highlighted %}
+                                {% if char.mismatch %}
+                                <span class="tooltip red">{{ char.char }}<span class="tooltiptext">
+                                    {{ char.tooltip }}</span></span>
+                                {% else %}
+                                <span>{{ char.char }}</span>
+                                {% endif %}
+                            {% endfor %}
+                            {% endspaceless %}
+                        </h4>
+                    </div>
+                    {% else %}
+                    <div class="abb-description">
+                        <h4>{{ abb.abbreviation }}</h4>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Description text -->
+                    <span class="description-text" id="description_text_{{ abb.abbreviation }}">
+                        {% if abb.selected_description %}
+                            - {{ abb.selected_description }}
+                        {% endif %}
+                    </span>
+                </div>
+                
+                <!-- Toggle button -->
+                <button class="toggle-btn" id="toggle_btn_{{ abb.abbreviation }}">▼</button>
+            </div>
+
+            <!-- Collapsible content -->
+            <div class="abb-content" id="content_{{ abb.abbreviation }}">
+                <!-- Description options -->
+                <div class="description-options">
+                    {% if abb.descriptions %}
+                        {% for description in abb.descriptions %}
+                            <button class="btn-select-option" 
+                                    onclick="handleAbbreviation('{{ abb.abbreviation }}', '{{ description }}', 'add')">
+                                {{ description }}
+                            </button>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Custom description input -->
+                    <div class="input-group" id="input_group_{{ abb.abbreviation }}">
+                        <input type="text" id="desc_{{ abb.abbreviation }}" placeholder="Введите расшифровку">
+                        <button onclick="handleAbbreviation('{{ abb.abbreviation }}', null, 'add')" id="add_btn_{{ abb.abbreviation }}" class="btn-base btn-success">
+                            ✓
+                        </button>
+                        <button onclick="handleAbbreviation('{{ abb.abbreviation }}', null, 'skip')" id="skip_btn_{{ abb.abbreviation }}" class="btn-base btn-skip">
+                            ✗
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Contexts section -->
+                {% if abb.contexts %}
+                    {% for context in abb.contexts %}
+                        <div class="context-item">
+                            <p>{{ context }}</p>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
 
     <!-- Section with generate table button -->
     <div class="generate-table-section">
