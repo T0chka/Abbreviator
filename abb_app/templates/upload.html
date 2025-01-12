@@ -65,6 +65,7 @@
         </div>
     </div>
 <script>
+    
     const uploadBox = document.querySelector('.upload-container');
 
     uploadBox.addEventListener('dragover', (e) => {
@@ -77,17 +78,49 @@
     uploadBox.addEventListener('drop', (e) => {
         e.preventDefault();
         const files = e.dataTransfer.files;
-        document.getElementById('fileInput').files = files;
-        alert(`File "${files[0].name}" selected.`);
+        const file = files[0];
+        
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.docx')) {
+            alert('Пожалуйста, загрузите файл формата .docx');
+            return;
+        }
+        
+        const maxSize = 1048576; // 1MB in bytes
+        if (file.size > maxSize) {
+            alert(`Файл слишком большой. Максимальный размер: 1MB`);
+            return;
+        }
+        
+        const fileInput = document.getElementById('fileInput');
+        fileInput.files = files;
+        document.getElementById('uploadForm').submit();
     });
 
+    function checkFileSize(file) {
+        const maxSize = 1048576; // 1MB in bytes
+        if (file.size > maxSize) {
+            alert(`Файл слишком большой. Максимальный размер: 1MB`);
+            return false;
+        }
+        return true;
+    }
     function copyShareLink() {
         const shareLink = document.getElementById('shareLink');
         shareLink.select();
         document.execCommand('copy');
         alert('Ссылка скопирована!');
     }
+
     function autoSubmitForm() {
+        const fileInput = document.getElementById('fileInput');
+        const file = fileInput.files[0];
+        
+        if (!checkFileSize(file)) {
+            fileInput.value = '';
+            return;
+        }
+        
         document.getElementById('uploadForm').submit();
     }
 

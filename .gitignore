@@ -44,5 +44,5 @@ Thumbs.db
 *.doc
 
 # Ignore Backup or Draft Data
-backend_scripts/
+abb_app/update_abb_dict
 media/*

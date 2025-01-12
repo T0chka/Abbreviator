@@ -21,10 +21,8 @@ from .utils import (
     Abbreviation,
     load_abbreviation_dict,
     AbbreviationTableExtractor,
-    TextProcessor,
     process_abbreviations,
     AbbreviationFormatter,
-    CharacterValidator,
     compare_abbreviations,
     AbbreviationTableGenerator
 )
@@ -70,8 +68,7 @@ def upload_file(request: HttpRequest) -> HttpResponse:
         
         try:
             uploaded_file = request.FILES['uploaded_file']
-            logger.info(f"Uploading file: {uploaded_file.name},",
-                        f"size: {uploaded_file.size} bytes")
+            logger.info(f"Uploading file: {uploaded_file.name}, size: {uploaded_file.size} bytes")
             
             if uploaded_file.size > settings.FILE_UPLOAD_MAX_MEMORY_SIZE:
                 return render(request, 'upload.html', {

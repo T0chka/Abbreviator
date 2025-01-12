@@ -30,7 +30,7 @@ EXCLUDE_TERMS = {
     'ЦЕЛИ', 'РАБОТА', 'ИСТОРИЯ', 'ОЦЕНКА', 'СПОНСОР', 'ЗАДАЧИ', 'ДОСТУП',
     'КОНТРОЛЬ', 'ТЕРМИНОВ', 'ЗАПИСЕЙ', 'ГИПОТЕЗА', 'ДАННЫМИ', 'ДЕЙСТВИЕ',
     'ДАННЫМ/ДОКУМЕНТАЦИИ', 'ДЛЯ', 'ФОРМА', 'ВВЕДЕНИЕ', 'СВОЙСТВА', 'РЕЗЮМЕ',
-    'ДАННЫХ', 'ЧЕЛОВЕКА'
+    'ДАННЫХ', 'ЧЕЛОВЕКА', 'ОБЩЕСТВО', 'ЦЕНТР', 'АКТИВНЫХ', 'ВЕЩЕСТВ'
 }
 
 class Abbreviation(TypedDict):
@@ -617,7 +617,7 @@ class CharacterValidator:
 
 def compare_abbreviations(
         old_abbs: List[Abbreviation],
-        new_abbs: List[Dict[str, str]],
+        new_abbs: Union[List[Dict[str, str]], List[Abbreviation]],
     ) -> Dict[str, List[Abbreviation]]:
     """
     Compare new and old abbreviation tables.
@@ -629,6 +629,14 @@ def compare_abbreviations(
 
     # Create sets of abbreviations for efficient comparison
     old_abb_set = {abb['abbreviation'] for abb in old_abbs}
+    if new_abbs and isinstance(new_abbs[0], dict):
+        if 'description' in new_abbs[0]:
+            get_descriptions = lambda abb: [abb['description']]  # Wrap in list
+        elif 'descriptions' in new_abbs[0]:
+            get_descriptions = lambda abb: abb['descriptions']  # Use as is
+        else:
+            raise ValueError("Invalid format for new_abbs")
+
     new_abb_set = {abb['abbreviation'] for abb in new_abbs}
 
     # Find abbreviations that are in old but not in new
@@ -640,9 +648,9 @@ def compare_abbreviations(
     results['new_found'] = [
         {
             'abbreviation': abb['abbreviation'],
-            'descriptions': [abb['description']]  
+            'descriptions': get_descriptions(abb)
         }
-        for abb in new_abbs 
+        for abb in new_abbs
         if abb['abbreviation'] not in old_abb_set
     ]
     
