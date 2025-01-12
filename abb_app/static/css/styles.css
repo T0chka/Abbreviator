@@ -236,22 +236,6 @@ h2 {
     background-color: var(--danger-hover);
 }
 
-/* .input-group button[onclick*="addAbbreviation"] {
-    background-color: var(--success-color);
-}
-
-.input-group button[onclick*="addAbbreviation"]:hover {
-    background-color: var(--success-hover);
-}
-
-.input-group button[onclick*="skipAbbreviation"] {
-    background-color: var(--danger-color);
-}
-
-.input-group button[onclick*="skipAbbreviation"]:hover {
-    background-color: var(--danger-hover);
-} */
-
 /* Generate Table Section */
 .generate-table-section {
     margin: 2rem 0;
@@ -346,7 +330,7 @@ h2 {
 }
 
 .upload-container:hover {
-    background-color: var(--bg-accent);
+    background-color: var(--bg-accent-hover);
 }
 
 .upload-container svg {

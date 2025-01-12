@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Upload and View Document</title>
+    <title>Upload Document</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
@@ -17,10 +17,10 @@
             {% endfor %}
         </div>
         {% endif %}
-
+            
         <!-- Upload Section -->
-        <div class="section">
-            <h2>Добро пожаловать в Аббревиатор!</h2>
+        <h2>Добро пожаловать в Аббревиатор!</h2>
+        <div class="abbreviation-item" style="padding-top: 16px;">
             <div class="upload-container">
                 <label for="fileInput">
                     <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -52,6 +52,7 @@
                     {% endwith %}
                 {% endif %}
             </div>
+            <div style="height: 24px;"></div>
 
             <!-- Loading Overlay -->    
             <div id="loading-overlay" style="display: none;">
