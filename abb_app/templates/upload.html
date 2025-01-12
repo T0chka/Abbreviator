@@ -105,11 +105,38 @@
         }
         return true;
     }
+    
     function copyShareLink() {
         const shareLink = document.getElementById('shareLink');
-        shareLink.select();
-        document.execCommand('copy');
-        alert('Ссылка скопирована!');
+        
+        if (navigator.clipboard) {
+            // Use Clipboard API
+            navigator.clipboard.writeText(shareLink.value || shareLink.innerText)
+                .catch((err) => {
+                    console.error('Failed to copy text: ', err);
+                    alert('Не удалось скопировать ссылку.');
+                });
+        } else {
+            // Fallback for older browsers
+            const range = document.createRange();
+            const selection = window.getSelection();
+            range.selectNode(shareLink);
+            selection.removeAllRanges();
+            selection.addRange(range);
+
+            try {
+                const successful = document.execCommand('copy');
+                if (!successful) {
+                    alert('Не удалось скопировать ссылку.');
+                }
+            } catch (err) {
+                console.error('Fallback: Unable to copy', err);
+                alert('Не удалось скопировать ссылку.');
+            }
+
+            // Cleanup
+            selection.removeAllRanges();
+        }
     }
 
     function autoSubmitForm() {

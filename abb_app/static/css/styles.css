@@ -52,6 +52,7 @@ h2 {
     margin: 2rem 0;
     font-weight: 600;
     box-shadow: var(--shadow-md);
+    text-align: center;
 }
 
 /* ==========================================================================
