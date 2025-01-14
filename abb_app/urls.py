@@ -6,11 +6,13 @@ from .views import (
     upload_file, process_file_with_session,
     update_difference_section,
     update_abbreviation,
-    make_abbreviation_table
+    make_abbreviation_table,
+    test_redirect
 )
 
 urlpatterns = [
     path('', upload_file, name='home'),
+    path('test-redirect/', test_redirect, name='test_redirect'),
     path('upload/', upload_file, name='upload_file'),
     path('process/<str:session_id>/', process_file_with_session, name='process_file_with_session'),
     path('update-difference-section/', update_difference_section, name='update_difference_section'),

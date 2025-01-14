@@ -39,6 +39,19 @@ if not logger.hasHandlers():
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
 
+def test_redirect(request: HttpRequest) -> HttpResponse:
+    logger.info("Test redirect view called")  # Лог вызова вьюшки
+    print("Test redirect view called")       # Лог для вывода в консоль
+    try:
+        response = redirect('upload_file')  # Редирект на существующий маршрут
+        logger.info("Redirecting to 'upload_file'")  # Лог успешного редиректа
+        print("Redirecting to 'upload_file'")
+        return response
+    except Exception as e:
+        logger.error(f"Error in test_redirect: {e}")  # Лог ошибки
+        print(f"Error in test_redirect: {e}")
+        return HttpResponse("Error during redirect", status=500)
+
 def generate_session_id(file: UploadedFile) -> str:
     """Generate unique session ID based on file name and timestamp"""
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
@@ -104,9 +117,13 @@ def process_file_with_session(
         session_id: str
     ) -> HttpResponse:
     fs = FileSystemStorage()
+
+    print(f"Получен session_id: {session_id}")
+    print(f"Файлы в директории media: {fs.listdir('')}")
     
     for filename in fs.listdir('')[1]:
         if filename.startswith(session_id):
+            print(f"Файл найден: {filename}")
             request.session['uploaded_file_path'] = filename
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'success'})
