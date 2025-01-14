@@ -13,6 +13,11 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 
+#FORCE_SCRIPT_NAME = os.environ.get("SCRIPT_NAME")
+FORCE_SCRIPT_NAME = '/abbreviator/'
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -24,9 +29,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-6bds&z1+w@^6lordoifs(9f8so198eh7txm#5&0)m&+zpj#k=w'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
 
-ALLOWED_HOSTS = ['127.0.0.1']
+DEBUG = (os.environ.get('DEBUG', 'False') == 'True')
+ALLOWED_HOSTS = ['datadelic.dev']
+
 APPEND_SLASH = True
 
 # Application definition
@@ -38,7 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'abb_app'
+    'abb_app',
+    'django_extensions'
 ]
 
 MIDDLEWARE = [
@@ -114,11 +121,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = os.environ.get('STATIC_URL', 'static/')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'abb_app', 'static'),
 ]
-
+STATIC_ROOT = os.environ.get('STATIC_ROOT', None)
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
