@@ -30,7 +30,7 @@
                     </svg>
                     <p>Перетащите в это поле файл .docx</p>
                     <p>или <span class="highlight">выберите файл</span></p>
-                    <p>или <a href="{% url 'process_file_with_session' session_id=demo_session_id %}" class="highlight">запустите тест-драйв</a></p>
+                    <p>или <a href="{% url 'process_file_with_session' demo_session_id %}" class="highlight">запустите тест-драйв</a></p>
                 </label>
                 <form method="post" enctype="multipart/form-data" id="uploadForm" action="{% url 'upload_file' %}">
                     {% csrf_token %}

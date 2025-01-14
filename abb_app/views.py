@@ -69,15 +69,6 @@ def upload_file(request: HttpRequest) -> HttpResponse:
         try:
             uploaded_file = request.FILES['uploaded_file']
             logger.info(f"Uploading file: {uploaded_file.name}, size: {uploaded_file.size} bytes")
-            
-            if uploaded_file.size > settings.FILE_UPLOAD_MAX_MEMORY_SIZE:
-                return render(request, 'upload.html', {
-                    'error': (
-                        f'Файл слишком большой. Максимальный размер: '
-                        f'{settings.FILE_UPLOAD_MAX_MEMORY_SIZE / 1048576:.1f}MB'
-                        ),
-                    'demo_session_id': DEMO_SESSION_ID
-                })
 
             fs = FileSystemStorage()            
             session_id = generate_session_id(uploaded_file)
