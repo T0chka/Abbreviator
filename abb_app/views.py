@@ -39,18 +39,12 @@ if not logger.hasHandlers():
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
 
-def test_redirect(request: HttpRequest) -> HttpResponse:
-    logger.info("Test redirect view called")  # Лог вызова вьюшки
-    print("Test redirect view called")       # Лог для вывода в консоль
-    try:
-        response = redirect('upload_file')  # Редирект на существующий маршрут
-        logger.info("Redirecting to 'upload_file'")  # Лог успешного редиректа
-        print("Redirecting to 'upload_file'")
-        return response
-    except Exception as e:
-        logger.error(f"Error in test_redirect: {e}")  # Лог ошибки
-        print(f"Error in test_redirect: {e}")
-        return HttpResponse("Error during redirect", status=500)
+def test_home(request):
+    return HttpResponse("Hello, this is test home (no errors).", status=200)
+
+def test_redirect(request):
+    print("PATH_INFO =", request.META.get("PATH_INFO"))
+    return HttpResponse("debug", status=200)
 
 def generate_session_id(file: UploadedFile) -> str:
     """Generate unique session ID based on file name and timestamp"""

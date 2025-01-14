@@ -15,6 +15,7 @@ import os
 
 #FORCE_SCRIPT_NAME = os.environ.get("SCRIPT_NAME")
 FORCE_SCRIPT_NAME = '/abbreviator/'
+
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -30,10 +31,10 @@ SECRET_KEY = 'django-insecure-6bds&z1+w@^6lordoifs(9f8so198eh7txm#5&0)m&+zpj#k=w
 
 # SECURITY WARNING: don't run with debug turned on in production!
 
-DEBUG = (os.environ.get('DEBUG', 'False') == 'True')
-ALLOWED_HOSTS = ['datadelic.dev']
+DEBUG = True #(os.environ.get('DEBUG', 'False') == 'True')
+ALLOWED_HOSTS = ['datadelic.dev', '127.0.0.1']
 
-APPEND_SLASH = True
+#APPEND_SLASH = True
 
 # Application definition
 

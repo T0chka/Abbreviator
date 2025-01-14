@@ -7,7 +7,7 @@ from .views import (
     update_difference_section,
     update_abbreviation,
     make_abbreviation_table,
-    test_redirect
+    test_redirect, test_home
 )
 
 urlpatterns = [
