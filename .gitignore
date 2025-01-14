@@ -43,6 +43,9 @@ Thumbs.db
 *.docx
 *.doc
 
+!media/test_drive.docx
+
 # Ignore Backup or Draft Data
 abb_app/update_abb_dict
-media/*
+
+
