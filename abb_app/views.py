@@ -66,7 +66,8 @@ def upload_file(request: HttpRequest) -> HttpResponse:
         
         try:
             uploaded_file = request.FILES['uploaded_file']
-            logger.info(f"Uploading file: {uploaded_file.name}, size: {uploaded_file.size} bytes")
+            logger.info(f"Uploading file: {uploaded_file.name},"
+                        f" size: {uploaded_file.size} bytes")
 
             fs = FileSystemStorage()            
             session_id = generate_session_id(uploaded_file)
@@ -75,11 +76,17 @@ def upload_file(request: HttpRequest) -> HttpResponse:
             
             request.session['uploaded_file_path'] = filename
             
+            # Check if it's an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'session_id': session_id})
+            
             return render(request, 'upload.html', {
                 'session_id': session_id,
                 'demo_session_id': DEMO_SESSION_ID
             })
         except KeyError:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': 'File not selected'}, status=400)
             return render(request, 'upload.html', {
                 'error': 'File not selected',
                 'demo_session_id': DEMO_SESSION_ID

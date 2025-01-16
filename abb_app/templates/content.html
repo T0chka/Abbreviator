@@ -5,7 +5,7 @@
     <title>Process Document</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <link rel="icon" href="{% static 'images/favicon_Poppins.ico' %}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <script>
         async function fetchWrapper(url, data = null) {
             console.log('[fetchWrapper] called with URL:', url, 'and data:', data);
@@ -278,20 +278,20 @@
     <!-- Floating Action Buttons -->
     <div class="fab-container">
         <!-- Upload New File Button -->
-        <a href="{% url 'upload_file' %}" class="fab upload-fab tooltip tooltip-left">
-            <i class="fas fa-upload"></i>
+        <a href="{% url 'upload_file' %}" class="fab new-upload-fab tooltip tooltip-left">
+            <span class="material-icons">upload_file</span>
             <span class="tooltiptext">Загрузить новый файл</span>
         </a>
         
         <!-- Up Button -->
-        <a onclick="scrollToTop()" class="fab nav-fab tooltip tooltip-left">
-            <i class="fas fa-arrow-up"></i>
+        <a onclick="scrollToTop()" class="fab scroll-up-fab tooltip tooltip-left">
+            <span class="material-icons">arrow_upward</span>
             <span class="tooltiptext">Наверх</span>
         </a>
         
         <!-- Down Button -->
-        <a onclick="scrollToBottom()" class="fab nav-fab tooltip tooltip-left">
-            <i class="fas fa-arrow-down"></i>
+        <a onclick="scrollToBottom()" class="fab scroll-down-fab tooltip tooltip-left">
+            <span class="material-icons">arrow_downward</span>
             <span class="tooltiptext">Вниз</span>
         </a>
     </div>

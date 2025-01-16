@@ -4,6 +4,8 @@
 <head>
     <title>Upload Document</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="icon" href="{% static 'images/favicon_Poppins.ico' %}">
 </head>
 <body>
 
@@ -23,95 +25,182 @@
         <div class="abbreviation-item" style="padding-top: 16px;">
             <div class="upload-container">
                 <label for="fileInput">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 12v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"></path>
-                        <polyline points="16 6 12 2 8 6"></polyline>
-                        <line x1="12" y1="2" x2="12" y2="15"></line>
-                    </svg>
+                    <span class="material-icons" style="font-size: 48px;" id="icon">upload_file</span>
                     <p>Перетащите в это поле файл .docx</p>
                     <p>или <span class="highlight">выберите файл</span></p>
                     <p>или <a href="{% url 'process_file_with_session' demo_session_id %}" class="highlight">запустите тест-драйв</a></p>
                 </label>
                 <form method="post" enctype="multipart/form-data" id="uploadForm" action="{% url 'upload_file' %}">
                     {% csrf_token %}
-                    <input type="file" name="uploaded_file" id="fileInput" required style="display: none;" onchange="autoSubmitForm()">
+                    <input 
+                        type="file" 
+                        name="uploaded_file" 
+                        id="fileInput" 
+                        required 
+                        style="display: none;"
+                    >
                 </form>
             </div>
 
             <!-- Options Section -->
             <div class="description-options">
-                {% if session_id %}
-                    {% with share_url=request.scheme|add:'://'|add:request.get_host|add:'/process/'|add:session_id %}
-                        <input type="hidden" value="{{ share_url }}" id="shareLink">
-                        <button onclick="copyShareLink()" class="btn-select-option">
-                            Поделиться ссылкой на загруженный файл
-                        </button>
-                        <a href="{% url 'process_file_with_session' session_id=session_id %}" class="btn-select-option process-button">
-                            Перейти к обработке файла
-                        </a>
-                    {% endwith %}
-                {% endif %}
             </div>
             <div style="height: 24px;"></div>
-
-            <!-- Loading Overlay -->    
-            <div id="loading-overlay" style="display: none;">
-                <div class="loading-content">
-                    <div class="progress-bar">
-                        <div class="progress-fill"></div>
-                    </div>
-                    <p>Обработка файла...</p>
-                </div>
+        </div>
+    <!-- Loading Overlay -->    
+    <div id="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <p>Обработка файла</p>
+            <div class="dot-loader">
+                <span></span>
+                <span></span>
+                <span></span>
             </div>
         </div>
     </div>
-<script>
-    
-    const uploadBox = document.querySelector('.upload-container');
-
-    uploadBox.addEventListener('dragover', (e) => {
-        e.preventDefault();
-    });
-
-    uploadBox.addEventListener('dragleave', () => {
-    });
-
-    uploadBox.addEventListener('drop', (e) => {
-        e.preventDefault();
-        const files = e.dataTransfer.files;
-        const file = files[0];
-        
-        const fileName = file.name.toLowerCase();
-        if (!fileName.endsWith('.docx')) {
-            alert('Пожалуйста, загрузите файл формата .docx');
-            return;
-        }
-        
-        const maxSize = 1048576; // 1MB in bytes
-        if (file.size > maxSize) {
-            alert(`Файл слишком большой. Максимальный размер: 1MB`);
-            return;
-        }
-        
-        const fileInput = document.getElementById('fileInput');
-        fileInput.files = files;
-        document.getElementById('uploadForm').submit();
-    });
+<script>    
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadContainer = document.querySelector('.upload-container');
+    const icon = document.getElementById('icon');
+    const fileInput = document.getElementById('fileInput');
+    const descriptionOptions = document.querySelector('.description-options');
+    const uploadForm = document.getElementById('uploadForm');
 
     function checkFileSize(file) {
-        const maxSize = 1048576; // 1MB in bytes
+        const maxSize = 1048576; // 1MB
         if (file.size > maxSize) {
-            alert(`Файл слишком большой. Максимальный размер: 1MB`);
+            alert('Файл слишком большой. Максимальный размер: 1MB');
             return false;
         }
         return true;
     }
-    
-    function copyShareLink() {
-        const shareLink = document.getElementById('shareLink');
+
+    function checkFileExtension(fileName) {
+        if (!fileName.toLowerCase().endsWith('.docx')) {
+            alert('Пожалуйста, загрузите файл формата .docx');
+            return false;
+        }
+        return true;
+    }
+
+    function showButtons(sessionId) {
+        console.log('Showing buttons with sessionId:', sessionId);
+        const shareUrl = `${window.location.protocol}//${window.location.host}/process/${sessionId}`;
+        console.log('Generated shareUrl:', shareUrl);
         
+        descriptionOptions.innerHTML = `
+            <input type="hidden" value="${shareUrl}" id="shareLink">
+            <button onclick="copyShareLink()" class="btn-select-option">
+                Поделиться ссылкой на загруженный файл
+            </button>
+            <a href="/process/${sessionId}" class="btn-select-option process-button">
+                Перейти к обработке файла
+            </a>
+        `;
+
+        const processButton = descriptionOptions.querySelector('.process-button');
+        if (processButton) {
+            processButton.addEventListener('click', function(e) {
+                e.preventDefault();
+                const loadingOverlay = document.getElementById('loading-overlay');
+                loadingOverlay.style.display = 'flex';
+                window.location.href = this.href;
+                console.log('Processing file with sessionId:', sessionId);
+            });
+        }
+    }
+
+    function handleFileUpload(file) {
+        console.log('Handling file upload:', file ? file.name : 'No file');
+        if (!file) return;
+        
+        // Reset state
+        icon.textContent = 'upload_file';
+        descriptionOptions.innerHTML = '';
+
+        // Validate file
+        if (!checkFileExtension(file.name) || !checkFileSize(file)) {
+            return;
+        }
+
+        // If file was dragged, manually set it to the input
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        fileInput.files = dataTransfer.files;
+
+        // Update UI to show success
+        icon.textContent = 'download_done';
+        console.log('File validation passed, submitting form');
+
+        // Submit form to get session_id
+        const formData = new FormData(uploadForm);
+        fetch(uploadForm.action, {
+            method: 'POST',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Server response:', data);
+            if (data.session_id) {
+                showButtons(data.session_id);
+            } else {
+                console.error('No session_id in response');
+                alert('Ошибка при загрузке файла');
+            }
+        })
+        .catch(error => {
+            console.error('Error uploading file:', error);
+            alert('Ошибка при загрузке файла');
+        });
+    }
+
+    // Handle file input change
+    fileInput.addEventListener('change', function(e) {
+        console.log('File input change event triggered');
+        handleFileUpload(e.target.files[0]);
+    });
+
+    // Handle drag and drop
+    uploadContainer.addEventListener('drop', function(e) {
+        e.preventDefault();
+        console.log('File drop event triggered');
+        uploadContainer.classList.remove('drag-over');
+        handleFileUpload(e.dataTransfer.files[0]);
+    });
+
+    // Prevent opening file in browser when dragging
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        uploadContainer.addEventListener(eventName, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }, false);
+    });
+
+    // Highlight when file hovers over the block
+    uploadContainer.addEventListener('dragover', function() {
+        uploadContainer.classList.add('drag-over');
+    });
+    uploadContainer.addEventListener('dragleave', function() {
+        uploadContainer.classList.remove('drag-over');
+    });
+    uploadContainer.addEventListener('drop', function(e) {
+        uploadContainer.classList.remove('drag-over');
+    });
+
+    window.copyShareLink = function() {
+        const shareLink = document.getElementById('shareLink');
+        if (!shareLink) return;
+
+        // Modern method
         if (navigator.clipboard) {
-            // Use Clipboard API
             navigator.clipboard.writeText(shareLink.value || shareLink.innerText)
                 .catch((err) => {
                     console.error('Failed to copy text: ', err);
@@ -134,46 +223,10 @@
                 console.error('Fallback: Unable to copy', err);
                 alert('Не удалось скопировать ссылку.');
             }
-
-            // Cleanup
             selection.removeAllRanges();
         }
-    }
-
-    function autoSubmitForm() {
-        const fileInput = document.getElementById('fileInput');
-        const file = fileInput.files[0];
-        
-        if (!checkFileSize(file)) {
-            fileInput.value = '';
-            return;
-        }
-        
-        document.getElementById('uploadForm').submit();
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const processButton = document.querySelector('.process-button');
-        if (processButton) {
-            processButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                const loadingOverlay = document.getElementById('loading-overlay');
-                const progressFill = document.querySelector('.progress-fill');
-
-                loadingOverlay.style.display = 'flex';
-                
-                let progress = 0;
-                const interval = setInterval(() => {
-                    if (progress < 90) {
-                        progress += Math.random() * 15;
-                        progressFill.style.width = `${Math.min(progress, 90)}%`;
-                    }
-                }, 500);
-
-                window.location.href = this.href;
-            });
-        }
-    });
+    };
+});
 </script>
 
 </body>
