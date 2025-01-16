@@ -10,6 +10,7 @@ db.sqlite3
 # Virtual Environment
 venv/
 .venv/
+.env
 
 # Django Migrations
 **/migrations/
