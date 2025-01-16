@@ -47,5 +47,6 @@ Thumbs.db
 
 # Ignore Backup or Draft Data
 abb_app/update_abb_dict
+secret_key.txt
 
 

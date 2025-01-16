@@ -13,28 +13,25 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 import os
 
-#FORCE_SCRIPT_NAME = os.environ.get("SCRIPT_NAME")
-FORCE_SCRIPT_NAME = '/abbreviator/'
-
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-6bds&z1+w@^6lordoifs(9f8so198eh7txm#5&0)m&+zpj#k=w'
+SECRET_KEY = (
+    os.environ.get('SECRET_KEY') 
+    if 'SECRET_KEY' in os.environ 
+    else 'your-default-secret-key'
+)
 
-# SECURITY WARNING: don't run with debug turned on in production!
-
-DEBUG = True #(os.environ.get('DEBUG', 'False') == 'True')
+DEBUG = os.environ.get('DEBUG') == 'True' if 'DEBUG' in os.environ else True
 ALLOWED_HOSTS = ['datadelic.dev', '127.0.0.1']
 
-#APPEND_SLASH = True
+if not DEBUG:   
+    FORCE_SCRIPT_NAME = '/abbreviator/'
 
 # Application definition
 
@@ -45,15 +42,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'abb_app',
-    'django_extensions'
+    'abb_app'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
-    #'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
@@ -127,12 +122,13 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'abb_app', 'static'),
 ]
 STATIC_ROOT = os.environ.get('STATIC_ROOT', None)
+
 # Media files
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Maximum size of the entire request body (in bytes)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB (default 2.5MB)
+DATA_UPLOAD_MAX_MEMORY_SIZE = 1048576  # 1MB (default 2.5MB)
 
 # Maximum size of request body per file (in bytes)
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1048576  # 1MB (default 2.5MB)

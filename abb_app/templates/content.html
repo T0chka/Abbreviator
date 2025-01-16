@@ -4,6 +4,7 @@
 <head>
     <title>Process Document</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script>
         async function fetchWrapper(url, data = null) {
             console.log('[fetchWrapper] called with URL:', url, 'and data:', data);
@@ -151,6 +152,14 @@
             }
         }
 
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function scrollToBottom() {
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+
     </script>
 </head>
 <body>
@@ -192,7 +201,7 @@
                             {% spaceless %}
                             {% for char in abb.highlighted %}
                                 {% if char.mismatch %}
-                                <span class="tooltip red">{{ char.char }}<span class="tooltiptext">
+                                <span class="tooltip tooltip-right red">{{ char.char }}<span class="tooltiptext">
                                     {{ char.tooltip }}</span></span>
                                 {% else %}
                                 <span>{{ char.char }}</span>
@@ -258,11 +267,32 @@
     </div>
 
 
-    <!-- Section with generate table button -->
-    <div class="generate-table-section">
-        <button onclick="generateAbbreviationTable()" class="generate-btn">
+    <!-- Section with buttons for generating table and uploading new file -->
+    <div class="generate-buttons-section">
+        <a onclick="generateAbbreviationTable()" class="generate-btn">
             Сгенерировать таблицу аббревиатур
-        </button>
+        </a>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    <div class="fab-container">
+        <!-- Upload New File Button -->
+        <a href="{% url 'upload_file' %}" class="fab upload-fab tooltip tooltip-left">
+            <i class="fas fa-upload"></i>
+            <span class="tooltiptext">Загрузить новый файл</span>
+        </a>
+        
+        <!-- Up Button -->
+        <a onclick="scrollToTop()" class="fab nav-fab tooltip tooltip-left">
+            <i class="fas fa-arrow-up"></i>
+            <span class="tooltiptext">Наверх</span>
+        </a>
+        
+        <!-- Down Button -->
+        <a onclick="scrollToBottom()" class="fab nav-fab tooltip tooltip-left">
+            <i class="fas fa-arrow-down"></i>
+            <span class="tooltiptext">Вниз</span>
+        </a>
     </div>
 </body>
 </html>

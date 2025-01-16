@@ -4,16 +4,14 @@ import json
 import hashlib
 import logging
 
-from docx import Document
-
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import UploadedFile
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
-from django.conf import settings
 
+from docx import Document
 from typing import Dict, List, Union, Any
 from datetime import datetime, timedelta
 
@@ -39,20 +37,13 @@ if not logger.hasHandlers():
     logger.addHandler(logging.StreamHandler())
     logger.setLevel(logging.DEBUG)
 
-def test_home(request):
-    return HttpResponse("Hello, this is test home (no errors).", status=200)
-
-def test_redirect(request):
-    print("PATH_INFO =", request.META.get("PATH_INFO"))
-    return HttpResponse("debug", status=200)
-
 def generate_session_id(file: UploadedFile) -> str:
     """Generate unique session ID based on file name and timestamp"""
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
     content = f"{file.name}{timestamp}".encode()
     return hashlib.md5(content).hexdigest()[:12]
 
-def cleanup_old_files(exclude_id: str, max_hours: int = 1) -> None:
+def cleanup_old_files(exclude_id: str, max_hours: int = 0) -> None:
     """Remove old files from media directory"""
     fs = FileSystemStorage()
     now = datetime.now()
@@ -95,6 +86,7 @@ def upload_file(request: HttpRequest) -> HttpResponse:
             })
     
     # For GET request
+    request.session.flush()
     session_id = request.session.get(
         'uploaded_file_path', ''
         ).split('.')[0] if request.session.get(
@@ -112,9 +104,6 @@ def process_file_with_session(
     ) -> HttpResponse:
     fs = FileSystemStorage()
 
-    print(f"Получен session_id: {session_id}")
-    print(f"Файлы в директории media: {fs.listdir('')}")
-    
     for filename in fs.listdir('')[1]:
         if filename.startswith(session_id):
             print(f"Файл найден: {filename}")
@@ -137,7 +126,7 @@ def parse_request_json(request: HttpRequest) -> Dict[str, Any]:
 
 def get_processed_doc_abbs(request: HttpRequest) -> List[Dict[str, Any]]:
     """
-    Extract and process abbreviations with selected descriptions from session.
+    Extract and abbreviations with user-selected descriptions from session.
     """
     doc_abbs = request.session.get('doc_abbs', [])    
     processed_doc_abbs = [
@@ -147,8 +136,7 @@ def get_processed_doc_abbs(request: HttpRequest) -> List[Dict[str, Any]]:
         }
         for abb in doc_abbs
         if abb.get('selected_description') is not None
-    ]
-    
+    ]    
     return processed_doc_abbs
 
 @require_http_methods(["POST"])
@@ -176,6 +164,7 @@ def update_difference_section(request: HttpRequest) -> HttpResponse:
 
 def update_abbreviation(request: HttpRequest) -> JsonResponse:
     data = parse_request_json(request)
+    
     abb = data.get('abbreviation')
     description = data.get('description')
     action = data.get('action')
@@ -192,14 +181,13 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
         abb_entry['selected_description'] = None
 
     request.session['doc_abbs'] = doc_abbs
-
     return JsonResponse({'success': True})
     
 
 def process_and_display(request: HttpRequest) -> HttpResponse:
     logger.debug(f"process_and_display function called")
     logger.debug(f"Session ID: {request.session.session_key}")
-    logger.debug("Session data lengths: %s", {
+    logger.debug("Session data lengths before clearing: %s", {
         key: len(value) if hasattr(value, '__len__') else 'Not measurable'
         for key, value in request.session.items()
     })
@@ -211,9 +199,8 @@ def process_and_display(request: HttpRequest) -> HttpResponse:
                      {'error': 'Пожалуйста, загрузите новый файл.'})
     
     # Clear session but keep the file path
-    temp_file_path = file_path
     request.session.clear()
-    request.session['uploaded_file_path'] = temp_file_path
+    request.session['uploaded_file_path'] = file_path
     
     # Get full path to file
     file_path = FileSystemStorage().path(file_path)
