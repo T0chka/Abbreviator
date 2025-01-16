@@ -13,7 +13,7 @@
     --success-hover: color-mix(in srgb, var(--success-color) 80%, black);
     --danger-color: #f44336;
     --danger-hover: color-mix(in srgb, var(--danger-color) 80%, black);
-    
+    --link-color: #007bff;
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -62,6 +62,17 @@ h2 {
     min-height: 200px;
     max-height: 450px;
     overflow-y: auto;
+}
+
+.fixed-header {
+    position: sticky;
+    background-color: var(--bg-light);
+    top: 0;
+    padding: 20px 0;
+}
+
+.fixed-header h2 {
+    margin: 0;
 }
 
 /* ==========================================================================
@@ -285,7 +296,7 @@ h2 {
 /* FAB Container */
 .fab-container {
     position: fixed;
-    bottom: 30px;
+    bottom: 100px;
     right: 30px;
     display: flex;
     flex-direction: column;
@@ -428,7 +439,7 @@ h2 {
 }
 
 .upload-container .highlight {
-    color: #007bff;
+    color: var(--link-color);
     cursor: pointer;
     text-decoration: underline;
 }
@@ -475,13 +486,14 @@ h2 {
     }
 }
 
-.fixed-header {
-    position: sticky;
-    background-color: var(--bg-light);
-    top: 0;
-    padding: 20px 0;
-}
 
-.fixed-header h2 {
-    margin: 0;
+/* Footer */
+footer p{
+    position: fixed;
+    padding: 10px;
+    font-size: 12px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    text-align: center;
 }
