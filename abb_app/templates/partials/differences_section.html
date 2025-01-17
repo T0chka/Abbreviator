@@ -4,12 +4,16 @@
 
 <h3>Есть в исходном списке, но нет в новом</h3>
 <ul>
-    {% if missing_abbs %}
-        {% for old_abb in missing_abbs %}
-            <li>{{ old_abb.abbreviation }} - {{ old_abb.descriptions|join:", " }}</li>
-        {% endfor %}
+    {% if missing_abbs is not None %}
+        {% if missing_abbs %}
+            {% for old_abb in missing_abbs %}
+                <li>{{ old_abb.abbreviation }} - {{ old_abb.descriptions|join:", " }}</li>
+            {% endfor %}
+        {% else %}
+            <p>Все аббревиатуры из исходного списка присутствуют в новом списке</p>
+        {% endif %}
     {% else %}
-        <p>Все аббревиатуры из исходного списка присутствуют в новом списке</p>
+        <p>Исходный список аббревиатур не найден</p>
     {% endif %}
 </ul>
 

@@ -296,7 +296,7 @@ h2 {
 /* FAB Container */
 .fab-container {
     position: fixed;
-    bottom: 100px;
+    bottom: 115px;
     right: 30px;
     display: flex;
     flex-direction: column;
