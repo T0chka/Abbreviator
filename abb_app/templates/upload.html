@@ -85,7 +85,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function showButtons(sessionId) {
         console.log('Showing buttons with sessionId:', sessionId);
-        const shareUrl = `${window.location.protocol}//${window.location.host}/process/${sessionId}`;
+        // Get base URL from Django template
+        const processUrl = "{% url 'process_file_with_session' 'TEMP_ID' %}".replace('TEMP_ID', sessionId);
+        const shareUrl = window.location.origin + processUrl;
         console.log('Generated shareUrl:', shareUrl);
         
         descriptionOptions.innerHTML = `
@@ -93,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <button onclick="copyShareLink()" class="btn-select-option">
                 Поделиться ссылкой на загруженный файл
             </button>
-            <a href="/process/${sessionId}" class="btn-select-option process-button">
+            <a href="${processUrl}" class="btn-select-option process-button">
                 Перейти к обработке файла
             </a>
         `;
@@ -105,7 +107,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const loadingOverlay = document.getElementById('loading-overlay');
                 loadingOverlay.style.display = 'flex';
                 window.location.href = this.href;
-                console.log('Processing file with sessionId:', sessionId);
             });
         }
     }
