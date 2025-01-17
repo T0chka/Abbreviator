@@ -11,7 +11,6 @@ from typing import (
     TypedDict, Union, List, Dict, Set, Counter, Optional
 )
 from thefuzz import process, fuzz
-import logging
 
 ABB_DICT_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -240,6 +239,7 @@ class TextProcessor:
             if not skip:
                 relevant_text.append(para_text)
 
+        print(f"Found {len(relevant_text)} paragraphs")
         return " ".join(relevant_text)
 
     def extract_abbreviations(self, text: str) -> Counter[str]:
@@ -270,6 +270,7 @@ class TextProcessor:
                 and not (len(clean_match) > 8 and clean_match.isalpha())
                 ):
                 doc_abbs[clean_match] += 1
+        print(f"Found {len(doc_abbs)} abbreviations")
         return doc_abbs
 
     def _clean_abbreviation(self, match: str) -> str:
@@ -327,6 +328,7 @@ def process_abbreviations(
     raw_abbs = text_processor.extract_abbreviations(text)
     
     processed_abbs: List[Abbreviation] = []
+    print("Starting processing abbreviations")
     for abb, count in raw_abbs.items():
         # Find matching dictionary entry
         dict_entry = next(
@@ -346,12 +348,14 @@ def process_abbreviations(
             'status': None
         }
         
-        # Validate and update if needed
-        validation_result = validator.validate_abbreviation(abb, abb_dict)
-        if validation_result.get('correct_form'):
-            processed_abb['correct_form'] = validation_result['correct_form']
-            processed_abb['highlighted'] = validation_result['highlighted']
-            processed_abb['descriptions'] = validation_result['descriptions']
+        # Validate and update if it's 9 or less characters long
+        if len(abb) <= 15:
+            print(f"Validating {abb}")
+            validation_result = validator.validate_abbreviation(abb, abb_dict)
+            if validation_result.get('correct_form'):
+                processed_abb['correct_form'] = validation_result['correct_form']
+                processed_abb['highlighted'] = validation_result['highlighted']
+                processed_abb['descriptions'] = validation_result['descriptions']
             
         processed_abbs.append(processed_abb)
     
