@@ -113,7 +113,7 @@ def process_file_with_session(
 
     for filename in fs.listdir('')[1]:
         if filename.startswith(session_id):
-            print(f"Файл найден: {filename}")
+            print(f"Found file: {filename}")
             request.session['uploaded_file_path'] = filename
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'success'})
