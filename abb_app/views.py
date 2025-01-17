@@ -153,10 +153,20 @@ def update_difference_section(request: HttpRequest) -> HttpResponse:
     # Compare abbs with descriptions with initial abbreviations
     processed_doc_abbs = get_processed_doc_abbs(request)
     
-    # if processed_doc_abbs is empty, return only initial_abbs
+    if not processed_doc_abbs and not initial_abbs:
+        logger.debug(f"Both processed doc abbs and initial abbs are empty")
+        return render(request, 'partials/differences_section.html')
+    
     if not processed_doc_abbs:
+        logger.debug(f"Processed doc abbs is empty")
         return render(request, 'partials/differences_section.html', {
             'missing_abbs': initial_abbs
+        })
+    
+    if not initial_abbs:
+        logger.debug(f"Initial abbs is empty")
+        return render(request, 'partials/differences_section.html', {
+            'new_found': processed_doc_abbs
         })
 
     changes = compare_abbreviations(
