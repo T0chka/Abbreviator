@@ -26,7 +26,7 @@
     
     /* Typography */
     --font-stack: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-    --border-radius: 8px;
+    --border-radius: 4px;
 }
 
 /* ==========================================================================
@@ -54,6 +54,7 @@ h2 {
     font-weight: 600;
     box-shadow: var(--shadow-md);
     text-align: center;
+    text-wrap: balance;
 }
 
 /* ==========================================================================
@@ -157,6 +158,7 @@ h2 {
 .description-options {
     display: flex;
     flex-direction: column;
+    padding: 10px 0 0 0;
     gap: 0.5rem;
 }
 
@@ -317,8 +319,10 @@ h2 {
     transition: background var(--transition-slow);
     cursor: pointer;
     backdrop-filter: blur(5px);
+    position: relative;
 }
 
+/* Base style for icons, except for the dictionary */
 .fab span.material-icons {
     display: flex;
     align-items: center;
@@ -327,17 +331,78 @@ h2 {
     height: 100%;
 }
 
-.fab span.material-icons:hover {
-    transform: scale(1.2);
-    transition: var(--transition-normal);
+/* Specific FAB Styles */
+.scroll-up-fab, .scroll-down-fab, .dictionary-fab, .back-fab, .new-upload-fab {
+    color: var(--primary-color);
 }
 
-/* Specific FAB Styles */
-.new-upload-fab {
-    color: var(--success-color);
+/* Dictionary FAB */
+.dictionary-fab {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
 }
-.scroll-up-fab, .scroll-down-fab, .dictionary-fab, .moderation-fab, .back-fab {
-    color: var(--primary-color);
+
+.dictionary-fab span.material-icons-outlined,
+.dictionary-fab span.material-symbols-outlined {
+    top: 25%;
+    left: 25%;
+    position: absolute;
+    transition: opacity 0.5s ease;
+}
+
+.icon-book {
+    opacity: 1;
+    z-index: 1;
+}
+
+.icon-auto-stories {
+    opacity: 0;
+    z-index: 0;
+}
+
+/* On hover: fade out book_3, fade in auto_stories */
+.dictionary-fab:hover .icon-book {
+    opacity: 0;
+    z-index: 0;
+}
+
+.dictionary-fab:hover .icon-auto-stories {
+    opacity: 1;
+    z-index: 1;
+}
+
+.scroll-up-fab:hover span.material-icons {
+    transform: translateY(-5px); 
+}
+
+.scroll-down-fab:hover span.material-icons {
+    transform: translateY(5px);
+}
+
+.back-fab:hover span.material-icons {
+    transform: translateX(-5px);
+}
+
+@keyframes upload-pulse {
+    0% {
+        transform: scale(1);
+        color: var(--primary-color);
+    }
+    50% {
+        transform: scale(1.3);
+        color: var(--success-color);
+    }
+    100% {
+        transform: scale(1);
+        color: var(--primary-color);
+    }
+}
+
+.new-upload-fab:hover span.material-icons {
+    animation: upload-pulse 0.6s ease-in-out 1;
 }
 
 /* ==========================================================================
@@ -364,7 +429,7 @@ h2 {
     background-color: var(--primary-color);
     color: var(--bg-light);
     text-align: center;
-    border-radius: 8px;
+    border-radius: var(--border-radius);
     padding: 8px 12px;
     line-height: 1.2;
     position: absolute;
