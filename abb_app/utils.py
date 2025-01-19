@@ -352,7 +352,7 @@ def process_abbreviations(
         
         # Validate and update if it's 9 or less characters long
         if len(abb) <= 15:
-            print(f"Validating {abb}")
+            # print(f"Validating {abb}")
             validation_result = validator.validate_abbreviation(abb, abb_dict)
             if validation_result.get('correct_form'):
                 processed_abb['correct_form'] = validation_result['correct_form']

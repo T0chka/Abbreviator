@@ -7,8 +7,9 @@
     --bg-light: #ffffff; 
     --bg-accent: #f2eeec;
     --bg-accent-hover: color-mix(in srgb, var(--bg-accent) 80%, black);
+    --bg-accent2: #D3C5BF;
     --text-primary: #46413d;
-    --border-color: var(--text-primary);
+    --border: 1px solid var(--bg-accent-hover);
     --success-color: #64a863;
     --success-hover: color-mix(in srgb, var(--success-color) 80%, black);
     --danger-color: #f44336;
@@ -25,7 +26,7 @@
     
     /* Typography */
     --font-stack: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
-    --border-radius: 0px;
+    --border-radius: 8px;
 }
 
 /* ==========================================================================
@@ -192,7 +193,7 @@ h2 {
 .input-group input {
     flex-grow: 1;
     padding: 0.75rem 1.5rem;
-    border: 1px solid var(--border-color);
+    border: var(--border);
     border-radius: var(--border-radius);
     font-size: 0.95rem;
     transition: border-color var(--transition-fast);
@@ -253,11 +254,11 @@ h2 {
 .btn-select-option {
     text-align: left;
     background-color: var(--bg-light);
-    border: 1px solid var(--border-color);
+    border: var(--border);
     border-radius: var(--border-radius);
     color: var(--text-primary);
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: var(--transition-fast);
     margin: 0 24px;
 }
 
@@ -308,19 +309,14 @@ h2 {
 .fab {
     width: 50px;
     height: 50px;
-    border-radius: 50%;
-    border: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    line-height: 0;
-    text-decoration: none;
     background: rgba(255, 255, 255, 0.1);
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-md);
+    border-radius: 50%;
+    text-decoration: none;
+    border: none;
     transition: background var(--transition-slow);
     cursor: pointer;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(5px);
 }
 
 .fab span.material-icons {
@@ -332,8 +328,7 @@ h2 {
 }
 
 .fab span.material-icons:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.1);
+    transform: scale(1.2);
     transition: var(--transition-normal);
 }
 
@@ -341,7 +336,7 @@ h2 {
 .new-upload-fab {
     color: var(--success-color);
 }
-.scroll-up-fab, .scroll-down-fab {
+.scroll-up-fab, .scroll-down-fab, .dictionary-fab, .moderation-fab, .back-fab {
     color: var(--primary-color);
 }
 
@@ -410,7 +405,7 @@ h2 {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: 2px dashed var(--border-color);
+    border: 2px dashed var(--text-primary);
     padding: 40px;
     margin: 50px auto;
     width: 500px;
@@ -496,4 +491,147 @@ footer p{
     left: 0;
     right: 0;
     text-align: center;
+}
+
+/* ==========================================================================
+   Dictionary and Moderation Pages
+   ========================================================================== */
+   .dataTables_length {
+    margin-bottom: 20px; /* Spacing between table and show xx rows dropdown */
+}
+
+/* Show xx rows dropdown */
+.dataTables_wrapper .dataTables_length select {
+    color: var(--text-primary); 
+    border: var(--border) !important;
+}
+
+.dataTables_wrapper .dataTables_length select:focus {
+    outline: none;
+    border: var(--border) !important;
+    border-color: var(--bg-accent-hover) !important;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Info under table */
+.dataTables_wrapper .dataTables_info {
+    padding-top: 20px !important;
+}
+
+/* Pagination buttons */
+.dataTables_wrapper .dataTables_paginate .paginate_button,
+.dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
+    background: var(--bg-light) !important;
+    border: none !important;
+    color: var(--text-primary) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button:hover,
+.dataTables_wrapper .dataTables_paginate a.paginate_button:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button.next:hover,
+.dataTables_wrapper .dataTables_paginate .paginate_button.previous:hover:not(.disabled) {
+    background: var(--bg-accent) !important;
+    border: var(--border) !important;
+    border-radius: var(--border-radius);
+    color: var(--text-primary) !important;
+}
+
+.dataTables_wrapper .dataTables_paginate .paginate_button.current {
+    background: var(--bg-accent) !important;
+    border: var(--border) !important;
+    border-radius: var(--border-radius);
+    cursor: default;
+    color: var(--text-primary) !important;
+}
+
+/* Table header */
+#dictionary-table thead th {
+    background-color: var(--bg-accent);
+    text-align: center;
+}
+
+#dictionary-table thead tr:first-child th {
+    border-bottom: none;
+    padding: 10px;
+}
+
+#dictionary-table thead tr:last-child th {
+    padding: 0px 10px 10px 10px;
+    border-bottom: none;
+}
+
+/* Header border radius */
+table.dataTable thead th:first-child.sorting,
+table.dataTable thead th:first-child.sorting_asc,
+table.dataTable thead th:first-child.sorting_desc {
+    border-top-left-radius: var(--border-radius);
+}
+
+table.dataTable thead th.sorting_disabled {
+    border-top-right-radius: var(--border-radius);
+}
+
+table.dataTable thead tr.filter-group th:first-child {
+    border-bottom-left-radius: var(--border-radius);
+}
+table.dataTable thead tr.filter-group th:last-child {
+    border-bottom-right-radius: var(--border-radius);
+}
+
+/* Filter input */
+#dictionary-table thead .filter-group input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px;
+    border: var(--border);
+    border-radius: var(--border-radius);
+    color: var(--text-primary);
+}
+
+#dictionary-table thead .filter-group input:focus {
+    outline: none;
+    border: var(--border);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Sorting */
+table.dataTable thead th.sorting_asc::before,
+table.dataTable thead th.sorting_desc::after {
+    color: var(--text-primary);
+    opacity: 1 !important;
+}
+
+/* Table body */
+#dictionary-table tbody td {
+    background-color: var(--bg-light);
+    box-shadow: var(--bg-light);
+    border-color: var(--bg-accent);
+}
+
+#dictionary-table tbody td:hover:not(:last-child) {
+    background-color: var(--bg-accent);
+}
+
+
+/* Edit button */
+.edit-button {
+    background-color: var(--bg-light);
+    color: var(--text-primary);
+    padding: 0;
+    border: none;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.edit-button .material-icons {
+    font-size: 16px;
+}
+
+.edit-button:hover {
+    transform: scale(1.2);
+}
+
+/* Table bottom border */
+.dataTables_wrapper table.dataTable {
+    border-bottom: var(--bg-accent) !important;
 }
