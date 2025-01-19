@@ -1,0 +1,119 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Document</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="icon" href="{% static 'images/favicon_Poppins.ico' %}">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/fixedheader/3.3.2/css/fixedHeader.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/fixedheader/3.3.2/js/dataTables.fixedHeader.min.js"></script>    
+</head>
+<body>
+
+    <!-- Section with dictionary -->
+    <div class="main-content">
+        <h2>Словарь аббревиатур</h2>
+
+        <div class="dictionary-container">
+            <div class="statistics">
+                <li>Всего записей: {{ total_count }}</li>
+                <li>Добавлено за последний месяц: {{ new_count }}</li>
+                <li>Последнее обновление: {{ last_update|date:"d.m.Y" }}</li>
+                <div style="padding-bottom: 20px;"></div>
+            </div>
+
+            <table id="dictionary-table" class="display">
+                <thead>
+                    <tr class="header-group">
+                        <th class="sorting">Аббревиатура</th>
+                        <th class="sorting">Расшифровка</th>
+                        <th class="sorting">Дата</th>
+                        <th></th>
+                    </tr>
+                    <tr class="filter-group">
+                        <th><input type="text" placeholder=""></th>
+                        <th><input type="text" placeholder=""></th>
+                        <th>обновления</th>
+                        <th></th>
+                    </tr>
+                    
+                </thead>
+                <tbody>
+                    {% for entry in abbreviations %}
+                    <tr>
+                        <td>{{ entry.abbreviation }}</td>
+                        <td>{{ entry.description }}</td>
+                        <td>{{ entry.updated_at|date:"d.m.Y" }}</td>
+                        <td>
+                            <button class="edit-button" onclick="openSuggestForm('{{ entry.id }}')">
+                                <span class="material-icons">edit</span>
+                            </button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="no-entries">Словарь пока пуст</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Buttons -->
+    {% include 'partials/fab_buttons.html' with page='dictionary' %}
+
+    <script>
+        $(document).ready(function() {
+            $('#dictionary-table').DataTable({
+                dom: "ltrip",
+                language: {
+                    search: "",
+                    lengthMenu: "Показать _MENU_ записей",
+                    info: "Показано _START_ до _END_ из _TOTAL_ записей",
+                    paginate: {
+                        previous: "Назад",
+                        next: "Вперед"
+                    }
+                },
+                fixedHeader: true,
+                orderCellsTop: true,
+                columnDefs: [
+                    { orderable: false, targets: 3 }
+                ],
+                initComplete: function () {
+                    var api = this.api();
+                    api.columns().every(function (colIdx) {
+                        if (colIdx < 2) {
+                            var cell = $('thead tr:eq(1) th').eq(colIdx);
+                            $(cell).empty();
+                            
+                            var input = $('<input>', {
+                                type: 'text',
+                                placeholder: ''
+                            }).appendTo(cell);
+
+                            $(input).on('keyup change', function () {
+                                console.log('Фильтр для колонки ' + colIdx + ': ' + this.value);
+                                if (api.column(colIdx).search() !== this.value) {
+                                    api
+                                        .column(colIdx)
+                                        .search(this.value)
+                                        .draw();
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

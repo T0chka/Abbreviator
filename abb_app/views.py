@@ -5,11 +5,12 @@ import hashlib
 import logging
 
 from django.http import HttpRequest, HttpResponse, JsonResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import UploadedFile
 from django.views.decorators.http import require_http_methods
 from django.contrib import messages
+from django.utils.timezone import now
 
 from docx import Document
 from typing import Dict, List, Union, Any
@@ -24,6 +25,7 @@ from .utils import (
     compare_abbreviations,
     AbbreviationTableGenerator
 )
+from .models import AbbreviationEntry
 
 DEMO_SESSION_ID = 'test_drive'
 
@@ -193,6 +195,12 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
 
     if action == 'add':
         abb_entry['selected_description'] = description
+        if description not in abb_entry['descriptions']:
+            AbbreviationEntry.objects.create(
+                abbreviation=abb,
+                description=description,
+                status='for_review'
+            )
 
     elif action == 'skip':
         abb_entry['selected_description'] = None
@@ -200,6 +208,29 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
     request.session['doc_abbs'] = doc_abbs
     return JsonResponse({'success': True})
     
+def load_abbreviation_dict() -> List[Abbreviation]:
+    """Load abbreviations from database instead of CSV"""
+    approved_entries = AbbreviationEntry.objects.filter(
+        status='approved'
+    ).values('abbreviation', 'description')
+    
+    # Group descriptions by abbreviation
+    abb_dict = {}
+    for entry in approved_entries:
+        abb = entry['abbreviation']
+        desc = entry['description']
+        if abb in abb_dict:
+            abb_dict[abb].append(desc)
+        else:
+            abb_dict[abb] = [desc]
+    
+    return [
+        {
+            'abbreviation': abb,
+            'descriptions': descriptions
+        }
+        for abb, descriptions in abb_dict.items()
+    ]
 
 def process_and_display(request: HttpRequest) -> HttpResponse:
     logger.debug(f"process_and_display function called")
@@ -282,3 +313,23 @@ def make_abbreviation_table(
             'success': False, 
             'error': str(e)
         }, status=500)
+
+
+@require_http_methods(["GET"])
+def dictionary_view(request):
+    """Public view of the abbreviation dictionary"""
+    abbreviations = AbbreviationEntry.objects.filter(
+        status='approved'
+    ).order_by('abbreviation')
+
+    total_count = abbreviations.count()
+    last_month = now() - timedelta(days=30)
+    new_count = abbreviations.filter(created_at__gte=last_month).count()
+    last_update = abbreviations.order_by('-created_at').first().created_at
+    
+    return render(request, 'dictionary.html', {
+        'abbreviations': abbreviations,
+        'total_count': total_count,
+        'new_count': new_count,
+        'last_update': last_update,
+    })
