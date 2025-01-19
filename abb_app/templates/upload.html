@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         descriptionOptions.innerHTML = '';
 
         // Validate file
-        if (!checkFileExtension(file.name) || !checkFileSize(file)) {
+        if (!checkFileExtension(file.name)) {
             return;
         }
 

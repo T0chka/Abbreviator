@@ -68,10 +68,11 @@ def upload_file(request: HttpRequest) -> HttpResponse:
         
         try:
             uploaded_file = request.FILES['uploaded_file']
-            logger.info(f"Uploading file: {uploaded_file.name},"
-                        f" size: {uploaded_file.size} bytes")
+            size_in_mb = round(uploaded_file.size / (1024 * 1024))
+            logger.info(f"\n\nUploading file: {uploaded_file.name},"
+                        f" size: {size_in_mb} MB\n\n")
 
-            fs = FileSystemStorage()            
+            fs = FileSystemStorage()  
             session_id = generate_session_id(uploaded_file)
             file_extension = os.path.splitext(uploaded_file.name)[1]
             filename = fs.save(f"{session_id}{file_extension}", uploaded_file)

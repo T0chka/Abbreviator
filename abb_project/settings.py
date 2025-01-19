@@ -131,7 +131,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1048576  # 1MB (default 2.5MB)
 
 # Maximum size of request body per file (in bytes)
-FILE_UPLOAD_MAX_MEMORY_SIZE = 1048576  # 1MB (default 2.5MB)
+# FILE_UPLOAD_MAX_MEMORY_SIZE = 1048576  # 1MB (default 2.5MB)
 
 # Temporary folder for file uploads
 FILE_UPLOAD_TEMP_DIR = None  # Uses system default temp directory
