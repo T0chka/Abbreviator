@@ -196,11 +196,16 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
 
     if action == 'add':
         abb_entry['selected_description'] = description
+        
+        logger.debug(f"abb_entry: {abb_entry}")
+        # if description is new
         if description not in abb_entry['descriptions']:
+            correct_form = abb_entry.get('correct_form')
             AbbreviationEntry.objects.create(
-                abbreviation=abb,
+                abbreviation=correct_form if correct_form is not None else abb,
                 description=description,
-                status='for_review'
+                status='for_review',
+                highlighted=abb_entry.get('highlighted')
             )
 
     elif action == 'skip':

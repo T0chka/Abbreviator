@@ -198,6 +198,7 @@ h2 {
     border: var(--border);
     border-radius: var(--border-radius);
     font-size: 0.95rem;
+    color: var(--text-primary);
     transition: border-color var(--transition-fast);
 }
 

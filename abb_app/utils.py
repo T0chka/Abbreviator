@@ -331,6 +331,7 @@ def process_abbreviations(
     
     processed_abbs: List[Abbreviation] = []
     print("Starting processing abbreviations")
+
     for abb, count in raw_abbs.items():
         # Find matching dictionary entry
         dict_entry = next(
@@ -352,12 +353,19 @@ def process_abbreviations(
         
         # Validate and update if it's 9 or less characters long
         if len(abb) <= 15:
-            # print(f"Validating {abb}")
-            validation_result = validator.validate_abbreviation(abb, abb_dict)
-            if validation_result.get('correct_form'):
-                processed_abb['correct_form'] = validation_result['correct_form']
-                processed_abb['highlighted'] = validation_result['highlighted']
-                processed_abb['descriptions'] = validation_result['descriptions']
+            try:
+                validation_result = validator.validate_abbreviation(abb, abb_dict)
+                if validation_result:
+                    processed_abb.update({
+                        'correct_form': validation_result.get('correct_form'),
+                        'highlighted': validation_result.get('highlighted'),
+                        'descriptions': validation_result.get(
+                            'descriptions', processed_abb['descriptions']
+                        )
+                    })
+                    print(f"Processed validated abbreviation: {processed_abb}\n\n")
+            except ValueError as e:
+                print(f"[ERROR] Failed to validate abbreviation '{abb}': {e}")
             
         processed_abbs.append(processed_abb)
     
@@ -496,50 +504,66 @@ class CharacterValidator:
         """
         Validates an abbreviation for mixed characters.
         Checks for existing forms in the dictionary.
-        Returns a dict with validation info.
+        Returns a dict with validation info or empty dict.
+
+        Decision Tree (important returns are shown):
+        Abbreviation
+        └─ has_cyr_chars OR has_lat_chars
+            ├─ Generate forms and search the dictionary
+            │    ├─ Match found (does not matter mixed or not)
+            │    │    ├─ correct_form = matched_form
+            │    │    ├─ descriptions = matched_description
+            │    │    └─ highlighted = highlighted_text for tooltip
+            │    └─ No match found
+            │         ├─ is mixed (has_cyr_chars AND has_lat_chars)
+            │         │     └─ highlighted = highlighted_text for moderation
+            └─ Does not contain both types of characters or not mixed
+                └─ no validation issues found, return empty dict
+
+        Where:
+        - `cyr_chars` and `lat_chars` refer to similar-looking
+        Cyrillic and Latin characters.
         """
         has_cyr_chars = any(char in self.cyr2lat for char in abb)
         has_lat_chars = any(char in self.lat2cyr for char in abb)
         
-        if not has_cyr_chars and not has_lat_chars:
-            return {
-                "original": abb,
-                "highlighted": abb,
-                "correct_form": None,
-                "descriptions": []
-            }
-
+        if not (has_cyr_chars or has_lat_chars):
+            return {}
+    
+        # Generate all possible forms and search dictionary
         possible_forms = self._generate_all_mixed_forms(abb)
-        
-        # Find matching entries in dictionary
         matched_entries = [
             entry for entry in abb_dict 
             if entry['abbreviation'] in possible_forms
         ]
-        
+    
         if matched_entries:
-            if len(set(entry['abbreviation'] for entry in matched_entries)) > 1:
+            # Check for multiple matches
+            unique_forms = set(entry['abbreviation'] for entry in matched_entries)
+            if len(unique_forms) > 1:
                 raise ValueError(
                     "[ERROR] Mixed-character abbreviations in the dictionary:"
                     f"\n{matched_entries}"
                 )
             
-            correct_form = matched_entries[0]['abbreviation']
-            descriptions = matched_entries[0]['descriptions']
-            highlighted = self._highlight_mismatch_characters(
-                abb, correct_form
-            )
-        else:
-            correct_form = None
-            descriptions = []
-            highlighted = self._highlight_mixed_characters(abb)
+            matched_entry = matched_entries[0]
+            return {
+                "correct_form": matched_entry['abbreviation'],
+                "descriptions": matched_entry['descriptions'],
+                "highlighted": self._highlight_mismatch_characters(
+                    abb, matched_entry['abbreviation']
+                )
+            }
 
-        return {
-            "original": abb,
-            "highlighted": highlighted,
-            "correct_form": correct_form,
-            "descriptions": descriptions
-        }
+        # Handle case when no dictionary match found but chars are mixed
+        if has_cyr_chars and has_lat_chars:
+            return {
+                "correct_form": None,
+                "descriptions": [],
+                "highlighted": self._highlight_mixed_characters(abb)
+            }
+
+        return {}
 
     def _generate_all_mixed_forms(self, abb: str) -> set:
         """Generate all possible character combinations"""

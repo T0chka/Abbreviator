@@ -7,14 +7,8 @@ def approve_entries(modeladmin, request, queryset):
                
 @admin.register(AbbreviationEntry)
 class AbbreviationEntryAdmin(admin.ModelAdmin):
-    list_display = ('abbreviation', 'description', 'status', 'updated_at')
+    list_display = ('abbreviation', 'description', 'status', 'updated_at', 'highlighted')
     list_filter = ('status',)
     search_fields = ('abbreviation', 'description')
     ordering = ('abbreviation', 'description', 'status', '-updated_at')
     actions = [approve_entries]
-
-
-    
-
-
-
