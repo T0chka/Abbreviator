@@ -1,0 +1,38 @@
+<div class="fab-container">
+    {% if page == 'process' %}
+        <a href="{% url 'upload_file' %}" class="fab new-upload-fab tooltip tooltip-left">
+            <span class="material-icons">upload_file</span>
+            <span class="tooltiptext">Загрузить новый файл</span>
+        </a>
+        <a href="{% url 'dictionary' %}" class="fab dictionary-fab tooltip tooltip-left">
+            <span class="material-icons">auto_stories</span>
+            <span class="tooltiptext">Словарь</span>
+        </a>
+        
+    {% elif page == 'dictionary' %}
+        <a href="javascript:void(0);" onclick="window.history.back();" class="fab back-fab tooltip tooltip-left">
+            <span class="material-icons">arrow_back</span>
+            <span class="tooltiptext">Назад</span>
+        </a>
+    {% endif %}
+    
+    <!-- Common buttons -->
+    <a onclick="scrollToTop()" class="fab scroll-up-fab tooltip tooltip-left">
+        <span class="material-icons">arrow_upward</span>
+        <span class="tooltiptext">Наверх</span>
+    </a>
+    <a onclick="scrollToBottom()" class="fab scroll-down-fab tooltip tooltip-left">
+        <span class="material-icons">arrow_downward</span>
+        <span class="tooltiptext">Вниз</span>
+    </a>
+</div>
+
+<script>
+    function scrollToTop() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function scrollToBottom() {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+</script>
