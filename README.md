@@ -16,11 +16,12 @@ The project is currently live and running at [https://datadelic.dev/abbreviator]
 - Generates a Word document containing the abbreviation table with user-selected descriptions.
 
 ## TODO:
-- Add functionality to check for similar existing descriptions for new entries (e.g. using fuzzy matching)
+- Handling of different spellings of the same abbreviation (e.g. "HbA1c" and "HBA1C").
+- Functionality to check for similar existing descriptions for new entries (e.g. using fuzzy matching)
 - Interactive formatting of descriptions in the input line
 - Implement LLM-based description generation
-- Add settings to customize the view (e.g. the context window length and the number of context lines displayed)
-- Add counters for skipped abbreviations and newly added entries
-- Add tutorial within the app
-- Add abbreviations and their descriptions for other fields, not just medical (implement categories/tags)
+- Settings to customize the view (e.g. the context window length and the number of context lines displayed)
+- Counters for skipped abbreviations and newly added entries
+- Tutorial within the app
+- Add abbreviations from other fields (not just medical) to the dictionary (implement categories/tags)
 - Add English versions of the interface and the dictionary
