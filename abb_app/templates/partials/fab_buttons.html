@@ -36,4 +36,38 @@
     function scrollToBottom() {
         window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
+
+    
+    function savePageState() {
+        const pageState = {
+            scrollPosition: window.scrollY,
+            formData: Array.from(document.querySelectorAll('input, textarea')).map(input => ({
+                id: input.id,
+                value: input.value
+            })),
+        };
+        sessionStorage.setItem('pageState', JSON.stringify(pageState));
+    }
+
+    document.querySelector('.dictionary-fab').addEventListener('click', savePageState);
+
+    function restorePageState() {
+        const savedState = sessionStorage.getItem('pageState');
+        if (savedState) {
+            const pageState = JSON.parse(savedState);
+
+            window.scrollTo(0, pageState.scrollPosition);
+
+            pageState.formData.forEach(({ id, value }) => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.value = value;
+                }
+            });
+
+            sessionStorage.removeItem('pageState');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', restorePageState);
 </script>
