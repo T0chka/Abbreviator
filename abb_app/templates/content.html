@@ -5,16 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Process Document</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <link rel="icon" href="{% static 'images/favicon_Poppins.ico' %}">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
 </head>
 <body>
 
     <!-- Section with differences -->
+    <h2>Различия между исходным и новым списками аббревиатур</h2>
     <div class="main-content">
-        <h2>Различия между исходным и новым списками аббревиатур</h2>
         <div id="differences-section">
             {% include 'partials/differences_section.html' %}
         </div>
