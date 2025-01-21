@@ -3,6 +3,7 @@ import logging
 import json
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel
+from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
@@ -10,7 +11,11 @@ class AbbreviationResponse(BaseModel):
     description: str
 
 class ModelClient:
-    def __init__(self, host="http://localhost:11434", model="llama3.2"):
+    def __init__(
+            self,
+            host=getattr(settings, 'OLLAMA_HOST', 'http://localhost:11434'),
+            model=getattr(settings, 'OLLAMA_MODEL', 'llama3.2')
+        ):
         self.host = host
         self.model = model
         self.parser = PydanticOutputParser(pydantic_object=AbbreviationResponse)
@@ -43,8 +48,8 @@ class ModelClient:
             "prompt": prompt,
             "format": "json",
             "stream": False,
-            "temperature": 0.1,
-            "top_p": 0.1
+            "temperature": getattr(settings, 'OLLAMA_TEMPERATURE', 0.1),
+            "top_p": getattr(settings, 'OLLAMA_TOP_P', 0.3)
         }
         payload_str = json.dumps(payload, indent=4, ensure_ascii=False)
         logger.debug(f"\nSending request to model at {url} with payload:\n{payload_str}")
