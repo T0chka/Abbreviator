@@ -116,7 +116,6 @@ def process_file_with_session(
 
     for filename in fs.listdir('')[1]:
         if filename.startswith(session_id):
-            print(f"Found file: {filename}")
             request.session['uploaded_file_path'] = filename
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'status': 'success'})
@@ -157,17 +156,17 @@ def update_difference_section(request: HttpRequest) -> HttpResponse:
     processed_doc_abbs = get_processed_doc_abbs(request)
     
     if not processed_doc_abbs and not initial_abbs:
-        logger.debug(f"Both processed doc abbs and initial abbs are empty")
+        logger.debug(f"\nBoth processed doc abbs and initial abbs are empty\n")
         return render(request, 'partials/differences_section.html')
     
     if not processed_doc_abbs:
-        logger.debug(f"Processed doc abbs is empty")
+        logger.debug(f"\nProcessed doc abbs is empty\n")
         return render(request, 'partials/differences_section.html', {
             'missing_abbs': initial_abbs
         })
     
     if not initial_abbs:
-        logger.debug(f"Initial abbs is empty")
+        logger.debug(f"\nInitial abbs is empty\n")
         return render(request, 'partials/differences_section.html', {
             'new_found': processed_doc_abbs
         })
@@ -197,7 +196,7 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
     if action == 'add':
         abb_entry['selected_description'] = description
         
-        logger.debug(f"abb_entry: {abb_entry}")
+        logger.debug(f"\nAdded abb_entry: {abb_entry}")
         # if description is new
         if description not in abb_entry['descriptions']:
             correct_form = abb_entry.get('correct_form')
@@ -207,7 +206,7 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
                 status='for_review',
                 highlighted=abb_entry.get('highlighted')
             )
-
+            logger.debug(f"\nNew entry for review: {abb_entry}")
     elif action == 'skip':
         abb_entry['selected_description'] = None
 
@@ -287,7 +286,7 @@ def process_and_display(request: HttpRequest) -> HttpResponse:
 def make_abbreviation_table(
     request: HttpRequest
     ) -> Union[HttpResponse, JsonResponse]:
-    logger.debug(f"make_abbreviation_table function called")
+    logger.debug(f"\nMake_abbreviation_table function called")
     try:
         processed_doc_abbs = get_processed_doc_abbs(request)
         
