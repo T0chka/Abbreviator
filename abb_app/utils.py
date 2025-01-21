@@ -321,24 +321,35 @@ class TextProcessor:
 
 def generate_description_with_model(abbreviation: str, contexts: str = None) -> str:
     prompt = """
-    Дай конкретную общепринятую расшифровку аббревиатуры,
-    которая была использована в медицинской документации
-    (клинические исследования)
+    Ты - эксперт по медицинской терминологии. Твоя задача - расшифровать медицинскую аббревиатуру,
+    которая используется в клинической документации или медицинских исследованиях.
+    
+    Важные правила:
+    - Давай ТОЛЬКО медицинские/клинические расшифровки
+    - Если нет уверенности в расшифровке - верни {{"description": "неизвестная аббревиатура"}}
+    - Ответ должен быть на том же языке, что и аббревиатура
+    - Расшифровка должна быть общепринятой в медицинском сообществе
+    
+    Примеры:
+    Аббревиатура: ЭКГ
+    Контекст: Пациенту была проведена ЭКГ для оценки работы сердца
+    Ответ: {{"description": "электрокардиография"}}
 
-    Пример 1:
-    Аббревиатура: ДНК
-    Контекст: В клетках млекопитающих ДНК содержит генетический материал.
-    Ответ: {{"description": "дезоксирибонуклеиновая кислота"}}    
+    Аббревиатура: ЧСС
+    Контекст: ЧСС в норме, 72 удара в минуту
+    Ответ: {{"description": "частота сердечных сокращений"}}
 
-    Пример 2:
-    Аббревиатура: ВИЧ
-    Контекст: ВИЧ передается при контакте с инфицированной кровью.
-    Требуется расшифровать и выдать ответ формата JSON.
-    Ответ: {{"description": "вирус иммунодефицита человека"}}
+    Аббревиатура: АД
+    Контекст: АД измеряется регулярно в течение дня
+    Ответ: {{"description": "артериальное давление"}}
+
+    Аббревиатура: CBC
+    Контекст: CBC test shows normal results
+    Ответ: {{"description": "complete blood count"}}
 
     Теперь твоя очередь.
-    Аббревиатура: '{abbreviation}',
-    Контекст: {contexts}.
+    Аббревиатура: '{abbreviation}'
+    Контекст: {contexts}
     Ответ?
     """
     prompt = prompt.format(
@@ -350,6 +361,11 @@ def generate_description_with_model(abbreviation: str, contexts: str = None) -> 
 
     try:
         description = client.generate_response(prompt)
+        
+        # Validate response
+        if description.lower() == "неизвестная аббревиатура":
+            return "No description available"
+            
         return description
     except Exception as e:
         print(f"Error generating description for '{abbreviation}': {e}")
@@ -365,36 +381,34 @@ def process_abbreviations(
     
     # Get abbreviations from document text
     text = text_processor.extract_relevant_text(doc)
-    raw_abbs = text_processor.extract_abbreviations(text)
-    
+    raw_abbs = text_processor.extract_abbreviations(text)    
     processed_abbs: List[Abbreviation] = []
+
     print("Starting processing abbreviations")
 
     for abb, count in raw_abbs.items():
-        # Find matching dictionary entry
-        dict_entry = next(
-            (entry for entry in abb_dict 
-             if entry['abbreviation'] == abb),
-            None
-        )
-        # find contexts
         contexts = text_processor.find_abbreviation_context(text, abb)
+        dict_entry = next(
+            (entry for entry in abb_dict if entry['abbreviation'] == abb), None
+        )
 
-        # Use model if abbreviation is missing i the dict
-        ai_description = None
-        is_ai_generated = False
+        descriptions = dict_entry['descriptions'] if dict_entry else []
+        is_ai_generated = False        
+
+        # Use model if abbreviation is missing in the dict
         if not dict_entry:
-            # ai_description = generate_description_with_model(abb, " ".join(contexts).strip())
-            ai_description = generate_description_with_model(abb, contexts[0])
-            is_ai_generated = True
-            print(f"For {abb} generated description:\n{ai_description}")
+            ai_description = generate_description_with_model(abb, "\n".join(contexts))
+            if ai_description and ai_description != "No description available":
+                descriptions.append(ai_description)
+                is_ai_generated = True
+            print(f"For {abb} generated description: {ai_description}")
         
         processed_abb: Abbreviation = {
             'abbreviation': abb,
-            'descriptions': dict_entry['descriptions'] if dict_entry else [ai_description],
+            'descriptions': descriptions,
             'selected_description': None,  # Will be set by user
             'count': count,
-            'contexts': text_processor.find_abbreviation_context(text, abb),
+            'contexts': contexts,
             'correct_form': None,
             'highlighted': None,
             'status': None,
@@ -404,13 +418,15 @@ def process_abbreviations(
         # Validate and update if it's 9 or less characters long
         if len(abb) <= 15:
             try:
-                validation_result = validator.validate_abbreviation(abb, abb_dict)
-                if validation_result:
+                val_result = validator.validate_abbreviation(abb, abb_dict)
+                if val_result:
+                    val_descriptions = val_result.get('descriptions', [])
                     processed_abb.update({
-                        'correct_form': validation_result.get('correct_form'),
-                        'highlighted': validation_result.get('highlighted'),
-                        'descriptions': validation_result.get(
-                            'descriptions', processed_abb['descriptions']
+                        'correct_form': val_result.get('correct_form'),
+                        'highlighted': val_result.get('highlighted'),
+                        'descriptions': (
+                            val_descriptions if val_descriptions 
+                            else processed_abb['descriptions']
                         )
                     })
                     print(f"Processed validated abbreviation: {processed_abb}\n\n")
