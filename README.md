@@ -25,3 +25,61 @@ The project is currently live and running at [https://datadelic.dev/abbreviator]
 - Tutorial within the app
 - Add abbreviations from other fields (not just medical) to the dictionary (implement categories/tags)
 - Add English versions of the interface and the dictionary
+
+# Installation
+
+## 1. Create a directory and clone the repository
+
+```bash
+mkdir <project_directory>
+cd <project_directory>
+git clone https://github.com/T0chka/Abbreviator.git
+```
+
+## 2. Set up a virtual environment
+
+Go to the cloned repository:
+
+```bash
+cd Abbreviator
+```
+
+Create and activate a virtual environment:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+## 3. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+## 4. Create a database
+In the repository in the abb_app/data folder there is a file abb_dict.csv. This file contains a dictionary of abbreviations and their translations for example, which you can use for testing. You can replace it with your own dictionary, saving the CSV format:
+
+```
+abbreviation,description
+AI,Artificial Intelligence
+```
+
+Apply migrations and import the dictionary into the database:
+
+```bash
+python manage.py makemigrations abb_app
+python manage.py migrate
+python manage.py import_abbreviations abb_app/data/abb_dict.csv
+```
+
+## 5. Run the development server
+```bash
+python manage.py runserver
+```
+
+## 6. Open the application in your browser
+
+```
+http://127.0.0.1:8000/
+```
