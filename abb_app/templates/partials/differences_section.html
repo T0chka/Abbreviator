@@ -3,7 +3,7 @@
     {% if missing_abbs is not None %}
         {% if missing_abbs %}
             {% for old_abb in missing_abbs %}
-                <li>{{ old_abb.abbreviation }} - {{ old_abb.descriptions|join:", " }}</li>
+                <li>{{ old_abb.abbreviation }} - {{ old_abb.descriptions }}</li>
             {% endfor %}
         {% else %}
             <p>Все аббревиатуры из исходного списка присутствуют в новом списке</p>
@@ -18,7 +18,7 @@
     {% if new_found is not None %}
         {% if new_found %}
             {% for new in new_found %}
-                <li>{{ new.abbreviation }} - {{ new.descriptions|join:", " }}</li>
+                <li>{{ new.abbreviation }} - {{ new.descriptions }}</li>
             {% endfor %}
         {% else %}
             <p>Все аббревиатуры из нового списка присутствуют в исходном списке</p>
