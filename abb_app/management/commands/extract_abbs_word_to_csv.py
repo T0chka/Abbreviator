@@ -30,12 +30,18 @@ class Command(BaseCommand):
             default=10,
             help='Maximum number of contexts to extract for each abbreviation'
         )
+        parser.add_argument(
+            '--context-window',
+            type=int,
+            default=50,
+            help='Context window size for each abbreviation'
+        )
 
     def handle(self, *args, **options):
         input_dir = options['input_dir']
         output_file = options['output_file']
         max_contexts = options['max_contexts']
-
+        context_window = options['context_window']
 
         if not os.path.exists(input_dir):
             self.stderr.write(f"Input directory not found: {input_dir}")
@@ -59,7 +65,9 @@ class Command(BaseCommand):
 
                 for abb in abbreviations:
                     contexts = text_processor.find_abbreviation_context(
-                        text, abb['abbreviation'], window=100, find_all=True, max_contexts=max_contexts 
+                        text, abb['abbreviation'],
+                        window=context_window,
+                        max_contexts=max_contexts
                     )
                     
                     if contexts:

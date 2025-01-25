@@ -12,7 +12,7 @@ class Command(BaseCommand):
             '--dict-path',
             type=str,
             help='Path to abbreviation dictionary CSV file',
-            default=os.path.join('abb_app', 'data', 'abb_dict_with_contexts.csv')
+            default=os.path.join('abb_app', 'data', 'train_data.csv')
         )
         parser.add_argument(
             '--model-name',
