@@ -1,5 +1,6 @@
 import os
 import re
+import regex
 from docx import Document
 from docx.shared import Pt, RGBColor, Cm
 from docx.oxml import OxmlElement
@@ -294,26 +295,25 @@ class TextProcessor:
             text: str,
             abbreviation: str,
             window: int = 50,
-            find_all: bool = True
+            max_contexts: int = 1000
         ) -> Union[str, List[str]]:
         """
         Finds and returns snippets of text around occurrences of the abbreviation.
-        If `find_all` is False, returns the first occurrence; True returns all.
+        Limits the number of contexts returned to `max_contexts`.
         """
         contexts: Set[str] = set()
         matches = re.finditer(
             rf'(?<!\w){re.escape(abbreviation)}(?!\w)', text
         )
         for match in matches:
+            if len(contexts) >= max_contexts:
+                break
             start = max(0, match.start() - window)
             end = min(len(text), match.end() + window)
             snippet = "..." + text[start:end] + "..."
-            
-            if find_all:
-                contexts.add(snippet)
-            else:
-                return snippet
-        return list(contexts)
+            contexts.add(snippet)
+
+        return list(contexts) if max_contexts > 1 else next(iter(contexts), "")
 
 # -----------------------------------------------------------------------------
 # Preparation of abbreviations
@@ -837,3 +837,50 @@ class AbbreviationTableGenerator:
         for row in table.rows:
             row.cells[0].width = Cm(self.first_column_width)
             row.cells[1].width = self.second_column_width
+
+
+# -----------------------------------------------------------------------------
+# Alphabet detection for cleaning the abbreviation dictionary
+# -----------------------------------------------------------------------------
+
+def detect_string_alphabet(text):
+    """Detect if string contains Russian, Latin or mixed characters.
+    Returns: 'russian', 'latin', or 'mixed'
+    """
+    has_russian = bool(regex.search(r'\p{Script=Cyrillic}', text))
+    has_latin   = bool(regex.search(r'\p{Script=Latin}', text))
+    
+    if has_russian and has_latin:
+        return 'mixed'
+    elif has_russian:
+        return 'russian'
+    elif has_latin:
+        return 'latin'
+    return 'other'
+
+def split_by_language(text):
+    """Split text into Russian and Latin parts while preserving compound terms.
+    Returns: (russian_text, latin_text)
+    """
+    russian_parts = []
+    latin_parts = []
+
+    pattern = r'[\p{Script=Cyrillic}\p{Script=Latin}\p{N}_-]+[.,;:!?]*|\S'
+    words = regex.findall(pattern, text)
+    # print(words)
+
+    for word in words:
+        lang = detect_string_alphabet(word)
+        if lang == 'russian':
+            russian_parts.append(word)
+        elif lang == 'latin':
+            latin_parts.append(word)
+
+    russian_text = ' '.join(russian_parts)
+    latin_text = ' '.join(latin_parts)
+
+    # Remove trailing punctuation
+    russian_text = regex.sub(r'[.,;:!?]+$', '', russian_text)
+    latin_text = regex.sub(r'[.,;:!?]+$', '', latin_text)
+
+    return russian_text, latin_text
