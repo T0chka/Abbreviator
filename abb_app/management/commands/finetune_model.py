@@ -12,7 +12,7 @@ class Command(BaseCommand):
             '--dict-path',
             type=str,
             help='Path to abbreviation dictionary CSV file',
-            default=os.path.join('abb_app', 'data', 'abb_dict.csv')
+            default=os.path.join('abb_app', 'data', 'abb_dict_with_contexts.csv')
         )
         parser.add_argument(
             '--model-name',
@@ -24,7 +24,7 @@ class Command(BaseCommand):
             '--base-model',
             type=str,
             help='Base model to finetune',
-            default='llama3.2'
+            default= 'llama3.2' #'deepseek-r1:7b'
         )
         parser.add_argument(
             '--ollama-host',
@@ -74,11 +74,12 @@ class Command(BaseCommand):
             reader = csv.reader(f)
             next(reader)  # skip header
             for i, row in enumerate(reader):
-                if len(row) == 2:
-                    abb, desc = row[0], row[1]
+                if len(row) == 3:
+                    abb, desc, contexts = row[0], row[1], row[2]
                     training_data.append({
                         'abbreviation': abb,
-                        'response': f'{{"description": "{desc}"}}'
+                        'response': f'{{"description": "{desc}"}}',
+                        'contexts': contexts
                     })
                 if i < 3:
                     self.stdout.write(f"Sample data {i}: {abb} -> {desc}")
@@ -94,7 +95,7 @@ PARAMETER num_ctx 4096
 SYSTEM """Ты - эксперт по медицинской терминологии. Твоя задача - расшифровывать медицинские аббревиатуры.
 Важные правила:
 1. Не добавляй никакой другой текст кроме JSON
-2. Расшифровка может быть написана прямов контексте, если так - используй ее
+2. Расшифровка может быть написана прямо в контексте, если так - используй ее
 3. Расшифровка должна соответствовать каждой букве аббревиатуры
 4. Если аббревиатура на русском - давай русскую расшифровку, если на английском - английскую
 5. Расшифровка должна быть максимально короткой и общепринятой в медицинской документации
@@ -103,7 +104,7 @@ SYSTEM """Ты - эксперт по медицинской терминолог
 MESSAGE user Аббревиатура: 'ЭКГ' Контекст: Пациенту была проведена ЭКГ для оценки работы сердца
 MESSAGE assistant {{"description": "электрокардиография"}}
 
-MESSAGE user Аббревиатура: 'ЧСС' Контекст: ЧСС в норме, 72 удара в минуту
+MESSAGE user Аббревиатура: 'ЧСС' Контекст: ЧСС 72 удара в минуту
 MESSAGE assistant {{"description": "частота сердечных сокращений"}}
 '''
         # Add dictionary examples
@@ -112,25 +113,25 @@ MESSAGE assistant {{"description": "частота сердечных сокра
         for row in training_data:
             modelfile += f'''
 
-MESSAGE user Аббревиатура: '{row['abbreviation']}' Контекст: Документация для клинических исследований
+MESSAGE user Аббревиатура: '{row['abbreviation']}' Контекст: {row['contexts']}
 MESSAGE assistant {row["response"]}'''
             examples_added += 1
         self.stdout.write(f"Added {examples_added} dictionary examples")
 
         self.stdout.write("\n=== Saving and Validating Modelfile ===")
-        # modelfile_path = 'Modelfile'
-        # with open(modelfile_path, 'w', encoding='utf-8', newline='\n') as f:
-        #     f.write(modelfile)
+        modelfile_path = 'Modelfile'
+        with open(modelfile_path, 'w', encoding='utf-8', newline='\n') as f:
+            f.write(modelfile)
             
-        # with open(modelfile_path, 'r', encoding='utf-8') as f:
-        #     self.stdout.write("\nFirst 15 lines of Modelfile:")
-        #     for i, line in enumerate(f):
-        #         if i < 15:
-        #             self.stdout.write(f"Line {i+1}: {line.rstrip()}")
+        with open(modelfile_path, 'r', encoding='utf-8') as f:
+            self.stdout.write("\nFirst 25 lines of Modelfile:")
+            for i, line in enumerate(f):
+                if i < 25:
+                    self.stdout.write(f"Line {i+1}: {line.rstrip()}")
             
-        #     f.seek(0, os.SEEK_END)
-        #     file_size = f.tell() / 1024  # Size in KB
-        #     self.stdout.write(f"\nModelfile size: {file_size:.2f} KB")
+            f.seek(0, os.SEEK_END)
+            file_size = f.tell() / 1024  # Size in KB
+            self.stdout.write(f"\nModelfile size: {file_size:.2f} KB")
 
         self.stdout.write("\n=== Creating Model via API ===")
 
