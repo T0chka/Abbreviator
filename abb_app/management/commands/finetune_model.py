@@ -1,6 +1,7 @@
 import os
 import csv
 import json
+import re
 import requests
 from django.core.management.base import BaseCommand
 
@@ -9,30 +10,30 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--dict-path',
+            '--ollama-host',
             type=str,
-            help='Path to abbreviation dictionary CSV file',
-            default=os.path.join('abb_app', 'data', 'train_data.csv')
+            help='Ollama server host (e.g., http://localhost:11434)',
+            default=os.environ.get('OLLAMA_HOST', 'http://192.168.1.165:11434')
         )
         parser.add_argument(
-            '--model-name',
+            '--train-file',
             type=str,
-            help='Name for the finetuned model',
-            default='llama3.2-medical'
+            help='Path to training data CSV file',
+            default=os.path.join('abb_app', 'data', 'train_data.csv')
         )
         parser.add_argument(
             '--base-model',
             type=str,
             help='Base model to finetune',
-            default= 'llama3.2' #'deepseek-r1:7b'
+            default= 'deepseek-r1:32b' #'llama3.2'
         )
         parser.add_argument(
-            '--ollama-host',
+            '--new-model-name',
             type=str,
-            help='Ollama server host (e.g., http://localhost:11434)',
-            default=os.environ.get('OLLAMA_HOST', 'http://localhost:11434')
-        )
-
+            help='Name for the finetuned model',
+            default='medical'
+        )        
+        
     def check_ollama_server(self, host):
         """Check if Ollama server is running and accessible"""
         try:
@@ -55,88 +56,87 @@ class Command(BaseCommand):
             ))
             return False
 
+    def clean_context(self, text):
+        """Clean context by replacing punctuation with spaces and normalizing whitespace"""
+        text = re.sub(r'[^\w\s]', ' ', text)
+        text = re.sub(r'\s+', ' ', text)
+        return text.strip()
+
     def handle(self, *args, **options):
         ollama_host = options['ollama_host']
         if not self.check_ollama_server(ollama_host):
             return
 
-        dict_path = options['dict_path']
-        model_name = options['model_name']
+        train_file = options['train_file']
+        model_name = options['new_model_name']
         base_model = options['base_model']
 
-        self.stdout.write("\n=== Loading Dictionary ===")
-        if not os.path.exists(dict_path):
-            self.stderr.write(f"Dictionary file not found at {dict_path}")
+        if not os.path.exists(train_file):
+            self.stderr.write(f"Training data file not found at {train_file}")
             return
 
         training_data = []
-        with open(dict_path, 'r', encoding='utf-8') as f:
+        with open(train_file, 'r', encoding='utf-8') as f:
             reader = csv.reader(f)
             next(reader)  # skip header
             for i, row in enumerate(reader):
                 if len(row) == 3:
                     abb, desc, contexts = row[0], row[1], row[2]
+                    # Clean contexts before adding to training data
+                    cleaned_contexts = self.clean_context(contexts)
                     training_data.append({
                         'abbreviation': abb,
                         'response': f'{{"description": "{desc}"}}',
-                        'contexts': contexts
+                        'contexts': cleaned_contexts
                     })
-                if i < 3:
-                    self.stdout.write(f"Sample data {i}: {abb} -> {desc}")
         
-        self.stdout.write(f"Loaded {len(training_data)} abbreviations from dictionary")
-        self.stdout.write("\n=== Creating Base Modelfile ===")
-
+        self.stdout.write(f"Loaded {len(training_data)} training examples")
+        
         modelfile = f'''FROM {base_model}
-PARAMETER temperature 0.1
-PARAMETER top_p 0.3
+PARAMETER temperature 0.6
+PARAMETER top_p 0.6
 PARAMETER num_ctx 4096
 
-SYSTEM """Ты - эксперт по медицинской терминологии. Твоя задача - расшифровывать медицинские аббревиатуры.
+SYSTEM """Ты - эксперт по медицинской терминологии. Твоя задача - расшифровывать аббревиатуры из медицинской документации.
 Важные правила:
-1. Не добавляй никакой другой текст кроме JSON
-2. Расшифровка может быть написана прямо в контексте, если так - используй ее
-3. Расшифровка должна соответствовать каждой букве аббревиатуры
-4. Если аббревиатура на русском - давай русскую расшифровку, если на английском - английскую
-5. Расшифровка должна быть максимально короткой и общепринятой в медицинской документации
+1. Расшифровка должна быть максимально короткой и соответствовать контексту.
+2. Слова в расшифровке должны соответствовать буквам аббревиатуры (например, для аббревиатуры 'АБС' расшифровка должна содержать три слова, первое из которых начинается с буквы 'А', второе с буквы 'Б', третье с буквы 'С').
+3. Язык расшифровки должен соответствовать языку аббревиатуры.
+4. Если не уверен, что расшифровка правильная, то отвечай 'не знаю'
 """
 
-MESSAGE user Аббревиатура: 'ЭКГ' Контекст: Пациенту была проведена ЭКГ для оценки работы сердца
-MESSAGE assistant {{"description": "электрокардиография"}}
-
-MESSAGE user Аббревиатура: 'ЧСС' Контекст: ЧСС 72 удара в минуту
+MESSAGE user Следуя этим правилам, расшифруй аббревиатуру: 'ЧСС', использованную в контексте: 'при этом средняя ЧСС была 72 уд/мин'
 MESSAGE assistant {{"description": "частота сердечных сокращений"}}
+
+MESSAGE user Следуя этим правилам, расшифруй аббревиатуру: 'ИМТ', использованную в контексте: 'в то время как ИМТ пациента в норме'
+MESSAGE assistant {{"description": "индекс массы тела"}}
+
+MESSAGE user Следуя этим правилам, расшифруй аббревиатуру: 'BMI', использованную в контексте: 'while BMI is normal'
+MESSAGE assistant {{"description": "body mass index"}}
+
+MESSAGE user Следуя этим правилам, расшифруй аббревиатуру: 'ATP', использованную в контексте: 'influence metabolism by increasing ATP level'
+MESSAGE assistant {{"description": "adenosine triphosphate"}}
 '''
-        # Add dictionary examples
+        # Add training examples
         examples_added = 0
         
         for row in training_data:
             modelfile += f'''
-
-MESSAGE user Аббревиатура: '{row['abbreviation']}' Контекст: {row['contexts']}
-MESSAGE assistant {row["response"]}'''
+MESSAGE user Следуя этим правилам, расшифруй аббревиатуру: '{row['abbreviation']}', использованную в контексте: '{row['contexts']}'
+MESSAGE assistant {row["response"]}
+'''
             examples_added += 1
-        self.stdout.write(f"Added {examples_added} dictionary examples")
+        self.stdout.write(f"Added {examples_added} examples to Modelfile")
 
-        self.stdout.write("\n=== Saving and Validating Modelfile ===")
         modelfile_path = 'Modelfile'
         with open(modelfile_path, 'w', encoding='utf-8', newline='\n') as f:
             f.write(modelfile)
-            
-        with open(modelfile_path, 'r', encoding='utf-8') as f:
-            self.stdout.write("\nFirst 25 lines of Modelfile:")
-            for i, line in enumerate(f):
-                if i < 25:
-                    self.stdout.write(f"Line {i+1}: {line.rstrip()}")
-            
-            f.seek(0, os.SEEK_END)
-            file_size = f.tell() / 1024  # Size in KB
-            self.stdout.write(f"\nModelfile size: {file_size:.2f} KB")
 
-        self.stdout.write("\n=== Creating Model via API ===")
+        file_size = os.path.getsize(modelfile_path) / 1024
+        self.stdout.write(f"Modelfile size: {file_size:.2f} KB.")
+        self.stdout.write("Sending request to create model...")
 
         try:
-            self.stdout.write("Sending request to Ollama API...")
             response = requests.post(
                 f'{ollama_host}/api/create',
                 json={
@@ -145,16 +145,6 @@ MESSAGE assistant {row["response"]}'''
                     'stream': False
                 }
             )
-            
-            self.stdout.write(f"API Response Status: {response.status_code}")
-            
-            try:
-                response_json = response.json()
-                self.stdout.write("API Response Body:")
-                self.stdout.write(json.dumps(response_json, indent=2))
-            except json.JSONDecodeError:
-                self.stdout.write("Raw API Response:")
-                self.stdout.write(response.text)
             
             response.raise_for_status()
             
@@ -167,8 +157,7 @@ MESSAGE assistant {row["response"]}'''
             if hasattr(e, 'response') and e.response is not None:
                 self.stderr.write("Error Response:")
                 self.stderr.write(e.response.text)
-        # finally:
-        #     if os.path.exists(modelfile_path):
-        #         print(f"Modelfile: {modelfile_path}")
-        #         os.remove(modelfile_path)
-        #         self.stdout.write("Cleaned up Modelfile") 
+        finally:
+            if os.path.exists(modelfile_path):
+                os.remove(modelfile_path)
+                self.stdout.write("Temporary Modelfile removed.") 

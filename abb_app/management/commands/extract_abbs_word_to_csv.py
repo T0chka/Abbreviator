@@ -7,6 +7,7 @@ from abb_app.utils import (
     AbbreviationTableExtractor,
     TextProcessor
 )
+import time
 
 class Command(BaseCommand):
     help = 'Extract abbreviations with contexts from Word files'
@@ -27,7 +28,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--max-contexts',
             type=int,
-            default=10,
+            default=1,
             help='Maximum number of contexts to extract for each abbreviation'
         )
         parser.add_argument(
@@ -47,7 +48,7 @@ class Command(BaseCommand):
             self.stderr.write(f"Input directory not found: {input_dir}")
             return
 
-        abb_contexts = defaultdict(list)
+        unique_pairs = defaultdict(set)
         table_extractor = AbbreviationTableExtractor()
         text_processor = TextProcessor()
 
@@ -60,24 +61,35 @@ class Command(BaseCommand):
 
             try:
                 doc = Document(filepath)
-                abbreviations = table_extractor.get_abbreviation_table(doc)
-                text = text_processor.extract_relevant_text(doc)
 
-                for abb in abbreviations:
+                start_time = time.time()
+                abb_table = table_extractor.get_abbreviation_table(doc)
+                elapsed_time = time.time() - start_time
+                self.stdout.write(f"Abbreviation table extraction time: {elapsed_time:.2f} seconds")
+
+                start_time = time.time()
+                text = text_processor.extract_relevant_text(doc)
+                elapsed_time = time.time() - start_time
+                self.stdout.write(f"Relevant text extraction time: {elapsed_time:.2f} seconds")
+
+                start_time = time.time()
+                for abb in abb_table:
                     contexts = text_processor.find_abbreviation_context(
                         text, abb['abbreviation'],
                         window=context_window,
                         max_contexts=max_contexts
                     )
-                    
                     if contexts:
                         for desc in abb['descriptions']:
-                            key = (abb['abbreviation'], desc)
-                            abb_contexts[key].extend(contexts)
+                            key = (abb['abbreviation'], desc.strip().lower())
+                            unique_pairs[key].update(contexts)
+                elapsed_time = time.time() - start_time
+                self.stdout.write(f"Contexts collection time: {elapsed_time:.2f} seconds")
 
             except Exception as e:
                 self.stderr.write(f"Error processing {filename}: {e}")
 
+        start_time = time.time()
         self.stdout.write(f"\nSaving results to {output_file}...")
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
@@ -85,18 +97,19 @@ class Command(BaseCommand):
             writer = csv.writer(f, quoting=csv.QUOTE_ALL)
             writer.writerow(['abbreviation', 'description', 'contexts'])
             
-            for (abb, desc), contexts in abb_contexts.items():
-               # print(f"\nAbbreviation: {abb}, Description: {desc}, Contexts: {contexts}")
-                contexts_str = ' '.join(contexts)
+            for (abb, desc), contexts_set in sorted(unique_pairs.items()):
+                contexts_str = ' '.join(contexts_set)
                 writer.writerow([abb, desc, contexts_str])
+        elapsed_time = time.time() - start_time
+        self.stdout.write(f"File writing time: {elapsed_time:.2f} seconds")
 
-        total_abbs = len(abb_contexts)
-        total_contexts = sum(len(contexts) for contexts in abb_contexts.values())
+        total_pairs = len(unique_pairs)
+        total_contexts = sum(len(ctx_set) for ctx_set in unique_pairs.values())
         
         self.stdout.write(self.style.SUCCESS(
-            f"\nExtracted {total_abbs} abbreviations "
+            f"\nExtracted {total_pairs} abbreviations "
             f"with {total_contexts} total contexts"
         ))
         self.stdout.write(
             f"Results saved to {output_file}"
-        ) 
+        )

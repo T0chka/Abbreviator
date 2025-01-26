@@ -196,7 +196,9 @@ class TextProcessor:
             skip_sections: List[str] = SKIP_SECTIONS,
             exclude_terms: Set[str] = EXCLUDE_TERMS
         ):
-        self.skip_sections = skip_sections
+        self.skip_sections = {
+                section.upper() for section in skip_sections
+            }
         self.exclude_terms = exclude_terms
         self.roman_pattern = re.compile(
             r'^(?:[IVXLCDM]+(?:-[IVXLCDM]+)?)[A-Za-zА-Яа-яёЁ]*$',
@@ -209,43 +211,37 @@ class TextProcessor:
         The exclusion starts at the section title in bold or heading style
         and resumes at the next bold or heading section.
         """
-        relevant_text: List[str] = []
-        skip: bool = False
-
+        paragraphs = []
+        skip = False
+        
         for para in doc.paragraphs:
             para_text = para.text.strip()
-
+            if not para_text:
+                continue
+                
             is_heading = (
                 para.style.name.startswith('Heading')
                 or 'Заголовок' in para.style.name
             )
-            is_bold = any(
-                run.bold for run in para.runs if run.text.strip()
-            )
+            
+            is_bold = False
+            if not is_heading:
+                for run in para.runs:
+                    if run.text.strip() and run.bold:
+                        is_bold = True
+                        break
 
-            if any(t.upper() in para_text.upper() for t in self.skip_sections):
-                print(
-                    f"Detected: {para_text[:100]} - "
-                    f"Style: {para.style.name} - "
-                    f"Is Bold: {is_bold} - Is Heading: {is_heading}"
-                )
-            if ((is_bold or is_heading)
-                and any(t.upper() in para_text.upper() for t in self.skip_sections)
-                ):
-                print("Skipping this section")
-                skip = True
-
-            elif (is_bold or is_heading) and skip:
-                print(
-                    f"\nResuming search at section: {para_text}"
-                )
-                skip = False
+            if (is_bold or is_heading):
+                para_text_upper = para_text.upper()
+                if any(section in para_text_upper for section in self.skip_sections):
+                    skip = True
+                elif skip:
+                    skip = False
 
             if not skip:
-                relevant_text.append(para_text)
+                paragraphs.append(para_text)
 
-        print(f"Found {len(relevant_text)} paragraphs")
-        return " ".join(relevant_text)
+        return ' '.join(paragraphs)
 
     def extract_abbreviations(self, text: str) -> Counter[str]:
         """
@@ -306,14 +302,14 @@ class TextProcessor:
             rf'(?<!\w){re.escape(abbreviation)}(?!\w)', text
         )
         for match in matches:
-            if len(contexts) >= max_contexts:
-                break
             start = max(0, match.start() - window)
             end = min(len(text), match.end() + window)
-            snippet = "..." + text[start:end] + "..."
+            snippet = "..." + text[start:end].strip() + "..."
+            if max_contexts == 1:
+                return [snippet]
             contexts.add(snippet)
-
-        return list(contexts) if max_contexts > 1 else next(iter(contexts), "")
+            
+        return list(contexts)
 
 # -----------------------------------------------------------------------------
 # Preparation of abbreviations
@@ -370,7 +366,7 @@ def process_abbreviations(
 
         # Use model if abbreviation is missing in the dict
         if not dict_entry:
-            ai_description = generate_description_with_model(abb, "\n".join(contexts))
+            ai_description = generate_description_with_model(abb, " ".join(contexts))
             if ai_description and ai_description != "No description available":
                 descriptions.append(ai_description)
                 is_ai_generated = True
