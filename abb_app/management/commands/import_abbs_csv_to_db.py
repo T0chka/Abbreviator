@@ -7,7 +7,12 @@ class Command(BaseCommand):
     help = 'Import abbreviations from CSV file to database'
 
     def add_arguments(self, parser):
-        parser.add_argument('csv_file', type=str, help='Path to CSV file')
+        parser.add_argument(
+            '--csv-file',
+            type=str,
+            default=os.path.join('abb_app', 'data', 'abb_dict.csv'),
+            help='Path to CSV file'
+        )
         parser.add_argument(
             '--status',
             type=str,
@@ -33,7 +38,7 @@ class Command(BaseCommand):
         skipped_records = []
         imported = 0
 
-        with open(csv_file, 'r', encoding='utf-8') as f:
+        with open(csv_file, 'r', encoding='utf-8-sig') as f:
             reader = csv.reader(f)
             next(reader)  # Skip header row
             

@@ -1,4 +1,3 @@
-import os
 from django.core.management.base import BaseCommand
 from abb_app.utils import split_by_language
 

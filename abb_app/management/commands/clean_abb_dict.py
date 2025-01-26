@@ -21,6 +21,28 @@ class Command(BaseCommand):
             help='Output CSV file for cleaned data'
         )
 
+    def validate_abbreviation_match(self, abb: str, desc: str) -> bool:
+        """
+        Checks if the description contains words starting with the letters of the abbreviation.
+        """
+        if not abb or not desc:
+            return False
+            
+        abb_letters = [c for c in abb.upper() if c.isalpha()]
+        
+        words = regex.findall(r'[\p{L}-]+', desc, regex.UNICODE)
+        
+        first_letters = set()
+        for word in words:
+            if word:
+                first_letters.add(word[0].upper())
+            parts = word.split('-')
+            for part in parts[1:]:
+                if part:
+                    first_letters.add(part[0].upper())
+        
+        return all(letter in first_letters for letter in abb_letters)
+
     def handle(self, *args, **options):
         input_file = options['input_file']
         output_file = options['output_file']
@@ -34,6 +56,7 @@ class Command(BaseCommand):
         skipped_mixed = 0
         skipped_one_letter = 0
         skipped_few_capitals = 0
+        skipped_no_match = 0
         cleaned_descriptions = 0
         unchanged_descriptions = 0
         
@@ -73,6 +96,13 @@ class Command(BaseCommand):
                 
                 # Decide which cleaned description to use
                 if abb_lang == 'russian' and russian_desc:
+                    cleaned_desc = russian_desc
+                    if not self.validate_abbreviation_match(abb, russian_desc):
+                        skipped_no_match += 1
+                        self.stdout.write(
+                            f"Skipping due to no letter match: {abb} - {russian_desc}"
+                        )
+                        continue
                     if russian_desc != desc:
                         cleaned_descriptions += 1
                         self.stdout.write(
@@ -80,8 +110,14 @@ class Command(BaseCommand):
                         )
                     else:
                         unchanged_descriptions += 1 
-                    cleaned_desc = russian_desc                        
                 elif abb_lang == 'latin' and latin_desc:
+                    cleaned_desc = latin_desc
+                    if not self.validate_abbreviation_match(abb, latin_desc):
+                        skipped_no_match += 1
+                        self.stdout.write(
+                            f"Skipping due to no letter match: {abb} - {latin_desc}"
+                        )
+                        continue
                     if latin_desc != desc:
                         cleaned_descriptions += 1
                         self.stdout.write(
@@ -89,9 +125,14 @@ class Command(BaseCommand):
                         )
                     else:
                         unchanged_descriptions += 1
-                    cleaned_desc = latin_desc
                 else:
                     cleaned_desc = desc
+                    if not self.validate_abbreviation_match(abb, desc):
+                        skipped_no_match += 1
+                        self.stdout.write(
+                            f"Skipping due to no letter match: {abb} - {desc}"
+                        )
+                        continue
                     unchanged_descriptions += 1
                 
                 cleaned_data.append([abb, cleaned_desc, contexts])
@@ -109,7 +150,9 @@ class Command(BaseCommand):
             f"- Mixed-language abbreviations removed: {skipped_mixed}\n"
             f"- One-letter abbreviations removed: {skipped_one_letter}\n"
             f"- Abbreviations without at least two capital letters removed: {skipped_few_capitals}\n"
+            f"- Entries with no matching letters removed: {skipped_no_match}\n"
             f"- Descriptions cleaned: {cleaned_descriptions}\n"
             f"- Descriptions unchanged: {unchanged_descriptions}\n"
+            f"- Total entries in output file: {len(cleaned_data)}\n"
             f"Results saved to: {output_file}"
         )) 

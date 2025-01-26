@@ -14,10 +14,14 @@ class ModelClient:
     def __init__(
             self,
             host=getattr(settings, 'OLLAMA_HOST', 'http://localhost:11434'),
-            model=getattr(settings, 'OLLAMA_MODEL', 'llama3.2')
+            model=getattr(settings, 'OLLAMA_MODEL', 'llama3.2'),
+            temperature=getattr(settings, 'OLLAMA_TEMPERATURE', 0.6),
+            top_p=getattr(settings, 'OLLAMA_TOP_P', 0.6)
         ):
         self.host = host
         self.model = model
+        self.temperature = temperature
+        self.top_p = top_p
         self.parser = PydanticOutputParser(pydantic_object=AbbreviationResponse)
         
     def _clean_response(self, text: str) -> str:
@@ -34,34 +38,28 @@ class ModelClient:
         return text
 
     def generate_response(self, prompt: str):
-        # format_instructions = self.parser.get_format_instructions()
         format_instructions = (
             " Ответ должен быть одним коротким предложением на одном языке"
-            "в формате: {\"description\": \"<текст расшифровки>\"}"
+            "в формате JSON: {\"description\": \"<текст расшифровки>\"}"
         )
         prompt = f"{prompt}\n\n{format_instructions}"
         
         url = f"{self.host}/api/generate"
-        
+
         payload = {
             "model": self.model,
             "prompt": prompt,
             "format": "json",
             "stream": False,
-            "temperature": getattr(settings, 'OLLAMA_TEMPERATURE', 0.1),
-            "top_p": getattr(settings, 'OLLAMA_TOP_P', 0.3)
+            "temperature": self.temperature,
+            "top_p": self.top_p
         }
-        payload_str = json.dumps(payload, indent=4, ensure_ascii=False)
-        logger.debug(f"\nSending request to model at {url} with payload:\n{payload_str}")
         
         try:
             response = requests.post(url, json=payload)
             response.raise_for_status()
             response_data = response.json()
             response_data.pop("context", None)
-
-            response_str = json.dumps(response_data, indent=4, ensure_ascii=False)
-            logger.debug(f"Model response:\n{response_str}")
             
             # Clean and parse response
             model_response = response_data.get("response", "")

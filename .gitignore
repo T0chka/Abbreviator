@@ -43,6 +43,7 @@ Thumbs.db
 *.xls
 *.docx
 *.doc
+*.csv
 
 !media/test_drive.docx
 
