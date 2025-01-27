@@ -143,6 +143,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Ollama settings
 OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://192.168.1.165:11434')
-OLLAMA_MODEL = 'deepseek-r1:7b'
-OLLAMA_TEMPERATURE = 0.6
-OLLAMA_TOP_P = 0.6
+OLLAMA_MODEL = 'medical'
+OLLAMA_TEMPERATURE = 0.9
+OLLAMA_TOP_P = 0.9

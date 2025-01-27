@@ -38,21 +38,21 @@ class Command(BaseCommand):
             '--temperatures',
             nargs='+',
             type=float,
-            default=[0.1, 0.3, 0.6, 0.9],
+            default=[0.1, 0,5, 1],
             help='List of temperature values to test'
         )
         parser.add_argument(
             '--top-p-values',
             nargs='+',
             type=float,
-            default=[0.1, 0.3, 0.6, 0.9],
+            default=[0.1, 0,5, 1],
             help='List of top-p values to test'
         )
         parser.add_argument(
             '--train-sizes',
             nargs='+',
             type=int,
-            default=[10, 50, 100, 200, 500],
+            default=[50, 250, 500],
             help='List of training set sizes to test'
         )
         parser.add_argument(
@@ -64,7 +64,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--model-timeout',
             type=int,
-            default=60,
+            default=30,
             help='Timeout in seconds between testing different models'
         )
 
@@ -93,9 +93,10 @@ class Command(BaseCommand):
         
         # Write results
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
-        with open(csv_path, 'w', encoding='utf-8-sig', newline='') as f:
+        with open(csv_path, 'a', encoding='utf-8-sig', newline='') as f:
             writer = csv.DictWriter(f, fieldnames=headers)
-            writer.writeheader()
+            if not os.path.exists(csv_path):
+                writer.writeheader()
             for r in results:
                 writer.writerow(r)
         
@@ -103,18 +104,12 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         start_time = time.time()
-        benchmark_results = []
         
         # Create output directory
         os.makedirs(options['output_dir'], exist_ok=True)
         
-        for i, model in enumerate(options['models']):
-            # Add timeout between models (except first one)
-            if i > 0:
-                timeout = options['model_timeout']
-                self.stdout.write(f"\n=== Cooling down for {timeout} seconds ===")
-                time.sleep(timeout)
-            
+        for model in options['models']:
+            benchmark_results = []
             for train_size in options['train_sizes']:
                 # Create training subset
                 subset_file = os.path.join('abb_app', 'data', f'train_subset_{train_size}.csv')
@@ -123,7 +118,7 @@ class Command(BaseCommand):
                 for temp in options['temperatures']:
                     for top_p in options['top_p_values']:
                         self.stdout.write(self.style.SUCCESS(
-                            f"\n=== Testing Configuration ===\n"
+                            f"\n========= Testing Configuration =========\n\n"
                             f"Model: {model}\n"
                             f"Training examples: {train_size}\n"
                             f"Temperature: {temp}\n"
@@ -133,7 +128,7 @@ class Command(BaseCommand):
                         experiment_start = time.time()
                         try:
                             # Fine-tune model
-                            self.stdout.write(f"\n=== Fine-tuning Model ===")
+                            self.stdout.write(f"\n=== Fine-tuning Model ===\n")
                             call_command(
                                 'finetune_model',
                                 ollama_host=options['ollama_host'],
@@ -181,14 +176,14 @@ class Command(BaseCommand):
                             )
                         
                         benchmark_results.append(result)
-                        
-                        # Save intermediate results
-                        csv_file = self._save_results_csv(benchmark_results, options['output_dir'])
                 
                 # Clean up subset file
                 if os.path.exists(subset_file):
                     os.remove(subset_file)
                     os.remove(json_temp_file)
+
+            # Save intermediate results
+            csv_file = self._save_results_csv(benchmark_results, options['output_dir'])
 
         # Calculate total runtime
         total_time = time.time() - start_time
@@ -196,7 +191,7 @@ class Command(BaseCommand):
         # Print summary
         self.stdout.write(self.style.SUCCESS(
             f"\n=== Benchmark Complete ===\n"
-            f"Total runtime: {total_time:.1f} seconds\n"
+            f"Total runtime: {total_time / 60:.1f} minutes\n"
             f"Results saved to: {csv_file}"
         ))
 
