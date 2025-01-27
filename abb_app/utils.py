@@ -315,31 +315,6 @@ class TextProcessor:
 # Preparation of abbreviations
 # -----------------------------------------------------------------------------
 
-def generate_description_with_model(abbreviation: str, contexts: str = None) -> str:
-    prompt = """
-    Аббревиатура: '{abbreviation}'
-    Контекст: {contexts}
-    Расшифруй!
-    """
-    prompt = prompt.format(
-        abbreviation = abbreviation,
-        contexts=contexts
-    )
-    
-    client = ModelClient()
-
-    try:
-        description = client.generate_response(prompt)
-        
-        # Validate response
-        if description.lower() == "неизвестная аббревиатура":
-            return "No description available"
-            
-        return description
-    except Exception as e:
-        print(f"Error generating description for '{abbreviation}': {e}")
-        return "No description available"
-
 def process_abbreviations(
         doc: Document,
         abb_dict: List[Abbreviation]
@@ -352,7 +327,7 @@ def process_abbreviations(
     text = text_processor.extract_relevant_text(doc)
     raw_abbs = text_processor.extract_abbreviations(text)    
     processed_abbs: List[Abbreviation] = []
-
+    
     print("Starting processing abbreviations")
 
     for abb, count in raw_abbs.items():
@@ -360,18 +335,10 @@ def process_abbreviations(
         dict_entry = next(
             (entry for entry in abb_dict if entry['abbreviation'] == abb), None
         )
-
+        
         descriptions = dict_entry['descriptions'] if dict_entry else []
         is_ai_generated = False        
-
-        # Use model if abbreviation is missing in the dict
-        if not dict_entry:
-            ai_description = generate_description_with_model(abb, " ".join(contexts))
-            if ai_description and ai_description != "No description available":
-                descriptions.append(ai_description)
-                is_ai_generated = True
-            print(f"For {abb} generated description: {ai_description}")
-        
+            
         processed_abb: Abbreviation = {
             'abbreviation': abb,
             'descriptions': descriptions,
@@ -381,9 +348,9 @@ def process_abbreviations(
             'correct_form': None,
             'highlighted': None,
             'status': None,
-            'is_ai_generated': is_ai_generated 
+            'is_ai_generated': is_ai_generated
         }
-        
+            
         # Validate and update if it's 9 or less characters long
         if len(abb) <= 15:
             try:

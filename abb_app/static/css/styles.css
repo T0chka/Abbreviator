@@ -206,8 +206,36 @@ h2 {
 
 .input-group input:focus {
     outline: none;
-    border-color: var(--bg-accent-hover);
-    box-shadow: var(--shadow-sm);
+    border-color: var(--primary-color);
+}
+
+/* Magic wand button */
+.input-group .generate-btn {
+    position: absolute;
+    right: 140px;
+    background: none;
+    border: none;
+    box-shadow: none;
+    color: var(--text-primary);
+    padding: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Remove hover effects from button */
+.input-group .generate-btn:hover {
+    background: none;
+    box-shadow: none;
+}
+
+/* Icon animation */
+.magic-wand-icon {
+    transition: transform var(--transition-fast);
+}
+
+.tooltip:hover .magic-wand-icon {
+    transform: scale(1.2);
 }
 
 /* ==========================================================================
@@ -427,7 +455,6 @@ h2 {
 .tooltip .tooltiptext,
 .fab .tooltiptext,
 .abb-description .tooltiptext {
-    /* visibility: hidden; */
     background-color: var(--primary-color);
     color: var(--bg-light);
     text-align: center;
@@ -457,6 +484,12 @@ h2 {
     left: 50%;
     bottom: 40%;
     transform: translateY(-50%);
+}
+
+.tooltip-center .tooltiptext {
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 200%;
 }
 
 .tooltip:hover .tooltiptext {

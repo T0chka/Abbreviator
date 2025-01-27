@@ -2,8 +2,10 @@ import os
 import csv
 import re
 import json
+import time
 from django.core.management.base import BaseCommand, CommandError
 from abb_app.model_integration.client import ModelClient
+from abb_app.model_integration.chat_client import ChatModelClient
 
 class Command(BaseCommand):
     help = 'Test model performance on test data'
@@ -45,6 +47,11 @@ class Command(BaseCommand):
             default='',
             help='Path to JSON file for saving test results'
         )
+        parser.add_argument(
+            '--chat-mode',
+            action='store_true',
+            help='Use chat-based interaction mode'
+        )
 
     def normalize_text(self, text):
         """Normalize text for comparison by removing punctuation and extra spaces"""
@@ -60,12 +67,14 @@ class Command(BaseCommand):
         temperature = options['temperature']
         top_p = options['top_p']
         json_output = options['json_output']
+        chat_mode = options['chat_mode']
         if not os.path.exists(test_file):
             self.stderr.write(f"Test file not found: {test_file}")
             return
 
-        # Initialize model client
-        client = ModelClient(
+        # Initialize appropriate client
+        client_class = ChatModelClient if chat_mode else ModelClient
+        client = client_class(
             host=options['ollama_host'],
             model=model_name,
             temperature=temperature,
@@ -76,6 +85,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS(
             f"\nTest Configuration:\n"
             f"Model: {model_name}\n"
+            f"Mode: {'chat' if chat_mode else 'standard'}\n"
             f"Temperature: {temperature}\n"
             f"Top-p: {top_p}\n"
             f"Test file: {test_file}\n"
@@ -91,6 +101,16 @@ class Command(BaseCommand):
             'correct_train': 0
         }
 
+        rules = (
+            "Важные правила:\n"
+            "1. Расшифровка должна быть максимально короткой и соответствовать контексту.\n"
+            "2. Слова в расшифровке должны совпадать по начальному символу:\n"
+            "- Для 'FDA': F -> Food, D -> Drug, A -> Administration.\n"
+            "- Для 'ЧСС': Ч -> частота, С -> сердечных, С -> сокращений.\n"
+            "3. Если аббревиатура написана латиницей (FDA, BMI), ответ должен быть на английском языке.\n"
+            "4. Если аббревиатура написана кириллицей (АБС, МИА), ответ должен быть на русском языке.\n"
+        )
+
         # Read test data
         with open(test_file, 'r', encoding='utf-8-sig') as f:
             reader = csv.reader(f)
@@ -103,22 +123,34 @@ class Command(BaseCommand):
                 abb, expected_desc, contexts, source = row
                 stats['total'] += 1
                 
-                self.stdout.write(f"\nTesting abbreviation: {abb} [{source.upper()}]")
+                self.stdout.write(f"\nTesting abbreviation {stats['total']}: {abb} [{source.upper()}]")
                 self.stdout.write(f"Expected: {expected_desc}")
                 
+                if re.search(r'[A-Za-z]', abb):
+                    language_hint = "The abbreviation is English. The description must be in English."
+                else:
+                    language_hint = "Аббревиатура русская, расшифровка должна быть на русском языке."
+
                 try:
-                    prompt = (
-                        "Вспомни важные правила:\n"
-                        "1. Расшифровка должна быть максимально короткой и общепринята в медицинской документации.\n"
-                        "2. Слова в расшифровке должны соответствовать буквам аббревиатуры "
-                        "(например, для аббревиатуры 'АБС' расшифровка должна содержать три слова, "
-                        "первое из которых начинается с буквы 'А', второе с буквы 'Б', третье с буквы 'С').\n"
-                        "3. Язык расшифровки должен соответствовать языку аббревиатуры.\n"
-                        "4. Если не уверен, что расшифровка правильная, то отвечай 'не знаю'.\n"
-                        "Следуя этим правилам, расшифруй аббревиатуру: "
-                        f"'{abb}', использованную в контексте: '{contexts}'."
-                    )
-                    predicted_desc = client.generate_response(prompt)
+                    if chat_mode:
+                        prompt = (
+                            f"Аббревиатура '{abb}', использована в контексте: '{contexts}'."
+                            f"\n{language_hint}"
+                        )
+                        predicted_desc = client.generate_response(prompt, rules)
+                    else:
+                        prompt = (
+                            f"Следуя правилам, расшифруй аббревиатуру '{abb}',"
+                            f"использованную в контексте: '{contexts}'."
+                            f"\n{language_hint}"
+                        )
+                        # prompt = (
+                        #     "Вспомни " + rules +
+                        #     "Следуя этим правилам, расшифруй аббревиатуру: " +
+                        #     f"'{abb}', использованную в контексте: '{contexts}'."
+                        #     f"\n{language_hint}"
+                        # )
+                        predicted_desc = client.generate_response(prompt)                        
                     
                     # Compare predictions (normalized)
                     expected_norm = self.normalize_text(expected_desc)
@@ -157,6 +189,11 @@ class Command(BaseCommand):
                         self.style.SUCCESS(result_msg) if is_correct 
                         else self.style.ERROR(result_msg)
                     )
+
+                    # if stats['total'] % 10 == 0:
+                    #     timeout = 10
+                    #     self.stdout.write(f"\n=== Cooling down for {timeout} seconds ===")
+                    #     time.sleep(timeout)
                     
                 except Exception as e:
                     self.stderr.write(f"Error processing {abb}: {str(e)}")

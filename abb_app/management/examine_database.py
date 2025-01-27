@@ -33,5 +33,5 @@ def inspect_database(db_path):
         print(f"Error while accessing the database: {e}")
 
 # Replace with the path to your database
-db_path = r'C:\Workspace\abbreviator\db.sqlite3'
+db_path = r'C:\Workspace\abbreviator\abb_app\db.sqlite3'
 inspect_database(db_path)

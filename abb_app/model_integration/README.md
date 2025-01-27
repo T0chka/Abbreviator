@@ -80,7 +80,7 @@ python manage.py finetune_model \
 --ollama-host=http://192.168.1.165:11434 \
 --train-file=abb_app/data/train_data.csv \
 --base-model=deepseek-r1:32b \
---new-model-name=medical \
+--new-model-name=medical
 ```
 This command:
 
