@@ -140,3 +140,9 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 10
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Ollama settings
+OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://192.168.1.196:11434')
+OLLAMA_MODEL = 'medical'
+OLLAMA_TEMPERATURE = 0.9
+OLLAMA_TOP_P = 0.9

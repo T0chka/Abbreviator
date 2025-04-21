@@ -26,6 +26,8 @@ from .utils import (
     AbbreviationTableGenerator
 )
 from .models import AbbreviationEntry
+from .model_integration.client import ModelClient
+from django.conf import settings
 
 DEMO_SESSION_ID = 'test_drive'
 
@@ -338,3 +340,49 @@ def dictionary_view(request):
         'new_count': new_count,
         'last_update': last_update,
     })
+
+@require_http_methods(["POST"])
+def generate_description(request: HttpRequest) -> JsonResponse:
+    """Generate description for abbreviation using LLM"""
+    try:
+        data = parse_request_json(request)
+        abb = data.get('abbreviation')
+        context = data.get('context', '')
+        
+        if not abb:
+            return JsonResponse({
+                'success': False,
+                'error': 'Abbreviation is required'
+            }, status=400)
+
+        client = ModelClient(
+            host=settings.OLLAMA_HOST,
+            model=settings.OLLAMA_MODEL,
+            temperature=0.6,
+            top_p=0.6
+        )
+
+        prompt = (
+            "Расшифруй аббревиатуру, следуя этим важным правилам:\n"
+            "1. Расшифровка должна быть максимально короткой и соответствовать контексту.\n"
+            "2. Слова в расшифровке должны соответствовать буквам аббревиатуры.\n"
+            "3. Язык расшифровки должен соответствовать языку аббревиатуры.\n"
+            "4. Если не уверен, что расшифровка правильная, то отвечай 'не знаю'.\n"
+            f"\nАббревиатура: '{abb}'\n"
+            f"Контекст использования: '{context}'\n"
+            "Дай ответ в формате JSON с полем 'description'."
+        )
+        
+        description = client.generate_response(prompt)
+        
+        return JsonResponse({
+            'success': True,
+            'description': description
+        })
+        
+    except Exception as e:
+        logger.error("Failed to generate description", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
