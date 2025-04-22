@@ -16,19 +16,9 @@ from thefuzz import process, fuzz
 
 
 import logging
-import platform
 
-debug_logger = logging.getLogger('debug')
-debug_logger.setLevel(logging.ERROR)
-
-if platform.system() == 'Windows':
-    debug_log_path = 'debug.log'
-else:
-    debug_log_path = '/tmp/debug.log'
-
-handler = logging.FileHandler(debug_log_path)
-handler.setLevel(logging.ERROR)
-debug_logger.addHandler(handler)
+standard_logger = logging.getLogger('django')
+standard_logger.error("STARTING TEXT EXTRACTION")
 
 ABB_DICT_PATH = os.path.join(
     os.path.dirname(__file__),
@@ -236,13 +226,20 @@ class TextProcessor:
                 continue
                 
             try:
+                style_name = None
+                if hasattr(para, 'style') and para.style:
+                    try:
+                        style_name = para.style.name
+                    except:
+                        style_name = None
+                        
                 is_heading = (
-                    para.style and 
-                    para.style.name and 
-                    (para.style.name.startswith('Heading') or 'Заголовок' in para.style.name)
+                    style_name and 
+                    (style_name.startswith('Heading') or 'Заголовок' in style_name)
                 )
+                
             except Exception as e:
-                debug_logger.error(f"Error in paragraph {i} (content: '{para_text[:30]}...'): {str(e)}")
+                standard_logger.error(f"Error in para {i}: {str(e)}")
                 is_heading = False
             
             is_bold = False
@@ -262,6 +259,7 @@ class TextProcessor:
             if not skip:
                 paragraphs.append(para_text)
 
+        standard_logger.error("EXTRACTION COMPLETED")
         return ' '.join(paragraphs)
 
     def extract_abbreviations(self, text: str) -> Counter[str]:
