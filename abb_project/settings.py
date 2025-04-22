@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -27,10 +28,10 @@ SECRET_KEY = (
     else 'your-default-secret-key'
 )
 
-DEBUG = os.environ.get('DEBUG') == 'True' if 'DEBUG' in os.environ else True
+DEBUG = ('runserver' in sys.argv)
 ALLOWED_HOSTS = ['datadelic.dev', '127.0.0.1']
 
-if not DEBUG:   
+if not DEBUG:
     FORCE_SCRIPT_NAME = '/abbreviator/'
 
 # Application definition
