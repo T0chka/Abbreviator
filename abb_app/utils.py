@@ -14,6 +14,22 @@ from typing import (
 from abb_app.model_integration.client import ModelClient
 from thefuzz import process, fuzz
 
+
+import logging
+import platform
+
+debug_logger = logging.getLogger('debug')
+debug_logger.setLevel(logging.ERROR)
+
+if platform.system() == 'Windows':
+    debug_log_path = 'debug.log'
+else:
+    debug_log_path = '/tmp/debug.log'
+
+handler = logging.FileHandler(debug_log_path)
+handler.setLevel(logging.ERROR)
+debug_logger.addHandler(handler)
+
 ABB_DICT_PATH = os.path.join(
     os.path.dirname(__file__),
     'data', 'abb_dict.csv'
@@ -214,15 +230,20 @@ class TextProcessor:
         paragraphs = []
         skip = False
         
-        for para in doc.paragraphs:
+        for i, para in enumerate(doc.paragraphs):
             para_text = para.text.strip()
             if not para_text:
                 continue
                 
-            is_heading = (
-                para.style.name.startswith('Heading')
-                or 'Заголовок' in para.style.name
-            )
+            try:
+                is_heading = (
+                    para.style and 
+                    para.style.name and 
+                    (para.style.name.startswith('Heading') or 'Заголовок' in para.style.name)
+                )
+            except Exception as e:
+                debug_logger.error(f"Error in paragraph {i} (content: '{para_text[:30]}...'): {str(e)}")
+                is_heading = False
             
             is_bold = False
             if not is_heading:
