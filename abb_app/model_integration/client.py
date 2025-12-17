@@ -32,12 +32,23 @@ class ModelClient:
                     'top_p': self.top_p,
                     'format': 'json',
                     'stream': False
-                }
+                },
+                timeout=3
             )
             response.raise_for_status()
             return response.json()['response']
-        except requests.exceptions.RequestException as e:
-            raise Exception(f"Failed to get model response: {str(e)}")
+        except requests.exceptions.ConnectionError:
+            logger.error(f"Connection error to Ollama server at {self.host}")
+            return json.dumps({"description": "Sorry, the language model service is unavailable now"})
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout connecting to Ollama server at {self.host}")
+            return json.dumps({"description": "Sorry, the language model service is unavailable now"})
+        except requests.exceptions.HTTPError as e:
+            logger.error(f"HTTP error from Ollama server: {e}")
+            return json.dumps({"description": "Sorry, the language model service is unavailable now"})
+        except Exception as e:
+            logger.error(f"Unexpected error with Ollama server: {str(e)}")
+            return json.dumps({"description": "Sorry, the language model service is unavailable now"})
 
     def generate_response(self, prompt: str):
         format_instructions = (
