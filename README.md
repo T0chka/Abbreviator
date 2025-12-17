@@ -17,13 +17,9 @@ The project is currently live and running at [https://datadelic.dev/abbreviator]
 - Load a table with user-selected abbreviation-description pairs in Word format.
 
 ## TODO:
-- Tutorial within the app
-- Handling of different spellings of the same abbreviation (e.g. "HbA1c" and "HBA1C").
 - Functionality to check for similar existing descriptions for new entries (e.g. using fuzzy matching)
-- Interactive formatting of descriptions in the input line
 - Settings to customize the view (e.g. the context window length and the number of context lines displayed)
 - Counters for skipped abbreviations and newly added entries
-- Add abbreviations from other fields (not just medical) to the dictionary (implement categories/tags)
 - Add English versions of the interface and the dictionary
 
 # Installation
