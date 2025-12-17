@@ -1,0 +1,14 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+
+# Your rule content
+
+Development Guidelines
+Code Style: Follow PEP 8 for Python code, use clear variable names
+Language: All code comments and documentation must be in English
+Error Handling: Implement proper validation and error handling without suppression
+Documentation: Keep comments minimal, concise and focused on implementation logic
+Professional Code: clean solution-focused code

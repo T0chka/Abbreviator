@@ -304,11 +304,11 @@ document.addEventListener('DOMContentLoaded', function() {
                                 .join(' ');
             
             try {
-                const icon = btn.querySelector('.material-icons');
+                const icon = btn.querySelector('.magic-wand-icon');
                 btn.disabled = true;
                 icon.textContent = 'hourglass_empty';
                 
-                const response = await fetch('/generate_description/', {
+                const response = await fetch('{% url "generate_description" %}', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -332,7 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Не удалось сгенерировать расшифровку: ' + error.message);
             } finally {
                 btn.disabled = false;
-                btn.querySelector('.material-icons').textContent = 'auto_fix_high';
+                btn.querySelector('.magic-wand-icon').textContent = 'auto_fix_high';
             }
         });
     });

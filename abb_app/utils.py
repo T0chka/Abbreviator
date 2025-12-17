@@ -14,6 +14,12 @@ from typing import (
 from abb_app.model_integration.client import ModelClient
 from thefuzz import process, fuzz
 
+
+import logging
+
+standard_logger = logging.getLogger('django')
+standard_logger.error("STARTING TEXT EXTRACTION")
+
 ABB_DICT_PATH = os.path.join(
     os.path.dirname(__file__),
     'data', 'abb_dict.csv'
@@ -214,15 +220,27 @@ class TextProcessor:
         paragraphs = []
         skip = False
         
-        for para in doc.paragraphs:
+        for i, para in enumerate(doc.paragraphs):
             para_text = para.text.strip()
             if not para_text:
                 continue
                 
-            is_heading = (
-                para.style.name.startswith('Heading')
-                or 'Заголовок' in para.style.name
-            )
+            try:
+                style_name = None
+                if hasattr(para, 'style') and para.style:
+                    try:
+                        style_name = para.style.name
+                    except:
+                        style_name = None
+                        
+                is_heading = (
+                    style_name and 
+                    (style_name.startswith('Heading') or 'Заголовок' in style_name)
+                )
+                
+            except Exception as e:
+                standard_logger.error(f"Error in para {i}: {str(e)}")
+                is_heading = False
             
             is_bold = False
             if not is_heading:
@@ -241,6 +259,7 @@ class TextProcessor:
             if not skip:
                 paragraphs.append(para_text)
 
+        standard_logger.error("EXTRACTION COMPLETED")
         return ' '.join(paragraphs)
 
     def extract_abbreviations(self, text: str) -> Counter[str]:

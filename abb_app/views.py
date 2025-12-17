@@ -375,6 +375,13 @@ def generate_description(request: HttpRequest) -> JsonResponse:
         
         description = client.generate_response(prompt)
         
+        if description == "Sorry, the language model service is unavailable now":                
+            return JsonResponse({
+                'success': False,
+                'error': 'The language model service is unavailable',
+                'description': description
+            })
+        
         return JsonResponse({
             'success': True,
             'description': description
