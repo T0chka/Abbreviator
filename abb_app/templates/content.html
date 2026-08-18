@@ -1,14 +1,44 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/workflow.css' %}">
+{% endblock %}
+
 {% block content %}
-<!-- Section with differences -->
-<h2>Различия между исходным и новым списками аббревиатур</h2>
-<div class="main-content">
-    <div id="differences-section">
-        {% include 'partials/differences_section.html' %}
+{% if has_initial_abbs %}
+<dialog id="table-check-dialog" class="app-dialog table-check-dialog">
+    <h3>В документе найдена таблица сокращений</h3>
+    <p>
+        В ней {{ initial_abbs_count }} записей.
+        Проверять её по мере обработки документа?
+    </p>
+    <div class="dialog-actions">
+        <button type="button"
+                class="dialog-button dialog-primary"
+                onclick="chooseTableCheck(true)">
+            Проверять таблицу
+        </button>
+        <button type="button"
+                class="dialog-button dialog-secondary"
+                onclick="chooseTableCheck(false)">
+            Создать заново
+        </button>
+    </div>
+</dialog>
+
+<div id="comparison-block" class="is-hidden">
+    <h2>Проверка таблицы сокращений</h2>
+    <div class="main-content">
+        <div id="differences-section">
+            <p>В исходной таблице: {{ initial_abbs_count }} сокращений.</p>
+            <p>
+                Сравнение будет обновляться по мере подтверждения расшифровок.
+            </p>
+        </div>
     </div>
 </div>
+{% endif %}
 
 <!-- Section with abbreviation list -->
 <h2>Добавление аббревиатур и расшифровок</h2>
@@ -44,7 +74,7 @@
                     <h4>{{ abb.abbreviation }}</h4>
                 </div>
                 {% endif %}
-                
+
                 <!-- Description text -->
                 <span class="description-text" id="description_text_{{ abb.abbreviation }}">
                     {% if abb.selected_description %}
@@ -52,7 +82,7 @@
                     {% endif %}
                 </span>
             </div>
-            
+
             <!-- Toggle button -->
             <button class="toggle-btn" id="toggle_btn_{{ abb.abbreviation }}">▼</button>
         </div>
@@ -130,13 +160,29 @@
 
 {% block extra_js %}
 <script>
+let compareWithExisting = false;
+
+function chooseTableCheck(enabled) {
+    compareWithExisting = enabled;
+
+    if (enabled) {
+        document.getElementById('comparison-block')
+            .classList.remove('is-hidden');
+    }
+
+    document.getElementById('table-check-dialog').close();
+}
+
 // Global functions
 async function updateDifferenceSection() {
+    const differencesSection = document.getElementById('differences-section');
+    if (!differencesSection) return;
+
     console.log('[updateDifferenceSection] called');
     try {
         const response = await fetchWrapper("{% url 'update_difference_section' %}");
         if (response.ok) {
-            document.getElementById('differences-section').innerHTML = response.data;
+            differencesSection.innerHTML = response.data;
         } else {
             throw new Error('Update difference section failed, wrong response');
         }
@@ -157,11 +203,11 @@ async function fetchWrapper(url, data = null) {
     if (data) {
         options.body = JSON.stringify(data);
     }
-    
+
     try {
         const response = await fetch(url, options);
         const contentType = response.headers.get('content-type');
-        
+
         let responseData;
         if (contentType && contentType.includes('application/json')) {
             responseData = await response.json();
@@ -187,7 +233,7 @@ async function fetchWrapper(url, data = null) {
 
 async function handleAbbreviation(abb, description = null, action) {
     console.log('[handleAbbreviation] called with:', {abb, description, action});
-    
+
     if (action === 'add' && !description) {
         description = document.getElementById(`desc_${abb}`).value.trim();
         if (!description) return;
@@ -203,7 +249,10 @@ async function handleAbbreviation(abb, description = null, action) {
         if (response.ok) {
             updateAbbreviationUI(abb, description, action);
             toggleAbbreviationContent(abb, true);
-            await updateDifferenceSection();
+
+            if (compareWithExisting) {
+                await updateDifferenceSection();
+            }
         } else {
             throw new Error(response.data?.error || 'Failed to update abbreviation');
         }
@@ -220,7 +269,7 @@ function updateAbbreviationUI(abbreviation, description, action) {
     const addBtn = document.getElementById(`add_btn_${abbreviation}`);
     const titleLeft = document.querySelector(`.abb-title-left[data-abb="${abbreviation}"]`);
     const content = document.getElementById(`content_${abbreviation}`);
-    
+
     if (action === 'skip') {
         descriptionText.textContent = '- (убрано)';
         statusIcon.textContent = '✗';
@@ -241,7 +290,7 @@ function toggleAbbreviationContent(abb, forceCollapse = false) {
     const content = document.getElementById(`content_${abb}`);
     const toggleBtn = document.getElementById(`toggle_btn_${abb}`);
     const titleLeft = document.querySelector(`.abb-title-left[data-abb="${abb}"]`);
-    
+
     if (window.getComputedStyle(content).display === 'none' && !forceCollapse) {
         content.style.display = 'block';
         toggleBtn.textContent = '▼';
@@ -278,11 +327,12 @@ async function generateAbbreviationTable() {
 
 // DOM Ready handler
 document.addEventListener('DOMContentLoaded', function() {
-    // Call updateDifferenceSection when the page loads
-    try {
-        updateDifferenceSection();
-    } catch (error) {
-        console.error('Failed to load initial difference section:', error);
+    const tableDialog = document.getElementById('table-check-dialog');
+    if (tableDialog) {
+        tableDialog.addEventListener('cancel', function(e) {
+            e.preventDefault();
+        });
+        tableDialog.showModal();
     }
 
     // Handle generate button clicks
@@ -292,22 +342,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!this.closest('.abbreviation-item')) {
                 return;
             }
-            
+
             // Prevent event bubbling for generate button
             e.stopPropagation();
-            
+
             const item = this.closest('.abbreviation-item');
             const abb = item.dataset.abbreviation;
             const input = item.querySelector('input[type="text"]');
             const contexts = Array.from(item.querySelectorAll('.context-item p'))
                                 .map(p => p.textContent)
                                 .join(' ');
-            
+
             try {
                 const icon = btn.querySelector('.magic-wand-icon');
                 btn.disabled = true;
                 icon.textContent = 'hourglass_empty';
-                
+
                 const response = await fetch('{% url "generate_description" %}', {
                     method: 'POST',
                     headers: {
@@ -319,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         context: contexts
                     })
                 });
-                
+
                 const data = await response.json();
                 if (data.success) {
                     input.value = data.description;

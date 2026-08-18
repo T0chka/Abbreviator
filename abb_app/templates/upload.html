@@ -2,13 +2,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Upload Document</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Abbreviator</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/workflow.css' %}">
     <link rel="icon" href="{% static 'images/favicon_Poppins.ico' %}">
 </head>
 <body>
-
     <div class="main-content">
         {% if messages %}
         <div class="messages">
@@ -19,220 +20,107 @@
             {% endfor %}
         </div>
         {% endif %}
-            
-        <!-- Upload Section -->
-        <h2>Добро пожаловать в Аббревиатор!</h2>
-        <div class="abbreviation-item" style="padding-top: 16px;">
-            <div class="upload-container">
-                <label for="fileInput">
-                    <span class="material-icons" style="font-size: 48px;" id="icon">upload_file</span>
-                    <p>Перетащите в это поле файл .docx</p>
-                    <p>или <span class="highlight">выберите файл</span></p>
-                    <p>или <a href="{% url 'process_file_with_session' demo_session_id %}" class="highlight">запустите тест-драйв</a></p>
-                </label>
-                <form method="post" enctype="multipart/form-data" id="uploadForm" action="{% url 'upload_file' %}">
-                    {% csrf_token %}
-                    <input 
-                        type="file" 
-                        name="uploaded_file" 
-                        id="fileInput" 
-                        required 
-                        style="display: none;"
-                    >
-                </form>
-            </div>
 
-            <!-- Options Section -->
-            <div class="description-options">
+        {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+        {% endif %}
+
+        <h2>Abbreviator</h2>
+        <p class="upload-intro">
+            Находит сокращения в DOCX и помогает проверить или собрать таблицу расшифровок.
+        </p>
+
+        <div class="abbreviation-item upload-card">
+            <div class="upload-container" id="uploadContainer">
+                <label for="fileInput" class="upload-label">
+                    <svg class="upload-icon" viewBox="0 0 24 24"
+                         aria-hidden="true">
+                        <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v5h14v-5"
+                              fill="none" stroke="currentColor"
+                              stroke-width="1.8" stroke-linecap="round"
+                              stroke-linejoin="round"/>
+                    </svg>
+                    <p>Перетащите сюда файл .docx</p>
+                    <p class="upload-choice">
+                        или <span class="highlight">выберите файл</span>
+                        <span class="upload-limit">до {{ max_upload_size_mb }} МБ</span>
+                    </p>
+                </label>
+
+                <form method="post"
+                      enctype="multipart/form-data"
+                      id="uploadForm"
+                      action="{% url 'upload_file' %}"
+                      data-max-upload-size="{{ max_upload_size }}"
+                      data-max-upload-size-mb="{{ max_upload_size_mb }}"
+                      data-process-url="{% url 'process_file_with_session' '__SESSION_ID__' %}">
+                    {% csrf_token %}
+                    <input type="file"
+                           name="uploaded_file"
+                           id="fileInput"
+                           accept=".docx"
+                           required
+                           hidden>
+                </form>
+
+                <p class="demo-action">
+                    <a href="{% url 'process_file_with_session' demo_session_id %}"
+                       id="demoLink"
+                       class="highlight">
+                        Посмотреть демо
+                    </a>
+                </p>
             </div>
-            <div style="height: 24px;"></div>
         </div>
-    <!-- Loading Overlay -->    
-    <div id="loading-overlay" style="display: none;">
+    </div>
+
+    <div id="loading-overlay" class="is-hidden" aria-live="polite">
         <div class="loading-content">
-            <p>Обработка файла</p>
-            <div class="dot-loader">
+            <p>Обработка документа</p>
+            <div class="dot-loader" aria-hidden="true">
                 <span></span>
                 <span></span>
                 <span></span>
             </div>
         </div>
     </div>
-<script>    
-document.addEventListener('DOMContentLoaded', function() {
-    const uploadContainer = document.querySelector('.upload-container');
-    const icon = document.getElementById('icon');
-    const fileInput = document.getElementById('fileInput');
-    const descriptionOptions = document.querySelector('.description-options');
-    const uploadForm = document.getElementById('uploadForm');
 
-    function checkFileSize(file) {
-        const maxSize = 1048576; // 1MB
-        if (file.size > maxSize) {
-            alert('Файл слишком большой. Максимальный размер: 1MB');
-            return false;
-        }
-        return true;
-    }
-
-    function checkFileExtension(fileName) {
-        if (!fileName.toLowerCase().endsWith('.docx')) {
-            alert('Пожалуйста, загрузите файл формата .docx');
-            return false;
-        }
-        return true;
-    }
-
-    function showButtons(sessionId) {
-        console.log('Showing buttons with sessionId:', sessionId);
-        // Get base URL from Django template
-        const processUrl = "{% url 'process_file_with_session' 'TEMP_ID' %}".replace('TEMP_ID', sessionId);
-        const shareUrl = window.location.origin + processUrl;
-        console.log('Generated shareUrl:', shareUrl);
-        
-        descriptionOptions.innerHTML = `
-            <input type="hidden" value="${shareUrl}" id="shareLink">
-            <button onclick="copyShareLink()" class="btn-select-option">
-                Поделиться ссылкой на загруженный файл
+    <dialog id="upload-error-dialog" class="app-dialog error-dialog">
+        <h3>Не удалось загрузить файл</h3>
+        <p id="upload-error-message"></p>
+        <div class="dialog-actions">
+            <button type="button"
+                    class="dialog-button dialog-primary"
+                    id="uploadErrorClose">
+                Закрыть
             </button>
-            <a href="${processUrl}" class="btn-select-option process-button">
-                Перейти к обработке файла
+        </div>
+    </dialog>
+
+    <footer>
+        <p>
+            &copy; 2026 Antonina Dolgorukova |
+            <a class="source-link"
+               href="https://github.com/T0chka/Abbreviator"
+               target="_blank"
+               rel="noopener noreferrer">
+                <svg class="github-icon" viewBox="0 0 24 24"
+                     aria-hidden="true">
+                    <path fill="currentColor"
+                          d="M12 .7A11.3 11.3 0 0 0 8.4 22.8c.6.1.8-.3.8-.6v-2.2c-3.4.7-4.1-1.4-4.1-1.4-.5-1.4-1.3-1.8-1.3-1.8-1.1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1.1 1.8 2.8 1.3 3.5 1 .1-.8.4-1.3.8-1.6-2.7-.3-5.5-1.3-5.5-5.9 0-1.3.5-2.4 1.2-3.2-.1-.3-.5-1.6.1-3.2 0 0 1-.3 3.3 1.2a11.4 11.4 0 0 1 6 0c2.3-1.5 3.3-1.2 3.3-1.2.6 1.6.2 2.9.1 3.2.8.9 1.2 1.9 1.2 3.2 0 4.6-2.8 5.6-5.5 5.9.4.4.8 1.1.8 2.2v3.3c0 .3.2.7.8.6A11.3 11.3 0 0 0 12 .7Z"/>
+                </svg>
+                Source code
             </a>
-        `;
+            |
+            <a href="https://opensource.org/licenses/MIT"
+               target="_blank"
+               rel="noopener noreferrer"
+               style="color: var(--link-color);">
+                MIT License
+            </a>
+        </p>
+    </footer>
 
-        const processButton = descriptionOptions.querySelector('.process-button');
-        if (processButton) {
-            processButton.addEventListener('click', function(e) {
-                e.preventDefault();
-                const loadingOverlay = document.getElementById('loading-overlay');
-                loadingOverlay.style.display = 'flex';
-                window.location.href = this.href;
-            });
-        }
-    }
-
-    function handleFileUpload(file) {
-        console.log('Handling file upload:', file ? file.name : 'No file');
-        if (!file) return;
-        
-        // Reset state
-        icon.textContent = 'upload_file';
-        descriptionOptions.innerHTML = '';
-
-        // Validate file
-        if (!checkFileExtension(file.name)) {
-            return;
-        }
-
-        // If file was dragged, manually set it to the input
-        const dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        fileInput.files = dataTransfer.files;
-
-        // Update UI to show success
-        icon.textContent = 'download_done';
-        console.log('File validation passed, submitting form');
-
-        // Submit form to get session_id
-        const formData = new FormData(uploadForm);
-        fetch(uploadForm.action, {
-            method: 'POST',
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Server response:', data);
-            if (data.session_id) {
-                showButtons(data.session_id);
-            } else {
-                console.error('No session_id in response');
-                alert('Ошибка при загрузке файла');
-            }
-        })
-        .catch(error => {
-            console.error('Error uploading file:', error);
-            alert('Ошибка при загрузке файла');
-        });
-    }
-
-    // Handle file input change
-    fileInput.addEventListener('change', function(e) {
-        console.log('File input change event triggered');
-        handleFileUpload(e.target.files[0]);
-    });
-
-    // Handle drag and drop
-    uploadContainer.addEventListener('drop', function(e) {
-        e.preventDefault();
-        console.log('File drop event triggered');
-        uploadContainer.classList.remove('drag-over');
-        handleFileUpload(e.dataTransfer.files[0]);
-    });
-
-    // Prevent opening file in browser when dragging
-    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        uploadContainer.addEventListener(eventName, function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }, false);
-    });
-
-    // Highlight when file hovers over the block
-    uploadContainer.addEventListener('dragover', function() {
-        uploadContainer.classList.add('drag-over');
-    });
-    uploadContainer.addEventListener('dragleave', function() {
-        uploadContainer.classList.remove('drag-over');
-    });
-    uploadContainer.addEventListener('drop', function(e) {
-        uploadContainer.classList.remove('drag-over');
-    });
-
-    window.copyShareLink = function() {
-        const shareLink = document.getElementById('shareLink');
-        if (!shareLink) return;
-
-        // Modern method
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(shareLink.value || shareLink.innerText)
-                .catch((err) => {
-                    console.error('Failed to copy text: ', err);
-                    alert('Не удалось скопировать ссылку.');
-                });
-        } else {
-            // Fallback for older browsers
-            const range = document.createRange();
-            const selection = window.getSelection();
-            range.selectNode(shareLink);
-            selection.removeAllRanges();
-            selection.addRange(range);
-
-            try {
-                const successful = document.execCommand('copy');
-                if (!successful) {
-                    alert('Не удалось скопировать ссылку.');
-                }
-            } catch (err) {
-                console.error('Fallback: Unable to copy', err);
-                alert('Не удалось скопировать ссылку.');
-            }
-            selection.removeAllRanges();
-        }
-    };
-});
-</script>
-
-<footer>
-    <p>&copy; 2025 Antonina Dolgorukova | <a href="https://opensource.org/licenses/MIT" target="_blank" style="color: var(--link-color);">MIT License</a></p>
-</footer>
-
+    <script src="{% static 'js/upload.js' %}"></script>
 </body>
 </html>

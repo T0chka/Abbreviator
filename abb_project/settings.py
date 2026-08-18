@@ -23,8 +23,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 SECRET_KEY = (
-    os.environ.get('SECRET_KEY') 
-    if 'SECRET_KEY' in os.environ 
+    os.environ.get('SECRET_KEY')
+    if 'SECRET_KEY' in os.environ
     else 'your-default-secret-key'
 )
 
@@ -68,7 +68,8 @@ TEMPLATES = [
                 'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages'            ],
+                'django.contrib.messages.context_processors.messages'
+            ],
         },
     },
 ]
@@ -83,67 +84,69 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'UserAttributeSimilarityValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'MinimumLengthValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'CommonPasswordValidator'
+        ),
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': (
+            'django.contrib.auth.password_validation.'
+            'NumericPasswordValidator'
+        ),
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.1/howto/static-files/
-
+# Static files
 STATIC_URL = os.environ.get('STATIC_URL', 'static/')
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'abb_app', 'static'),
 ]
 STATIC_ROOT = os.environ.get('STATIC_ROOT', None)
 
-# Media files
+# Uploaded documents
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-# Maximum size of the entire request body (in bytes)
-DATA_UPLOAD_MAX_MEMORY_SIZE = 1048576  # 1MB (default 2.5MB)
-
-# Temporary folder for file uploads
-FILE_UPLOAD_TEMP_DIR = None  # Uses system default temp directory
-
-# Maximum number of files that can be uploaded simultaneously
-DATA_UPLOAD_MAX_NUMBER_FILES = 10
+MAX_UPLOAD_SIZE_MB = 15
+MAX_UPLOAD_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+MAX_DOCX_UNCOMPRESSED_SIZE = 100 * 1024 * 1024
+UPLOAD_RETENTION_HOURS = 24
+DATA_UPLOAD_MAX_NUMBER_FILES = 1
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Ollama settings
-OLLAMA_HOST = os.environ.get('OLLAMA_HOST', 'http://192.168.1.196:11434')
+OLLAMA_HOST = os.environ.get(
+    'OLLAMA_HOST',
+    'http://192.168.1.196:11434'
+)
 OLLAMA_MODEL = 'medical'
 OLLAMA_TEMPERATURE = 0.9
 OLLAMA_TOP_P = 0.9

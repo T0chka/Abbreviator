@@ -498,99 +498,11 @@ h2 {
 }
 
 /* ==========================================================================
-   Upload Section
+   Icon transitions
    ========================================================================== */
-.upload-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    border: 2px dashed var(--text-primary);
-    padding: 40px;
-    margin: 50px auto;
-    width: 500px;
-    border-radius: 12px;
-    background-color: var(--bg-light);
-    text-align: center;
-}
 
 .material-icons {
     transition: var(--transition-fast);
-}
-
-.upload-container:hover .material-icons {
-    transform: scale(1.2);
-}
-
-.upload-container.drag-over {
-    background-color: var(--bg-accent-hover);
-    transform: scale(1.01);
-}
-
-.upload-container p {
-    margin: 10px 0;
-    font-size: 16px;
-    color: var(--text-primary);
-}
-
-.upload-container .highlight {
-    color: var(--link-color);
-    cursor: pointer;
-    text-decoration: underline;
-}
-
-/* ==========================================================================
-   Loading Overlay
-   ========================================================================== */
-#loading-overlay {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 999;
-}
-
-.dot-loader {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 5px;
-}
-
-.dot-loader span {
-    width: 10px;
-    height: 10px;
-    background-color: var(--primary-color);
-    border-radius: 50%;
-    animation: bounce 1.5s infinite;
-}
-
-.dot-loader span:nth-child(2) {
-    animation-delay: 0.3s;
-}
-
-.dot-loader span:nth-child(3) {
-    animation-delay: 0.6s;
-}
-
-@keyframes bounce {
-    0%, 80%, 100% {
-        transform: translateY(0);
-    }
-    40% {
-        transform: translateY(-10px);
-    }
-}
-
-
-/* Footer */
-footer p{
-    position: fixed;
-    padding: 10px;
-    font-size: 12px;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    text-align: center;
 }
 
 /* ==========================================================================
