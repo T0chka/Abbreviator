@@ -1,8 +1,6 @@
 import requests
 import logging
 import json
-from langchain_core.output_parsers import PydanticOutputParser
-from pydantic import BaseModel
 from django.conf import settings
 
 logger = logging.getLogger(__name__)

@@ -11,8 +11,6 @@ from docx.oxml.table import CT_Tbl
 from typing import (
     TypedDict, Union, List, Dict, Set, Counter, Optional
 )
-from abb_app.model_integration.client import ModelClient
-from thefuzz import process, fuzz
 
 
 import logging
