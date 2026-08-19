@@ -260,34 +260,42 @@ class TextProcessor:
         standard_logger.error("EXTRACTION COMPLETED")
         return ' '.join(paragraphs)
 
-    def extract_abbreviations(self, text: str) -> Counter[str]:
+    def extract_abbreviations(
+        self,
+        text: str,
+        known_abbreviations: Set[str]
+    ) -> Counter[str]:
         """
-        Extracts uppercase and mixed-case abbreviations from the text.
-        Excludes pure Roman numerals, `exclude_terms`, words in quotes,
-        and words that are 9 or more characters long and contain only letters.
+        Extract abbreviations from text.
+
+        Exact dictionary matches are always included. Unknown tokens must satisfy
+        the abbreviation heuristics.
         """
         doc_abbs: Counter[str] = Counter()
 
-        # Remove quoted words
-        text_no_quotes = re.compile(r'«\S+?»|\"[^\"]+\"').sub('', text)
-        words = text_no_quotes.split()
+        text_no_quotes = re.compile(r'«\S+?»|"[^"]+"').sub('', text)
 
-        # Find words with at least 2 uppercase (Latin or Cyrillic) letters
-        matches = [
-            word for word in words
-            if re.search(r'[A-ZА-ЯЁ].*[A-ZА-ЯЁ]', word)
-        ]
-        
-        for match in matches:
-            clean_match = self._clean_abbreviation(match)
+        for word in text_no_quotes.split():
+            candidate = self._clean_abbreviation(word)
+            if not candidate:
+                continue
 
-            # Exclude pure Roman numerals and specific excluded terms,
-            # and overly long abbreviations
-            if (not self.roman_pattern.match(clean_match)
-                and clean_match not in self.exclude_terms
-                and not (len(clean_match) > 8 and clean_match.isalpha())
-                ):
-                doc_abbs[clean_match] += 1
+            if candidate in known_abbreviations:
+                doc_abbs[candidate] += 1
+                continue
+
+            if not re.search(r'[A-ZА-ЯЁ].*[A-ZА-ЯЁ]', candidate):
+                continue
+
+            if self.roman_pattern.match(candidate):
+                continue
+            if candidate in self.exclude_terms:
+                continue
+            if len(candidate) > 8 and candidate.isalpha():
+                continue
+
+            doc_abbs[candidate] += 1
+
         print(f"Found {len(doc_abbs)} abbreviations")
         return doc_abbs
 
@@ -341,18 +349,24 @@ def process_abbreviations(
     validator = CharacterValidator()
     
     # Get abbreviations from document text
+    dictionary = {
+        entry['abbreviation']: entry
+        for entry in abb_dict
+    }
+
     text = text_processor.extract_relevant_text(doc)
-    raw_abbs = text_processor.extract_abbreviations(text)    
+    raw_abbs = text_processor.extract_abbreviations(
+        text,
+        set(dictionary)
+    )
     processed_abbs: List[Abbreviation] = []
     
     print("Starting processing abbreviations")
 
     for abb, count in raw_abbs.items():
         contexts = text_processor.find_abbreviation_context(text, abb)
-        dict_entry = next(
-            (entry for entry in abb_dict if entry['abbreviation'] == abb), None
-        )
         
+        dict_entry = dictionary.get(abb)
         descriptions = dict_entry['descriptions'] if dict_entry else []
         is_ai_generated = False        
             
