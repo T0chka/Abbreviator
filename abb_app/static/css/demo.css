@@ -17,7 +17,16 @@
 
 .demo-tour-target {
     outline: 3px solid var(--primary-color);
-    outline-offset: 4px;
+    outline-offset: 6px;
+}
+
+.demo-tour-highlight {
+    position: fixed;
+    z-index: 1100;
+    box-sizing: border-box;
+    border: 3px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    pointer-events: none;
 }
 
 .demo-popover {

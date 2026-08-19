@@ -7,44 +7,100 @@ document.addEventListener('DOMContentLoaded', () => {
     const counter = document.getElementById('demoStepCounter');
     const nextButton = popover.querySelector('.demo-next-button');
     const comparisonBlock = document.getElementById('comparison-block');
-    const firstCard = document.querySelector('.abbreviation-item');
-    const atxAbbreviation = document.querySelector(
-        '[data-abbreviation="AT\u0425"] .abb-description h4'
+    const abbreviationList = document.querySelector('.abbreviation-list');
+    const firstCard = abbreviationList.querySelector('.abbreviation-item');
+    const atxCard = abbreviationList.querySelector(
+        '[data-abbreviation="AT\u0425"]'
     );
+    const atxAbbreviation = atxCard.querySelector('.abb-description h4');
+
     const steps = Array.from(document.querySelectorAll('[data-demo-step]'));
     const stepByName = Object.fromEntries(
         steps.map(step => [step.dataset.demoStep, step])
     );
 
+    const highlight = document.createElement('div');
+    const HIGHLIGHT_PADDING = 6;
+    highlight.className = 'demo-tour-highlight is-hidden';
+    document.body.appendChild(highlight);
+
     const defaultNextLabel = nextButton.textContent;
+
+    let activeStep = null;
     let target = null;
-    let clickTarget = null;
-    let clickHandler = null;
+    let highlightTargets = [];
     let placement = 'auto';
+    let directHighlightTarget = null;
+    let animationFrame = null;
 
-    function clearTarget() {
-        if (target) {
-            target.classList.remove('demo-tour-target');
-        }
-
-        if (clickTarget && clickHandler) {
-            clickTarget.removeEventListener('click', clickHandler);
-        }
-
-        target = null;
-        clickTarget = null;
-        clickHandler = null;
+    function isCollapsed(card) {
+        const content = card.querySelector('.abb-content');
+        return getComputedStyle(content).display === 'none';
     }
 
-    function finishTour() {
-        clearTarget();
+    function expandCard(card) {
+        if (isCollapsed(card)) {
+            toggleAbbreviationContent(card.dataset.abbreviation);
+        }
+    }
+
+    function clearStep() {
+        if (directHighlightTarget) {
+            directHighlightTarget.classList.remove('demo-tour-target');
+        }
+    
+        directHighlightTarget = null;
+        activeStep = null;
+        target = null;
+        highlightTargets = [];
+        highlight.classList.add('is-hidden');
         popover.classList.add('is-hidden');
     }
 
-    function positionPopover() {
-        if (!target || popover.classList.contains('is-hidden')) return;
+    function finishTour() {
+        clearStep();
+        layoutObserver.disconnect();
+    }
 
-        const rect = target.getBoundingClientRect();
+    function getHighlightRect() {
+        const rects = highlightTargets.map(
+            element => element.getBoundingClientRect()
+        );
+    
+        const left = Math.min(...rects.map(rect => rect.left)) -
+            HIGHLIGHT_PADDING;
+        const top = Math.min(...rects.map(rect => rect.top)) -
+            HIGHLIGHT_PADDING;
+        const right = Math.max(...rects.map(rect => rect.right)) +
+            HIGHLIGHT_PADDING;
+        const bottom = Math.max(...rects.map(rect => rect.bottom)) +
+            HIGHLIGHT_PADDING;
+    
+        return {
+            left,
+            top,
+            right,
+            bottom,
+            width: right - left,
+            height: bottom - top
+        };
+    }
+
+    function positionHighlight() {
+        if (highlightTargets.length === 1) {
+            return;
+        }
+    
+        const rect = getHighlightRect();
+    
+        highlight.style.left = `${rect.left}px`;
+        highlight.style.top = `${rect.top}px`;
+        highlight.style.width = `${rect.width}px`;
+        highlight.style.height = `${rect.height}px`;
+    }
+
+    function positionPopover() {
+        const rect = getHighlightRect();
         const margin = 16;
         const gap = 12;
         const width = popover.offsetWidth;
@@ -70,6 +126,18 @@ document.addEventListener('DOMContentLoaded', () => {
         popover.style.top = `${Math.max(margin, top)}px`;
     }
 
+    function refreshGeometry() {
+        if (!target || popover.classList.contains('is-hidden')) return;
+
+        positionHighlight();
+        positionPopover();
+    }
+
+    function scheduleGeometryRefresh() {
+        cancelAnimationFrame(animationFrame);
+        animationFrame = requestAnimationFrame(refreshGeometry);
+    }
+
     function setStepContent(step) {
         const stepTitle = step.querySelector('h4');
         const stepBody = step.querySelector('.demo-step-body');
@@ -77,9 +145,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         title.textContent = stepTitle.textContent;
         counter.textContent = `${stepNumber} / ${steps.length}`;
+
         body.replaceChildren(
-            ...Array.from(stepBody.childNodes, node => node.cloneNode(true))
+            ...Array.from(
+                stepBody.childNodes,
+                node => node.cloneNode(true)
+            )
         );
+
         nextButton.textContent =
             step.dataset.nextLabel || defaultNextLabel;
     }
@@ -87,26 +160,39 @@ document.addEventListener('DOMContentLoaded', () => {
     function showStep(
         name,
         stepTarget,
-        {onNext = finishTour, stepPlacement = 'auto',
-         advanceOnTargetClick = false} = {}
+        {
+            onNext = finishTour,
+            stepPlacement = 'auto',
+            stepHighlights = [stepTarget],
+            scrollTarget = true
+        } = {}
     ) {
-        clearTarget();
+        clearStep();
 
+        activeStep = name;
         target = stepTarget;
+        highlightTargets = stepHighlights;
         placement = stepPlacement;
+
         setStepContent(stepByName[name]);
         nextButton.onclick = onNext;
 
-        target.classList.add('demo-tour-target');
-        popover.classList.remove('is-hidden');
-        target.scrollIntoView({behavior: 'smooth', block: 'center'});
-        window.setTimeout(positionPopover, 250);
-
-        if (advanceOnTargetClick) {
-            clickTarget = target;
-            clickHandler = () => window.setTimeout(onNext, 150);
-            target.addEventListener('click', clickHandler, {once: true});
+        if (highlightTargets.length === 1) {
+            directHighlightTarget = highlightTargets[0];
+            directHighlightTarget.classList.add('demo-tour-target');
+            highlight.classList.add('is-hidden');
+        } else {
+            positionHighlight();
+            highlight.classList.remove('is-hidden');
         }
+        
+        popover.classList.remove('is-hidden');
+
+        if (scrollTarget) {
+            target.scrollIntoView({block: 'center'});
+        }
+
+        scheduleGeometryRefresh();
     }
 
     function showComparisonStep() {
@@ -114,37 +200,93 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showMixedAlphabetStep() {
-        showStep('mixed-alphabet', atxAbbreviation, {
-            stepPlacement: 'right',
-            onNext: showComparisonStep
+        expandCard(atxCard);
+
+        requestAnimationFrame(() => {
+            showStep('mixed-alphabet', atxAbbreviation, {
+                stepPlacement: 'right',
+                onNext: showComparisonStep
+            });
         });
     }
 
     function showDescriptionStep() {
-        showStep(
-            'description',
-            firstCard.querySelector('.btn-select-option'),
-            {
-                advanceOnTargetClick: true,
+        expandCard(firstCard);
+
+        requestAnimationFrame(() => {
+            const descriptions = Array.from(
+                firstCard.querySelectorAll('.btn-select-option')
+            );
+
+            showStep('description', descriptions[0], {
+                stepHighlights: descriptions,
                 onNext: showMixedAlphabetStep
-            }
-        );
+            });
+        });
     }
 
     function showContextStep() {
-        showStep('context', firstCard.querySelector('.context-item'), {
-            onNext: showDescriptionStep
+        expandCard(firstCard);
+
+        requestAnimationFrame(() => {
+            const contexts = Array.from(
+                firstCard.querySelectorAll('.context-item')
+            );
+
+            showStep('context', contexts[0], {
+                stepHighlights: contexts,
+                onNext: showDescriptionStep
+            });
         });
     }
 
     function showAbbreviationStep() {
         showStep('abbreviation', firstCard, {
+            scrollTarget: false,
             onNext: showContextStep
         });
     }
 
-    window.addEventListener('resize', positionPopover);
-    window.addEventListener('scroll', positionPopover, {passive: true});
+    function handleLayoutChange() {
+        if (activeStep === 'context' && isCollapsed(firstCard)) {
+            clearStep();
+            requestAnimationFrame(showDescriptionStep);
+            return;
+        }
+
+        if (activeStep === 'description' && isCollapsed(firstCard)) {
+            clearStep();
+            requestAnimationFrame(showMixedAlphabetStep);
+            return;
+        }
+
+        scheduleGeometryRefresh();
+    }
+
+    const layoutObserver = new MutationObserver(handleLayoutChange);
+
+    layoutObserver.observe(abbreviationList, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+    
+    layoutObserver.observe(comparisonBlock, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ['class', 'style']
+    });
+
+    window.addEventListener('resize', scheduleGeometryRefresh);
+    window.addEventListener('scroll', scheduleGeometryRefresh, {
+        passive: true
+    });
+
+    abbreviationList.addEventListener(
+        'transitionend',
+        scheduleGeometryRefresh
+    );
 
     introDialog.addEventListener(
         'cancel',
