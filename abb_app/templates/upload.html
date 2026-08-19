@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Abbreviator</title>
+    <title>Аббревиатор</title>
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <link rel="stylesheet" href="{% static 'css/workflow.css' %}">
     <link rel="icon" href="{% static 'images/favicon_Poppins.ico' %}">
@@ -25,14 +25,14 @@
         <div class="alert alert-error">{{ error }}</div>
         {% endif %}
 
-        <h2>Abbreviator</h2>
+        <h2>Добро пожаловать в Аббревиатор!</h2>
         <p class="upload-intro">
             Находит сокращения в DOCX и помогает проверить или собрать таблицу расшифровок.
         </p>
 
         <div class="abbreviation-item upload-card">
             <div class="upload-container" id="uploadContainer">
-                <label for="fileInput" class="upload-label">
+                <div class="upload-label">
                     <svg class="upload-icon" viewBox="0 0 24 24"
                          aria-hidden="true">
                         <path d="M12 16V4m0 0-4 4m4-4 4 4M5 14v5h14v-5"
@@ -40,12 +40,19 @@
                               stroke-width="1.8" stroke-linecap="round"
                               stroke-linejoin="round"/>
                     </svg>
+                
                     <p>Перетащите сюда файл .docx</p>
-                    <p class="upload-choice">
-                        или <span class="highlight">выберите файл</span>
-                        <span class="upload-limit">до {{ max_upload_size_mb }} МБ</span>
+                    <p>или</p>
+                
+                    <label for="fileInput"
+                           class="demo-link-button file-select-button">
+                        Выбрать файл
+                    </label>
+                
+                    <p class="upload-limit">
+                        (максимальный размер файла: {{ max_upload_size_mb }} МБ)
                     </p>
-                </label>
+                </div>
 
                 <form method="post"
                       enctype="multipart/form-data"
@@ -62,15 +69,14 @@
                            required
                            hidden>
                 </form>
-
-                <p class="demo-action">
-                    <a href="{% url 'process_file_with_session' demo_session_id %}"
-                       id="demoLink"
-                       class="highlight">
-                        Посмотреть демо
-                    </a>
-                </p>
             </div>
+        </div>
+        <div class="demo-link-row">
+            <a href="{% url 'process_file_with_session' demo_session_id %}"
+               id="demoLink"
+               class="demo-link-button">
+                Посмотреть, как работает Аббревиатор
+            </a>
         </div>
     </div>
 
@@ -99,8 +105,9 @@
 
     <footer>
         <p>
-            &copy; 2026 Antonina Dolgorukova |
-            <a class="source-link"
+            <span>&copy; 2026 Antonina Dolgorukova</span>
+            <span class="footer-separator">|</span>
+            <a class="footer-link source-link"
                href="https://github.com/T0chka/Abbreviator"
                target="_blank"
                rel="noopener noreferrer">
@@ -111,11 +118,11 @@
                 </svg>
                 Source code
             </a>
-            |
-            <a href="https://opensource.org/licenses/MIT"
+            <span class="footer-separator">|</span>
+            <a class="footer-link"
+               href="https://opensource.org/licenses/MIT"
                target="_blank"
-               rel="noopener noreferrer"
-               style="color: var(--link-color);">
+               rel="noopener noreferrer">
                 MIT License
             </a>
         </p>

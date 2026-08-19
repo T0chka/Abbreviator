@@ -11,7 +11,7 @@
 }
 
 .upload-intro {
-    margin: -0.75rem 0 0;
+    margin: -0.75rem 0 18px;
     text-align: center;
     white-space: nowrap;
     color: var(--text-primary);
@@ -23,7 +23,7 @@
     align-items: center;
     justify-content: center;
     width: 500px;
-    margin: 50px auto;
+    margin: 24px auto 50px;
     padding: 40px;
     border: 2px dashed var(--text-primary);
     border-radius: 12px;
@@ -42,14 +42,10 @@
     font-size: 16px;
 }
 
-.upload-container .highlight {
-    color: var(--link-color);
-    cursor: pointer;
-    text-decoration: underline;
-}
-
 .upload-label {
-    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .upload-icon {
@@ -63,20 +59,36 @@
     transform: scale(1.2);
 }
 
-.upload-choice {
-    white-space: nowrap;
-}
-
 .upload-limit {
-    margin-left: 0.35rem;
-    color: color-mix(in srgb, var(--text-primary) 65%, white);
-    font-size: 0.75rem;
+    margin: 6px 0 0 !important;
+    color: color-mix(in srgb, var(--text-primary) 65%, white) !important;
+    font-size: 0.75rem !important;
     white-space: nowrap;
 }
 
-.demo-action {
-    margin-top: 14px !important;
+.demo-link-row {
+    margin: 50px 0 0;
+    text-align: center;
 }
+
+.demo-link-button {
+    display: inline-flex;
+    padding: 10px 16px;
+    align-items: center;
+    border: 1px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    color: var(--primary-color);
+    background: var(--bg-light);
+    font-weight: 500;
+    text-decoration: none;
+    transition: var(--transition-fast);
+}
+
+.demo-link-button:hover {
+    color: var(--bg-light);
+    background: var(--primary-color);
+}
+
 
 /* ==========================================================================
    Loading overlay
@@ -204,26 +216,33 @@
    Upload footer
    ========================================================================== */
 
-footer p {
+   footer p {
     position: fixed;
     right: 0;
     bottom: 0;
     left: 0;
+    display: flex;
     padding: 10px;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
     font-size: 12px;
-    text-align: center;
+}
+
+.footer-link {
+    color: var(--text-primary);
+    text-decoration: none;
+}
+
+.footer-link:hover {
+    color: var(--link-color);
+    text-decoration: underline;
 }
 
 .source-link {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    color: var(--link-color);
-    text-decoration: none;
-}
-
-.source-link:hover {
-    text-decoration: underline;
 }
 
 .github-icon {
@@ -232,20 +251,6 @@ footer p {
     flex: 0 0 14px;
 }
 
-@media screen and (max-width: 700px) {
-    .upload-intro {
-        white-space: normal;
-    }
-
-    .upload-container {
-        box-sizing: border-box;
-        width: 100%;
-        max-width: 500px;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    .dialog-actions {
-        flex-direction: column;
-    }
+.footer-separator {
+    color: var(--text-primary);
 }

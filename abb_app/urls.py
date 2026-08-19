@@ -1,20 +1,31 @@
-from django.urls import path
 from django.contrib import admin
+from django.urls import path
 
 from .views import (
-    upload_file, process_file_with_session,
-    update_abbreviation, update_difference_section,
-    make_abbreviation_table, dictionary_view,
-    generate_description
-    )
+    dictionary_view,
+    download_demo_document,
+    generate_description,
+    make_abbreviation_table,
+    process_file_with_session,
+    update_abbreviation,
+    update_difference_section,
+    upload_file,
+)
 
 urlpatterns = [
     path('', upload_file, name='upload_file'),
     path('admin/', admin.site.urls),
-    path('process/<str:session_id>/', process_file_with_session, name='process_file_with_session'),
-    path('update_abbreviation/', update_abbreviation, name='update_abbreviation'),
-    path('update_difference_section/', update_difference_section, name='update_difference_section'),
-    path('make_abbreviation_table/', make_abbreviation_table, name='make_abbreviation_table'),
+    path('demo/document/', download_demo_document,
+         name='download_demo_document'),
     path('dictionary/', dictionary_view, name='dictionary'),
-    path('generate_description/', generate_description, name='generate_description'),
+    path('generate_description/', generate_description,
+         name='generate_description'),
+    path('make_abbreviation_table/', make_abbreviation_table,
+         name='make_abbreviation_table'),
+    path('process/<str:session_id>/', process_file_with_session,
+         name='process_file_with_session'),
+    path('update_abbreviation/', update_abbreviation,
+         name='update_abbreviation'),
+    path('update_difference_section/', update_difference_section,
+         name='update_difference_section'),
 ]

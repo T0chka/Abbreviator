@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Union
 from django.conf import settings
 from django.contrib import messages
 from django.core.files.storage import FileSystemStorage
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import FileResponse, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.timezone import now
 from django.views.decorators.http import require_http_methods
@@ -30,6 +30,7 @@ from .utils import (
 
 
 DEMO_SESSION_ID = 'test_drive'
+DEMO_FILENAME = 'test_drive.docx'
 
 extractor = AbbreviationTableExtractor()
 formatter = AbbreviationFormatter()
@@ -142,33 +143,32 @@ def upload_file(request: HttpRequest) -> HttpResponse:
 
 
 @require_http_methods(['GET'])
+def download_demo_document(_request: HttpRequest) -> FileResponse:
+    return FileResponse(
+        FileSystemStorage().open(DEMO_FILENAME, 'rb'),
+        as_attachment=True,
+        filename='abbreviator_demo.docx'
+    )
+
+
+@require_http_methods(['GET'])
 def process_file_with_session(
     request: HttpRequest,
     session_id: str
 ) -> HttpResponse:
     fs = FileSystemStorage()
+    is_demo = session_id == DEMO_SESSION_ID
+    filename = DEMO_FILENAME if is_demo else f'{session_id}.docx'
 
-    if session_id == DEMO_SESSION_ID:
-        filenames = [
-            name for name in fs.listdir('')[1]
-            if name.startswith(DEMO_SESSION_ID)
-            and name.lower().endswith('.docx')
-        ]
-        filename = filenames[0] if filenames else None
-    else:
-        filename = f'{session_id}.docx'
-        if not fs.exists(filename):
-            filename = None
+    if not is_demo and not fs.exists(filename):
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error'}, status=404)
 
-    if filename:
-        request.session['uploaded_file_path'] = filename
-        return process_and_display(request)
+        messages.error(request, 'Сессия не найдена или истекла')
+        return redirect('upload_file')
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return JsonResponse({'status': 'error'}, status=404)
-
-    messages.error(request, 'Сессия не найдена или истекла')
-    return redirect('upload_file')
+    request.session['uploaded_file_path'] = filename
+    return process_and_display(request, is_demo=is_demo)
 
 
 def parse_request_json(request: HttpRequest) -> Dict[str, Any]:
@@ -286,7 +286,10 @@ def load_abbreviation_dict() -> List[Abbreviation]:
     ]
 
 
-def process_and_display(request: HttpRequest) -> HttpResponse:
+def process_and_display(
+    request: HttpRequest,
+    is_demo: bool = False
+) -> HttpResponse:
     file_name = request.session.get('uploaded_file_path')
     if not file_name:
         return render(
@@ -323,6 +326,7 @@ def process_and_display(request: HttpRequest) -> HttpResponse:
             'doc_abbs': doc_abbs,
             'has_initial_abbs': bool(initial_abbs),
             'initial_abbs_count': len(initial_abbs),
+            'is_demo': is_demo,
         }
     )
 

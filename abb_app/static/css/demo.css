@@ -1,0 +1,133 @@
+/* ==========================================================================
+   Guided demo
+   ========================================================================== */
+
+.demo-intro-dialog {
+    width: min(760px, calc(100vw - 48px));
+}
+
+.demo-feature-list {
+    margin: 12px 0 18px;
+    padding-left: 22px;
+}
+
+.demo-feature-list li {
+    margin: 6px 0;
+}
+
+.demo-tour-target {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 4px;
+}
+
+.demo-popover {
+    position: fixed;
+    z-index: 1200;
+    width: min(360px, calc(100vw - 32px));
+    box-sizing: border-box;
+    padding: 16px;
+    border: var(--border);
+    border-radius: var(--border-radius);
+    color: var(--text-primary);
+    background: var(--bg-light);
+    box-shadow: var(--shadow-md);
+}
+
+.demo-popover-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.demo-popover-header h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.demo-step-counter {
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.demo-popover p {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.demo-popover p:last-child {
+    margin-bottom: 0;
+}
+
+.demo-popover-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 14px;
+}
+
+.demo-popover button {
+    font-family: var(--font-stack);
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+.demo-next-button {
+    padding: 0.5rem 0.9rem;
+    border: 1px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    color: var(--bg-light);
+    background: var(--primary-color);
+}
+
+.demo-inline-icon {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: #fff;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.demo-inline-icon-success {
+    background: var(--success-color);
+}
+
+.demo-inline-icon-skip {
+    background: var(--danger-color);
+}
+
+.generate-buttons-section {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+
+.demo-document-btn {
+    display: inline-flex;
+    min-height: 48px;
+    padding: 0 28px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--primary-color);
+    border-radius: var(--border-radius);
+    color: var(--primary-color);
+    background: var(--bg-light);
+    font-family: var(--font-stack);
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.demo-document-btn:hover,
+.demo-document-btn:active {
+    color: var(--primary-color);
+    background: var(--bg-accent);
+}

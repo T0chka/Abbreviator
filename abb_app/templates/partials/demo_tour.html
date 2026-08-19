@@ -1,0 +1,108 @@
+<dialog id="demo-intro-dialog" class="app-dialog demo-intro-dialog">
+    <h3>Что умеет Аббревиатор?</h3>
+    <ul class="demo-feature-list">
+        <li>находит сокращения в документе;</li>
+        <li>показывает контекст их использования;</li>
+        <li>предлагает расшифровки из словаря или позволяет ввести свою;</li>
+        <li>генерирует таблицу сокращений с расшифровками.</li>
+    </ul>
+
+    <p>
+        Если в документе уже есть таблица сокращений, Аббревиатор предложит проверить её и сравнить с новым списком.
+    </p>
+    <p>
+        Документ хранится только на время работы с ним и затем автоматически удаляется.
+    </p>
+
+    <div class="dialog-actions">
+        <button type="button"
+                class="dialog-button dialog-primary"
+                id="demoStartButton">
+            Начать демо
+        </button>
+    </div>
+</dialog>
+
+<div id="demo-popover"
+     class="demo-popover is-hidden"
+     role="dialog"
+     aria-live="polite">
+    <div class="demo-popover-header">
+        <h4 id="demoPopoverTitle"></h4>
+        <span id="demoStepCounter" class="demo-step-counter"></span>
+    </div>
+    <div id="demoPopoverBody"></div>
+    <div class="demo-popover-actions">
+        <button type="button" class="demo-next-button">Далее</button>
+    </div>
+</div>
+
+<div id="demo-tour-steps" hidden>
+    <section data-demo-step="abbreviation">
+        <h4>Карточка сокращения</h4>
+        <div class="demo-step-body">
+            <p>
+                Аббревиатор находит в документе потенциальные сокращения – слова, содержащие не менее
+                двух заглавных букв латиницы или кириллицы, в том числе сочетания
+                с цифрами, дефисами, скобками и другими символами.
+            </p>
+            <p>
+                Исключаются римские цифры и их сочетания с буквами, слова длиннее
+                8 букв, состоящие только из букв, а также сокращения в кавычках.
+            </p>
+        </div>
+    </section>
+
+    <section data-demo-step="context">
+        <h4>Контекст</h4>
+        <div class="demo-step-body">
+            <p>
+                Здесь показаны все упоминания данного сокращения в тексте загруженного документа.
+            </p>
+        </div>
+    </section>
+
+    <section data-demo-step="description">
+        <h4>Выбор расшифровки</h4>
+        <div class="demo-step-body">
+            <p>
+                Здесь показаны варианты расшифровки, которые есть в словаре.
+                Выберите наиболее подходящую по контексту или введите свою
+                в поле ниже и подтвердите, нажав
+                <span class="demo-inline-icon demo-inline-icon-success">✓</span>.
+            </p>
+            <p>
+                <span class="demo-inline-icon demo-inline-icon-skip">✗</span>
+                исключает сокращение из итоговой таблицы.
+            </p>
+        </div>
+    </section>
+
+    <section data-demo-step="mixed-alphabet">
+        <h4>Буквы из другого алфавита</h4>
+        <div class="demo-step-body">
+            <p>
+                Аббревиатуры иногда набирают буквами из разных
+                алфавитов. Например, в демо-документе ATХ написано так:
+                A и T – латинские, Х – кириллическая. Аббревиатор отмечает красным потенциально ошибочные буквы.
+            </p>
+            <p>
+                Совет: если правильная форма тоже встречается в тексте, она появится отдельной карточкой,
+                поэтому ошибочный вариант лучше исключить кнопкой <span class="demo-inline-icon demo-inline-icon-skip">✗</span>.
+                Используйте контекст чтобы найти и исправить все случаи неправильного написания в документе.
+            </p>
+        </div>
+    </section>
+
+    <section data-demo-step="comparison" data-next-label="Готово">
+        <h4>Проверка исходной таблицы</h4>
+        <div class="demo-step-body">
+            <p>
+                Этот блок обновляется по мере подтверждения расшифровок.
+                Здесь видно, какие сокращения есть в исходной таблице,
+                но отсутствуют в новом списке, и какие найдены в документе,
+                но отсутствуют в исходной таблице.
+            </p>
+        </div>
+    </section>
+</div>

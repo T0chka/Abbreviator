@@ -3,10 +3,15 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/workflow.css' %}">
+{% if is_demo %}
+<link rel="stylesheet" href="{% static 'css/demo.css' %}">
+{% endif %}
 {% endblock %}
 
 {% block content %}
-{% if has_initial_abbs %}
+{% if is_demo %}
+{% include 'partials/demo_tour.html' %}
+{% elif has_initial_abbs %}
 <dialog id="table-check-dialog" class="app-dialog table-check-dialog">
     <h3>В документе найдена таблица сокращений</h3>
     <p>
@@ -26,7 +31,9 @@
         </button>
     </div>
 </dialog>
+{% endif %}
 
+{% if has_initial_abbs %}
 <div id="comparison-block" class="is-hidden">
     <h2>Проверка таблицы сокращений</h2>
     <div class="main-content">
@@ -152,6 +159,12 @@
     <a onclick="generateAbbreviationTable()" class="generate-btn">
         Сгенерировать таблицу аббревиатур
     </a>
+
+    {% if is_demo %}
+    <a href="{% url 'download_demo_document' %}" class="demo-document-btn">
+        Скачать демо-документ
+    </a>
+    {% endif %}
 </div>
 
 <!-- Floating Action Buttons -->
@@ -160,7 +173,7 @@
 
 {% block extra_js %}
 <script>
-let compareWithExisting = false;
+let compareWithExisting = '{{ is_demo|yesno:"true,false" }}' === 'true';
 
 function chooseTableCheck(enabled) {
     compareWithExisting = enabled;
@@ -388,4 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
+{% if is_demo %}
+<script src="{% static 'js/demo.js' %}"></script>
+{% endif %}
 {% endblock %}
