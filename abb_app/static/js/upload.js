@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get('expired') === '1') {
+        window.history.replaceState({}, '', window.location.pathname);
+    }
+    
     const uploadContainer = document.getElementById('uploadContainer');
     const fileInput = document.getElementById('fileInput');
     const uploadForm = document.getElementById('uploadForm');

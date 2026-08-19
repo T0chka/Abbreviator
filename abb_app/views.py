@@ -4,7 +4,7 @@ import logging
 import os
 import secrets
 
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import Any, Dict, List, Union
 
 from django.conf import settings
@@ -16,6 +16,12 @@ from django.utils.timezone import now
 from django.views.decorators.http import require_http_methods
 from docx import Document
 
+from .document_session import (
+    DEMO_FILENAME,
+    cleanup_expired_documents,
+    delete_session_document,
+    touch_session_document,
+)
 from .model_integration.client import ModelClient
 from .models import AbbreviationEntry
 from .uploads import UploadValidationError, validate_docx_upload
@@ -30,7 +36,6 @@ from .utils import (
 
 
 DEMO_SESSION_ID = 'test_drive'
-DEMO_FILENAME = 'test_drive.docx'
 
 extractor = AbbreviationTableExtractor()
 formatter = AbbreviationFormatter()
@@ -45,24 +50,6 @@ if not logger.hasHandlers():
 
 def generate_session_id() -> str:
     return secrets.token_urlsafe(9)
-
-
-def cleanup_old_files(
-    exclude_id: str,
-    max_hours: int = settings.UPLOAD_RETENTION_HOURS
-) -> None:
-    """Remove expired uploaded documents while preserving the demo file."""
-    fs = FileSystemStorage()
-    current_time = datetime.now()
-
-    for filename in fs.listdir('')[1]:
-        if filename.startswith(exclude_id):
-            continue
-
-        file_path = fs.path(filename)
-        modified = datetime.fromtimestamp(os.path.getmtime(file_path))
-        if current_time - modified > timedelta(hours=max_hours):
-            fs.delete(filename)
 
 
 def upload_page_context(**extra: Any) -> Dict[str, Any]:
@@ -93,11 +80,14 @@ def upload_error_response(
 @require_http_methods(['GET', 'POST'])
 def upload_file(request: HttpRequest) -> HttpResponse:
     if request.method == 'GET':
+        delete_session_document(request)
         request.session.flush()
         return render(
             request,
             'upload.html',
-            upload_page_context()
+            upload_page_context(
+                session_expired=request.GET.get('expired') == '1'
+            )
         )
 
     uploaded_file = request.FILES.get('uploaded_file')
@@ -116,7 +106,8 @@ def upload_file(request: HttpRequest) -> HttpResponse:
             status_code=exc.status_code
         )
 
-    cleanup_old_files(exclude_id=DEMO_SESSION_ID)
+    delete_session_document(request)
+    cleanup_expired_documents()
 
     size_mb = uploaded_file.size / (1024 * 1024)
     logger.info(
@@ -151,6 +142,19 @@ def download_demo_document(_request: HttpRequest) -> FileResponse:
     )
 
 
+@require_http_methods(['POST'])
+def touch_document_session(request: HttpRequest) -> HttpResponse:
+    touch_session_document(request)
+    return HttpResponse(status=204)
+
+
+@require_http_methods(['POST'])
+def end_document_session(request: HttpRequest) -> HttpResponse:
+    delete_session_document(request)
+    request.session.flush()
+    return HttpResponse(status=204)
+
+
 @require_http_methods(['GET'])
 def process_file_with_session(
     request: HttpRequest,
@@ -168,6 +172,7 @@ def process_file_with_session(
         return redirect('upload_file')
 
     request.session['uploaded_file_path'] = filename
+    touch_session_document(request)
     return process_and_display(request, is_demo=is_demo)
 
 
@@ -327,6 +332,9 @@ def process_and_display(
             'has_initial_abbs': bool(initial_abbs),
             'initial_abbs_count': len(initial_abbs),
             'is_demo': is_demo,
+            'document_session_timeout_ms': (
+                settings.DOCUMENT_SESSION_TIMEOUT_SECONDS * 1000
+            ),
         }
     )
 

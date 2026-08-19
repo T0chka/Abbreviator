@@ -25,6 +25,12 @@
         <div class="alert alert-error">{{ error }}</div>
         {% endif %}
 
+        {% if session_expired %}
+        <div class="session-expired-note">
+            Предыдущая сессия истекла, загруженный документ был удалён.
+        </div>
+        {% endif %}
+
         <h2>Добро пожаловать в Аббревиатор!</h2>
         <p class="upload-intro">
             Находит сокращения в DOCX и помогает проверить или собрать таблицу расшифровок.

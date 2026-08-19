@@ -66,6 +66,12 @@
     white-space: nowrap;
 }
 
+.session-expired-note {
+    margin: 16px 0 14px;
+    color: color-mix(in srgb, var(--text-primary) 60%, transparent);
+    font-size: .75rem;
+}
+
 .demo-link-row {
     margin: 50px 0 0;
     text-align: center;

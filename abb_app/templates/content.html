@@ -9,6 +9,13 @@
 {% endblock %}
 
 {% block content %}
+<div id="document-session"
+     data-touch-url="{% url 'touch_document_session' %}"
+     data-end-url="{% url 'end_document_session' %}"
+     data-start-url="{% url 'upload_file' %}"
+     data-timeout-ms="{{ document_session_timeout_ms }}"
+     hidden></div>
+
 {% if is_demo %}
 {% include 'partials/demo_tour.html' %}
 {% elif has_initial_abbs %}
@@ -404,4 +411,5 @@ document.addEventListener('DOMContentLoaded', function() {
 {% if is_demo %}
 <script src="{% static 'js/demo.js' %}"></script>
 {% endif %}
+<script src="{% static 'js/session.js' %}"></script>
 {% endblock %}
