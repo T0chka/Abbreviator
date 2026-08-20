@@ -12,6 +12,7 @@
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     {% block extra_css %}{% endblock %}
+    {% include 'partials/analytics.html' %}
 </head>
 <body>
     {% block content %}{% endblock %}

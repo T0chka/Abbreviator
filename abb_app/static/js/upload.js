@@ -38,11 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validateFile(file) {
         if (!file.name.toLowerCase().endsWith('.docx')) {
+            window.umami?.track('upload_failed', {reason: 'file_type'});
             showError('Можно загрузить только файл формата .docx.');
             return false;
         }
 
         if (file.size > maxUploadSize) {
+            window.umami?.track('upload_failed', {reason: 'file_size'});
             showError(
                 `Файл слишком большой: ${formatMb(file.size)} МБ. ` +
                 `Максимальный размер: ${maxUploadSizeMb} МБ.`
@@ -90,9 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.session_id) {
                 throw new Error('Не удалось создать сессию обработки.');
             }
-
+            window.umami?.track('document_uploaded');
             window.location.assign(processUrl(data.session_id));
         } catch (error) {
+            window.umami?.track('upload_failed', {reason: 'server'});
             fileInput.value = '';
             showError(error.message);
         }

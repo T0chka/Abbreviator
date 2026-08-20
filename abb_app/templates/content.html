@@ -15,6 +15,12 @@
      data-start-url="{% url 'upload_file' %}"
      data-timeout-ms="{{ document_session_timeout_ms }}"
      hidden></div>
+<div id="resultsAnalytics"
+     data-source="{% if is_demo %}demo{% else %}upload{% endif %}"
+     data-abbreviation-count="{{ doc_abbs|length }}"
+     data-has-initial-table="{{ has_initial_abbs|yesno:'true,false' }}"
+     data-initial-table-count="{{ initial_abbs_count }}"
+     hidden></div>
 
 {% if is_demo %}
 {% include 'partials/demo_tour.html' %}
@@ -338,6 +344,7 @@ async function generateAbbreviationTable() {
         a.download = 'abbreviation_table.docx';
         document.body.appendChild(a);
         a.click();
+        window.umami?.track('table_exported');
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
     } catch (error) {
@@ -394,11 +401,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     input.value = data.description;
                     input.focus();
+                    window.umami?.track('llm_generated');
                 } else {
                     throw new Error(data.error || 'Failed to generate description');
                 }
             } catch (error) {
                 console.error('Error:', error);
+                window.umami?.track('llm_failed');
                 alert('Не удалось сгенерировать расшифровку: ' + error.message);
             } finally {
                 btn.disabled = false;

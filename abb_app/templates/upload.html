@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <link rel="stylesheet" href="{% static 'css/workflow.css' %}">
     <link rel="icon" href="{% static 'images/favicon_Poppins.ico' %}">
+    {% include 'partials/analytics.html' %}
 </head>
 <body>
     <div class="main-content">
@@ -79,8 +80,9 @@
         </div>
         <div class="demo-link-row">
             <a href="{% url 'process_file_with_session' demo_session_id %}"
-               id="demoLink"
-               class="demo-link-button">
+                id="demoLink"
+                class="demo-link-button"
+                data-umami-event="demo_started">
                 Посмотреть, как работает Аббревиатор
             </a>
         </div>
