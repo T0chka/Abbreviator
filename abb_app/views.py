@@ -18,7 +18,6 @@ from docx import Document
 
 from .document_session import (
     DEMO_FILENAME,
-    cleanup_expired_documents,
     delete_session_document,
     touch_session_document,
 )
@@ -107,7 +106,6 @@ def upload_file(request: HttpRequest) -> HttpResponse:
         )
 
     delete_session_document(request)
-    cleanup_expired_documents()
 
     size_mb = uploaded_file.size / (1024 * 1024)
     logger.info(
