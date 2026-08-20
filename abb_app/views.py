@@ -1,4 +1,3 @@
-import io
 import json
 import logging
 import os
@@ -14,7 +13,6 @@ from django.http import FileResponse, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.timezone import now
 from django.views.decorators.http import require_http_methods
-from docx import Document
 
 from .document_session import (
     DEMO_FILENAME,
@@ -24,21 +22,19 @@ from .document_session import (
 from .model_integration.client import ModelClient
 from .models import AbbreviationEntry
 from .uploads import UploadValidationError, validate_docx_upload
-from .utils import (
-    Abbreviation,
-    AbbreviationFormatter,
-    AbbreviationTableExtractor,
-    AbbreviationTableGenerator,
-    compare_abbreviations,
-    process_abbreviations,
+from .utils import Abbreviation, compare_abbreviations
+from .services.abbreviations import (
+    get_selected_abbreviations,
+    update_abbreviation_selection,
+)
+from .services.documents import (
+    build_abbreviation_table_docx,
+    process_document,
 )
 
 
 DEMO_SESSION_ID = 'test_drive'
 
-extractor = AbbreviationTableExtractor()
-formatter = AbbreviationFormatter()
-generator = AbbreviationTableGenerator()
 logger = logging.getLogger('abb_app')
 
 
@@ -175,55 +171,44 @@ def process_file_with_session(
 
 
 def parse_request_json(request: HttpRequest) -> Dict[str, Any]:
-    data: Dict[str, Any] = json.loads(request.body)
-    if not data:
-        return JsonResponse({'success': False, 'error': 'Invalid JSON'})
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        raise ValueError('Invalid JSON') from exc
+
+    if not isinstance(data, dict):
+        raise ValueError('JSON object expected')
+
     return data
-
-
-def get_processed_doc_abbs(request: HttpRequest) -> List[Dict[str, Any]]:
-    """
-    Extract abbreviations with user-selected descriptions from the session.
-    """
-    doc_abbs = request.session.get('doc_abbs', [])
-    return [
-        {
-            'abbreviation': abb['abbreviation'],
-            'description': abb['selected_description']
-        }
-        for abb in doc_abbs
-        if abb.get('selected_description') is not None
-    ]
 
 
 @require_http_methods(['POST'])
 def update_difference_section(request: HttpRequest) -> HttpResponse:
     initial_abbs: List[Abbreviation] = request.session.get(
         'initial_abbs',
-        []
+        [],
     )
-    processed_doc_abbs = get_processed_doc_abbs(request)
+    doc_abbs: List[Abbreviation] = request.session.get('doc_abbs', [])
+    processed_doc_abbs = get_selected_abbreviations(doc_abbs)
 
     if not processed_doc_abbs and not initial_abbs:
         return render(request, 'partials/differences_section.html')
-
     if not processed_doc_abbs:
         return render(
             request,
             'partials/differences_section.html',
-            {'missing_abbs': initial_abbs}
+            {'missing_abbs': initial_abbs},
         )
-
     if not initial_abbs:
         return render(
             request,
             'partials/differences_section.html',
-            {'new_found': processed_doc_abbs}
+            {'new_found': processed_doc_abbs},
         )
 
     changes = compare_abbreviations(
         old_abbs=initial_abbs,
-        new_abbs=processed_doc_abbs
+        new_abbs=processed_doc_abbs,
     )
     return render(
         request,
@@ -231,67 +216,38 @@ def update_difference_section(request: HttpRequest) -> HttpResponse:
         {
             'missing_abbs': changes.get('missing_abbs', []),
             'new_found': changes.get('new_found', []),
-        }
+        },
     )
 
 
+@require_http_methods(['POST'])
 def update_abbreviation(request: HttpRequest) -> JsonResponse:
-    data = parse_request_json(request)
+    try:
+        data = parse_request_json(request)
+        abbreviation = data.get('abbreviation')
+        if not abbreviation:
+            raise ValueError('Abbreviation is required')
 
-    abb = data.get('abbreviation')
-    description = data.get('description')
-    action = data.get('action')
-
-    doc_abbs: List[Abbreviation] = request.session.get('doc_abbs', [])
-    abb_entry = next(
-        (entry for entry in doc_abbs if entry['abbreviation'] == abb),
-        None
-    )
-
-    if action == 'add':
-        abb_entry['selected_description'] = description
-
-        logger.debug('Added abb_entry: %s', abb_entry)
-        if description not in abb_entry['descriptions']:
-            correct_form = abb_entry.get('correct_form')
-            AbbreviationEntry.objects.create(
-                abbreviation=correct_form if correct_form is not None else abb,
-                description=description,
-                status='for_review',
-                highlighted=abb_entry.get('highlighted')
-            )
-            logger.debug('New entry for review: %s', abb_entry)
-    elif action == 'skip':
-        abb_entry['selected_description'] = None
+        doc_abbs: List[Abbreviation] = request.session.get('doc_abbs', [])
+        update_abbreviation_selection(
+            doc_abbs=doc_abbs,
+            abbreviation=abbreviation,
+            description=data.get('description'),
+            action=data.get('action'),
+        )
+    except ValueError as exc:
+        return JsonResponse(
+            {'success': False, 'error': str(exc)},
+            status=400,
+        )
 
     request.session['doc_abbs'] = doc_abbs
     return JsonResponse({'success': True})
 
 
-def load_abbreviation_dict() -> List[Abbreviation]:
-    """Load approved abbreviations from the database."""
-    approved_entries = AbbreviationEntry.objects.filter(
-        status='approved'
-    ).values('abbreviation', 'description')
-
-    abb_dict: Dict[str, List[str]] = {}
-    for entry in approved_entries:
-        abb = entry['abbreviation']
-        description = entry['description']
-        abb_dict.setdefault(abb, []).append(description)
-
-    return [
-        {
-            'abbreviation': abb,
-            'descriptions': descriptions
-        }
-        for abb, descriptions in abb_dict.items()
-    ]
-
-
 def process_and_display(
     request: HttpRequest,
-    is_demo: bool = False
+    is_demo: bool = False,
 ) -> HttpResponse:
     file_name = request.session.get('uploaded_file_path')
     if not file_name:
@@ -300,28 +256,19 @@ def process_and_display(
             'upload.html',
             upload_page_context(
                 error='Пожалуйста, загрузите новый файл.'
-            )
+            ),
         )
 
     request.session.clear()
     request.session['uploaded_file_path'] = file_name
-
     file_path = FileSystemStorage().path(file_name)
-    logger.debug('Processing file: %s', file_path)
 
-    abb_dict = load_abbreviation_dict()
-    logger.debug(
-        'Loaded abbreviation dictionary: %s',
-        len(abb_dict)
-    )
-
-    doc = Document(file_path)
-    initial_abbs = extractor.get_abbreviation_table(doc)
-    doc_abbs: List[Abbreviation] = process_abbreviations(doc, abb_dict)
+    processed = process_document(file_path)
+    doc_abbs = processed.abbreviations
+    initial_abbs = processed.initial_abbreviations
 
     request.session['doc_abbs'] = doc_abbs
     request.session['initial_abbs'] = initial_abbs
-
     return render(
         request,
         'content.html',
@@ -333,54 +280,43 @@ def process_and_display(
             'document_session_timeout_ms': (
                 settings.DOCUMENT_SESSION_TIMEOUT_SECONDS * 1000
             ),
-        }
+        },
     )
 
 
 @require_http_methods(['POST'])
 def make_abbreviation_table(
-    request: HttpRequest
+    request: HttpRequest,
 ) -> Union[HttpResponse, JsonResponse]:
     try:
-        processed_doc_abbs = get_processed_doc_abbs(request)
-
+        doc_abbs: List[Abbreviation] = request.session.get('doc_abbs', [])
+        processed_doc_abbs = get_selected_abbreviations(doc_abbs)
         if not processed_doc_abbs:
             return JsonResponse(
                 {
                     'success': False,
-                    'error': 'Нет аббревиатур для генерации таблицы'
+                    'error': 'Нет аббревиатур для генерации таблицы',
                 },
-                status=400
+                status=400,
             )
 
-        processed_doc_abbs = formatter.clean_and_sort_abbreviations(
-            processed_doc_abbs
-        )
-        file_stream = io.BytesIO()
-        doc = generator.generate_document(processed_doc_abbs)
-        doc.save(file_stream)
-        file_stream.seek(0)
-
+        content = build_abbreviation_table_docx(processed_doc_abbs)
         response = HttpResponse(
-            file_stream.getvalue(),
+            content,
             content_type=(
                 'application/vnd.openxmlformats-officedocument.'
                 'wordprocessingml.document'
-            )
+            ),
         )
         response['Content-Disposition'] = (
             'attachment; filename=abbreviation_table.docx'
         )
         return response
-
     except Exception as exc:
         logger.error('Failed to generate table', exc_info=True)
         return JsonResponse(
-            {
-                'success': False,
-                'error': str(exc)
-            },
-            status=500
+            {'success': False, 'error': str(exc)},
+            status=500,
         )
 
 
@@ -415,7 +351,13 @@ def dictionary_view(request: HttpRequest) -> HttpResponse:
 def generate_description(request: HttpRequest) -> JsonResponse:
     """Generate description for abbreviation using LLM."""
     try:
-        data = parse_request_json(request)
+        try:
+            data = parse_request_json(request)
+        except ValueError as exc:
+            return JsonResponse(
+                {'success': False, 'error': str(exc)},
+                status=400,
+            )
         abb = data.get('abbreviation')
         context = data.get('context', '')
 
