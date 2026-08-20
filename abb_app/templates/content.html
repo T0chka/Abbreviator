@@ -15,12 +15,6 @@
      data-start-url="{% url 'upload_file' %}"
      data-timeout-ms="{{ document_session_timeout_ms }}"
      hidden></div>
-<div id="resultsAnalytics"
-     data-source="{% if is_demo %}demo{% else %}upload{% endif %}"
-     data-abbreviation-count="{{ doc_abbs|length }}"
-     data-has-initial-table="{{ has_initial_abbs|yesno:'true,false' }}"
-     data-initial-table-count="{{ initial_abbs_count }}"
-     hidden></div>
 
 {% if is_demo %}
 {% include 'partials/demo_tour.html' %}

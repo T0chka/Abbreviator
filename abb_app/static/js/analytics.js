@@ -10,15 +10,3 @@ window.umamiBeforeSend = function(_type, payload) {
     }
     return payload;
 };
-
-document.addEventListener('DOMContentLoaded', () => {
-    const results = document.getElementById('resultsAnalytics');
-    if (!results || !window.umami) return;
-
-    window.umami.track('results_viewed', {
-        source: results.dataset.source,
-        abbreviation_count: Number(results.dataset.abbreviationCount),
-        has_initial_table: results.dataset.hasInitialTable === 'true',
-        initial_table_count: Number(results.dataset.initialTableCount)
-    });
-});
