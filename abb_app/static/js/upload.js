@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const fileInput = document.getElementById('fileInput');
     const uploadForm = document.getElementById('uploadForm');
     const loadingOverlay = document.getElementById('loading-overlay');
-    const demoLink = document.getElementById('demoLink');
     const errorDialog = document.getElementById('upload-error-dialog');
     const errorMessage = document.getElementById('upload-error-message');
     const errorClose = document.getElementById('uploadErrorClose');
@@ -140,10 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
     uploadContainer.addEventListener('drop', event => {
         uploadContainer.classList.remove('drag-over');
         uploadFile(event.dataTransfer.files[0]);
-    });
-
-    demoLink.addEventListener('click', () => {
-        setLoading(true);
     });
 
     errorClose.addEventListener('click', () => {
