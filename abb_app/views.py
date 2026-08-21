@@ -19,7 +19,6 @@ from .document_session import (
     delete_session_document,
     touch_session_document,
 )
-from .model_integration.client import ModelClient
 from .models import AbbreviationEntry
 from .uploads import UploadValidationError, validate_docx_upload
 from .utils import Abbreviation, compare_abbreviations
@@ -30,6 +29,10 @@ from .services.abbreviations import (
 from .services.documents import (
     build_abbreviation_table_docx,
     process_document,
+)
+from .services.llm import (
+    LLMServiceError,
+    generate_abbreviation_description,
 )
 
 
@@ -277,6 +280,7 @@ def process_and_display(
             'has_initial_abbs': bool(initial_abbs),
             'initial_abbs_count': len(initial_abbs),
             'is_demo': is_demo,
+            'llm_model': settings.GROQ_MODEL,
             'document_session_timeout_ms': (
                 settings.DOCUMENT_SESSION_TIMEOUT_SECONDS * 1000
             ),
@@ -349,79 +353,93 @@ def dictionary_view(request: HttpRequest) -> HttpResponse:
 
 @require_http_methods(['POST'])
 def generate_description(request: HttpRequest) -> JsonResponse:
-    """Generate description for abbreviation using LLM."""
+    """Generate an abbreviation description using its session contexts."""
     try:
-        try:
-            data = parse_request_json(request)
-        except ValueError as exc:
-            return JsonResponse(
-                {'success': False, 'error': str(exc)},
-                status=400,
-            )
-        abb = data.get('abbreviation')
-        context = data.get('context', '')
-
-        if not abb:
-            return JsonResponse(
-                {
-                    'success': False,
-                    'error': 'Abbreviation is required'
-                },
-                status=400
-            )
-
-        client = ModelClient(
-            host=settings.OLLAMA_HOST,
-            model=settings.OLLAMA_MODEL,
-            temperature=0.6,
-            top_p=0.6
-        )
-
-        prompt = (
-            "Расшифруй аббревиатуру, следуя этим важным правилам:\n"
-            "1. Расшифровка должна быть максимально короткой и "
-            "соответствовать контексту.\n"
-            "2. Слова в расшифровке должны соответствовать буквам "
-            "аббревиатуры.\n"
-            "3. Язык расшифровки должен соответствовать языку "
-            "аббревиатуры.\n"
-            "4. Если не уверен, что расшифровка правильная, то отвечай "
-            "'не знаю'.\n"
-            f"\nАббревиатура: '{abb}'\n"
-            f"Контекст использования: '{context}'\n"
-            "Дай ответ в формате JSON с полем 'description'."
-        )
-
-        description = client.generate_response(prompt)
-
-        unavailable = (
-            'Sorry, the language model service is unavailable now'
-        )
-        if description == unavailable:
-            return JsonResponse(
-                {
-                    'success': False,
-                    'error': 'The language model service is unavailable',
-                    'description': description
-                }
-            )
-
+        data = parse_request_json(request)
+    except ValueError as exc:
         return JsonResponse(
-            {
-                'success': True,
-                'description': description
-            }
+            {'success': False, 'error': str(exc)},
+            status=400,
         )
 
-    except Exception as exc:
-        logger.error(
-            'Failed to generate description',
-            exc_info=True
-        )
+    unexpected_fields = set(data) - {'abbreviation', 'confirmed'}
+    if unexpected_fields:
         return JsonResponse(
             {
                 'success': False,
-                'error': str(exc)
+                'error': 'Unexpected request fields',
             },
-            status=500
+            status=400,
         )
+
+    abbreviation = data.get('abbreviation')
+    if not abbreviation:
+        return JsonResponse(
+            {
+                'success': False,
+                'error': 'Abbreviation is required',
+            },
+            status=400,
+        )
+
+    if data.get('confirmed') is not True:
+        return JsonResponse(
+            {
+                'success': False,
+                'error': 'AI generation must be confirmed',
+            },
+            status=400,
+        )
+
+    doc_abbs: List[Abbreviation] = request.session.get('doc_abbs', [])
+    entry = next(
+        (
+            item for item in doc_abbs
+            if item.get('abbreviation') == abbreviation
+        ),
+        None,
+    )
+    if entry is None:
+        return JsonResponse(
+            {
+                'success': False,
+                'error': 'Abbreviation not found',
+            },
+            status=400,
+        )
+
+    contexts = entry.get('contexts', [])
+    if (
+        not isinstance(contexts, list)
+        or not contexts
+        or not all(isinstance(context, str) for context in contexts)
+    ):
+        return JsonResponse(
+            {
+                'success': False,
+                'error': 'Для этого сокращения нет контекста.',
+            },
+            status=400,
+        )
+
+    try:
+        description = generate_abbreviation_description(
+            abbreviation=abbreviation,
+            contexts=contexts,
+        )
+    except LLMServiceError:
+        logger.error('Failed to generate description', exc_info=True)
+        return JsonResponse(
+            {
+                'success': False,
+                'error': 'Сервис AI временно недоступен.',
+            },
+            status=503,
+        )
+
+    return JsonResponse(
+        {
+            'success': True,
+            'description': description,
+        }
+    )

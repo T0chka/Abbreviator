@@ -24,6 +24,31 @@
      data-compare-with-existing="{{ is_demo|yesno:'true,false' }}"
      hidden></div>
 
+<dialog id="llm-consent-dialog" class="app-dialog">
+    <h3>Сгенерировать расшифровку с помощью AI?</h3>
+    <p>
+        Для генерации расшифровки сокращение и показанные ниже
+        фрагменты контекста будут отправлены через Groq API модели
+        <code>{{ llm_model }}</code>.
+    </p>
+    <p>Другие части документа и имя файла не отправляются.</p>
+    <p><strong>Сокращение:</strong> <span id="llm-consent-abbreviation"></span></p>
+    <p><strong>Контекст, который будет отправлен:</strong></p>
+    <div id="llm-consent-contexts"></div>
+    <div class="dialog-actions">
+        <button type="button"
+                class="dialog-button dialog-secondary"
+                data-processing-action="cancel-generation">
+            Отмена
+        </button>
+        <button type="button"
+                class="dialog-button dialog-primary"
+                data-processing-action="confirm-generation">
+            Сгенерировать
+        </button>
+    </div>
+</dialog>
+
 {% if is_demo %}
 {% include 'partials/demo_tour.html' %}
 {% elif has_initial_abbs %}
@@ -133,7 +158,6 @@
                            placeholder="Введите расшифровку"
                            style="padding-right: 40px;"
                            >
-                    {% if not abb.descriptions %}
                     <button class="generate-btn"
                             type="button"
                             data-processing-action="generate-description"
@@ -146,7 +170,6 @@
                             <span class="tooltiptext">Сгенерировать расшифровку</span>
                         </div>
                     </button>
-                    {% endif %}
                     <button data-processing-action="add-description"
                             id="add_btn_{{ abb.abbreviation }}"
                             class="btn-base btn-success">

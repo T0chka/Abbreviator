@@ -142,11 +142,9 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 1
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Ollama settings
-OLLAMA_HOST = os.environ.get(
-    'OLLAMA_HOST',
-    'http://192.168.1.196:11434'
+# External AI service
+GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
+GROQ_MODEL = os.environ.get(
+    'GROQ_MODEL',
+    'openai/gpt-oss-120b',
 )
-OLLAMA_MODEL = 'medical'
-OLLAMA_TEMPERATURE = 0.9
-OLLAMA_TOP_P = 0.9

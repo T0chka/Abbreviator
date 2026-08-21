@@ -188,12 +188,49 @@ async function generateAbbreviationTable() {
     }
 }
 
+let pendingGeneration = null;
+
+function openGenerationConsent(button, item) {
+    const contexts = item.querySelectorAll('.context-item');
+    if (!contexts.length) {
+        alert('Для этого сокращения нет контекста для генерации.');
+        return;
+    }
+
+    const dialog = document.getElementById('llm-consent-dialog');
+    const contextContainer = document.getElementById(
+        'llm-consent-contexts'
+    );
+    const abbreviation = item.dataset.abbreviation;
+
+    document.getElementById(
+        'llm-consent-abbreviation'
+    ).textContent = abbreviation;
+    contextContainer.replaceChildren(
+        ...Array.from(contexts, context => context.cloneNode(true))
+    );
+
+    pendingGeneration = {button, item};
+    dialog.showModal();
+}
+
+function cancelGeneration() {
+    pendingGeneration = null;
+    document.getElementById('llm-consent-dialog').close();
+}
+
+async function confirmGeneration() {
+    if (!pendingGeneration) return;
+
+    const {button, item} = pendingGeneration;
+    pendingGeneration = null;
+    document.getElementById('llm-consent-dialog').close();
+    await generateDescription(button, item);
+}
+
 async function generateDescription(button, item) {
     const abbreviation = item.dataset.abbreviation;
     const input = item.querySelector('input[type="text"]');
-    const contexts = Array.from(
-        item.querySelectorAll('.context-item p')
-    ).map(context => context.textContent).join(' ');
     const icon = button.querySelector('.magic-wand-icon');
 
     try {
@@ -208,7 +245,7 @@ async function generateDescription(button, item) {
             },
             body: JSON.stringify({
                 abbreviation,
-                context: contexts
+                confirmed: true
             })
         });
 
@@ -265,7 +302,13 @@ document.addEventListener('click', event => {
             break;
         case 'generate-description':
             event.stopPropagation();
-            generateDescription(control, item);
+            openGenerationConsent(control, item);
+            break;
+        case 'cancel-generation':
+            cancelGeneration();
+            break;
+        case 'confirm-generation':
+            confirmGeneration();
             break;
         case 'export-table':
             event.preventDefault();
@@ -275,6 +318,11 @@ document.addEventListener('click', event => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    const consentDialog = document.getElementById('llm-consent-dialog');
+    consentDialog.addEventListener('cancel', () => {
+        pendingGeneration = null;
+    });
+
     const tableDialog = document.getElementById('table-check-dialog');
     if (!tableDialog) return;
 

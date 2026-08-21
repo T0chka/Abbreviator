@@ -32,6 +32,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let placement = 'auto';
     let directHighlightTarget = null;
     let animationFrame = null;
+    let nextAction = null;
+    let nextLockedUntil = 0;
 
     function isCollapsed(card) {
         const content = card.querySelector('.abb-content');
@@ -51,6 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
         directHighlightTarget = null;
         activeStep = null;
+        nextAction = null;
         target = null;
         highlightTargets = [];
         highlight.classList.add('is-hidden');
@@ -175,7 +178,8 @@ document.addEventListener('DOMContentLoaded', () => {
         placement = stepPlacement;
 
         setStepContent(stepByName[name]);
-        nextButton.onclick = onNext;
+        nextAction = onNext;
+        nextLockedUntil = performance.now() + 250;
 
         if (highlightTargets.length === 1) {
             directHighlightTarget = highlightTargets[0];
@@ -210,6 +214,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function showAIGenerationStep() {
+        expandCard(firstCard);
+
+        requestAnimationFrame(() => {
+            const generateButton = firstCard.querySelector(
+                '[data-processing-action="generate-description"]'
+            );
+
+            showStep('ai-generation', generateButton, {
+                onNext: showMixedAlphabetStep
+            });
+        });
+    }
+
     function showDescriptionStep() {
         expandCard(firstCard);
 
@@ -220,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             showStep('description', descriptions[0], {
                 stepHighlights: descriptions,
-                onNext: showMixedAlphabetStep
+                onNext: showAIGenerationStep
             });
         });
     }
@@ -248,19 +266,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleLayoutChange() {
-        if (activeStep === 'context' && isCollapsed(firstCard)) {
-            clearStep();
-            requestAnimationFrame(showDescriptionStep);
-            return;
-        }
-
-        if (activeStep === 'description' && isCollapsed(firstCard)) {
-            clearStep();
-            requestAnimationFrame(showMixedAlphabetStep);
-            return;
-        }
-
         scheduleGeometryRefresh();
+    }
+
+    function handleNextClick(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (!nextAction || performance.now() < nextLockedUntil) {
+            return;
+        }
+
+        const action = nextAction;
+        nextAction = null;
+        action();
     }
 
     const layoutObserver = new MutationObserver(handleLayoutChange);
@@ -292,6 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
         'cancel',
         event => event.preventDefault()
     );
+
+    nextButton.addEventListener('click', handleNextClick);
 
     startButton.addEventListener('click', () => {
         introDialog.close();
