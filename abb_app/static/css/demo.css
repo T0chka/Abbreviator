@@ -15,9 +15,10 @@
     margin: 6px 0;
 }
 
-.demo-tour-target {
-    outline: 3px solid var(--primary-color);
-    outline-offset: 6px;
+.demo-tour-blocker {
+    position: fixed;
+    z-index: 1090;
+    inset: 0;
 }
 
 .demo-tour-highlight {
@@ -26,6 +27,10 @@
     box-sizing: border-box;
     border: 3px solid var(--primary-color);
     border-radius: var(--border-radius);
+    box-shadow: 0 0 0 9999px var(
+        --demo-backdrop-color,
+        rgb(0 0 0 / 35%)
+    );
     pointer-events: none;
 }
 

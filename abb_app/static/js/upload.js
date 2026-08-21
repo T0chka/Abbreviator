@@ -1,10 +1,10 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-
-    if (params.get('expired') === '1') {
+    if (
+        new URLSearchParams(window.location.search).get('expired') === '1'
+    ) {
         window.history.replaceState({}, '', window.location.pathname);
     }
-    
+
     const uploadContainer = document.getElementById('uploadContainer');
     const fileInput = document.getElementById('fileInput');
     const uploadForm = document.getElementById('uploadForm');
@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const maxUploadSizeMb = uploadForm.dataset.maxUploadSizeMb;
     const processUrlTemplate = uploadForm.dataset.processUrl;
 
+    function setLoading(visible) {
+        loadingOverlay.classList.toggle('is-hidden', !visible);
+    }
+
     function formatMb(bytes) {
         return new Intl.NumberFormat('ru-RU', {
             minimumFractionDigits: 1,
@@ -26,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function showError(message) {
-        loadingOverlay.classList.add('is-hidden');
+        setLoading(false);
         errorMessage.textContent = message;
 
         if (typeof errorDialog.showModal === 'function') {
@@ -38,13 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function validateFile(file) {
         if (!file.name.toLowerCase().endsWith('.docx')) {
-            window.umami?.track('upload_failed', {reason: 'file_type'});
+            window.umami?.track('upload_failed', {
+                reason: 'file_type'
+            });
             showError('Можно загрузить только файл формата .docx.');
             return false;
         }
 
         if (file.size > maxUploadSize) {
-            window.umami?.track('upload_failed', {reason: 'file_size'});
+            window.umami?.track('upload_failed', {
+                reason: 'file_size'
+            });
             showError(
                 `Файл слишком большой: ${formatMb(file.size)} МБ. ` +
                 `Максимальный размер: ${maxUploadSizeMb} МБ.`
@@ -55,10 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     }
 
-    function processUrl(sessionId) {
-        return processUrlTemplate.replace('__SESSION_ID__', sessionId);
-    }
-
     async function uploadFile(file) {
         if (!file || !validateFile(file)) {
             fileInput.value = '';
@@ -67,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const formData = new FormData(uploadForm);
         formData.set('uploaded_file', file, file.name);
-        loadingOverlay.classList.remove('is-hidden');
+        setLoading(true);
 
         try {
             const response = await fetch(uploadForm.action, {
@@ -79,8 +83,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let data = {};
             try {
                 data = await response.json();
-            } catch (_) {
-                // nginx or another upstream may return a non-JSON error page.
+            } catch {
+                // An upstream proxy may return a non-JSON error page.
             }
 
             if (!response.ok) {
@@ -92,13 +96,26 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!data.session_id) {
                 throw new Error('Не удалось создать сессию обработки.');
             }
+
             window.umami?.track('document_uploaded');
-            window.location.assign(processUrl(data.session_id));
+            window.location.assign(
+                processUrlTemplate.replace(
+                    '__SESSION_ID__',
+                    data.session_id
+                )
+            );
         } catch (error) {
-            window.umami?.track('upload_failed', {reason: 'server'});
+            window.umami?.track('upload_failed', {
+                reason: 'server'
+            });
             fileInput.value = '';
             showError(error.message);
         }
+    }
+
+    function preventDragDefaults(event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
 
     fileInput.addEventListener('change', event => {
@@ -106,10 +123,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-        uploadContainer.addEventListener(eventName, event => {
-            event.preventDefault();
-            event.stopPropagation();
-        });
+        uploadContainer.addEventListener(
+            eventName,
+            preventDragDefaults
+        );
     });
 
     uploadContainer.addEventListener('dragover', () => {
@@ -126,10 +143,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     demoLink.addEventListener('click', () => {
-        loadingOverlay.classList.remove('is-hidden');
+        setLoading(true);
     });
 
     errorClose.addEventListener('click', () => {
         errorDialog.close();
+    });
+
+    window.addEventListener('pageshow', () => {
+        setLoading(false);
     });
 });
