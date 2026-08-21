@@ -218,6 +218,14 @@
     background: var(--bg-accent);
 }
 
+.llm-consent-dialog {
+    width: min(760px, calc(100vw - 48px));
+}
+
+.llm-consent-summary {
+    margin-top: 24px;
+}
+
 /* ==========================================================================
    Upload footer
    ========================================================================== */

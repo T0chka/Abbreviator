@@ -24,7 +24,7 @@
      data-compare-with-existing="{{ is_demo|yesno:'true,false' }}"
      hidden></div>
 
-<dialog id="llm-consent-dialog" class="app-dialog">
+<dialog id="llm-consent-dialog" class="app-dialog llm-consent-dialog">
     <h3>Сгенерировать расшифровку с помощью AI?</h3>
     <p>
         Для генерации расшифровки сокращение и показанные ниже
@@ -32,9 +32,11 @@
         <code>{{ llm_model }}</code>.
     </p>
     <p>Другие части документа и имя файла не отправляются.</p>
-    <p><strong>Сокращение:</strong> <span id="llm-consent-abbreviation"></span></p>
-    <p><strong>Контекст, который будет отправлен:</strong></p>
+    <div class="llm-consent-summary"></div>
+        <p><strong>Сокращение:</strong> <span id="llm-consent-abbreviation"></span></p>
+        <p><strong>Контекст, который будет отправлен:</strong></p>
     <div id="llm-consent-contexts"></div>
+    </div>
     <div class="dialog-actions">
         <button type="button"
                 class="dialog-button dialog-secondary"
