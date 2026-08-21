@@ -280,7 +280,7 @@ def process_and_display(
             'has_initial_abbs': bool(initial_abbs),
             'initial_abbs_count': len(initial_abbs),
             'is_demo': is_demo,
-            'llm_model': settings.GROQ_MODEL,
+            'llm_model': settings.GIGACHAT_MODEL,
             'document_session_timeout_ms': (
                 settings.DOCUMENT_SESSION_TIMEOUT_SECONDS * 1000
             ),

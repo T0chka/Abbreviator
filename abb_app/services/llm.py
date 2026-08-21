@@ -1,23 +1,61 @@
 import json
+import time
+import uuid
 from typing import List
 
 import requests
 from django.conf import settings
 
-GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions'
-GROQ_TIMEOUT_SECONDS = 20
+GIGACHAT_AUTH_URL = (
+    'https://ngw.devices.sberbank.ru:9443/api/v2/oauth'
+)
+GIGACHAT_CHAT_URL = 'https://api.giga.chat/v1/chat/completions'
+GIGACHAT_TIMEOUT_SECONDS = 20
+
+_access_token = None
+_access_token_expires_at = 0.0
 
 
 class LLMServiceError(Exception):
     pass
 
 
+def _get_access_token() -> str:
+    global _access_token, _access_token_expires_at
+
+    if _access_token and time.time() < _access_token_expires_at - 60:
+        return _access_token
+
+    response = requests.post(
+        GIGACHAT_AUTH_URL,
+        headers={
+            'Authorization': f'Basic {settings.GIGACHAT_CREDENTIALS}',
+            'RqUID': str(uuid.uuid4()),
+            'Accept': 'application/json',
+        },
+        data={'scope': settings.GIGACHAT_SCOPE},
+        timeout=GIGACHAT_TIMEOUT_SECONDS,
+        verify=settings.GIGACHAT_CA_BUNDLE or True,
+    )
+    response.raise_for_status()
+    data = response.json()
+
+    token = data['access_token']
+    expires_at = float(data['expires_at'])
+    if expires_at > 10_000_000_000:
+        expires_at /= 1000
+
+    _access_token = token
+    _access_token_expires_at = expires_at
+    return token
+
+
 def generate_abbreviation_description(
     abbreviation: str,
     contexts: List[str],
 ) -> str:
-    if not settings.GROQ_API_KEY:
-        raise LLMServiceError('Groq API key is not configured')
+    if not settings.GIGACHAT_CREDENTIALS:
+        raise LLMServiceError('GigaChat credentials are not configured')
 
     context_json = json.dumps(contexts, ensure_ascii=False)
     prompt = (
@@ -36,45 +74,45 @@ def generate_abbreviation_description(
     )
 
     payload = {
-        'model': settings.GROQ_MODEL,
-        'reasoning_effort': 'low',
-        'include_reasoning': False,
-        'max_completion_tokens': 100,
+        'model': settings.GIGACHAT_MODEL,
+        'temperature': 0.1,
+        'max_tokens': 100,
         'messages': [
             {'role': 'user', 'content': prompt},
         ],
         'response_format': {
             'type': 'json_schema',
-            'json_schema': {
-                'name': 'abbreviation_description',
-                'strict': True,
-                'schema': {
-                    'type': 'object',
-                    'properties': {
-                        'description': {'type': 'string'},
-                    },
-                    'required': ['description'],
-                    'additionalProperties': False,
+            'schema': {
+                'type': 'object',
+                'properties': {
+                    'description': {'type': 'string'},
                 },
+                'required': ['description'],
+                'additionalProperties': False,
             },
+            'strict': True,
         },
     }
 
     try:
+        access_token = _get_access_token()
         response = requests.post(
-            GROQ_CHAT_URL,
+            GIGACHAT_CHAT_URL,
             headers={
-                'Authorization': f'Bearer {settings.GROQ_API_KEY}',
+                'Authorization': f'Bearer {access_token}',
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
             },
             json=payload,
-            timeout=GROQ_TIMEOUT_SECONDS,
+            timeout=GIGACHAT_TIMEOUT_SECONDS,
+            verify=settings.GIGACHAT_CA_BUNDLE or True,
         )
         response.raise_for_status()
         content = response.json()['choices'][0]['message']['content']
         description = json.loads(content)['description'].strip()
     except (
         requests.RequestException,
+        IndexError,
         KeyError,
         TypeError,
         ValueError,

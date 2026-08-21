@@ -143,8 +143,7 @@ DATA_UPLOAD_MAX_NUMBER_FILES = 1
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # External AI service
-GROQ_API_KEY = os.environ.get('GROQ_API_KEY', '')
-GROQ_MODEL = os.environ.get(
-    'GROQ_MODEL',
-    'openai/gpt-oss-120b',
-)
+GIGACHAT_CREDENTIALS = os.environ.get('GIGACHAT_CREDENTIALS', '')
+GIGACHAT_MODEL = os.environ.get('GIGACHAT_MODEL', 'GigaChat-3-Ultra')
+GIGACHAT_SCOPE = os.environ.get('GIGACHAT_SCOPE', 'GIGACHAT_API_PERS')
+GIGACHAT_CA_BUNDLE = os.environ.get('GIGACHAT_CA_BUNDLE', '')
