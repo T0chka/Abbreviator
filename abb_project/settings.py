@@ -124,9 +124,6 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = os.environ.get('STATIC_URL', 'static/')
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'abb_app', 'static'),
-]
 STATIC_ROOT = os.environ.get('STATIC_ROOT', None)
 
 # Uploaded documents
