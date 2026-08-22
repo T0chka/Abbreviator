@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Abbreviator document cleanup every 5 minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+Unit=abbreviator-cleanup.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Clean up expired Abbreviator documents
+
+[Service]
+Type=oneshot
+User=tonia
+Group=www-data
+WorkingDirectory=/home/tonia/datadelic.dev/Abbreviator
+EnvironmentFile=/home/tonia/datadelic.dev/Abbreviator/.env
+ExecStart=/home/tonia/datadelic.dev/Abbreviator/.venv/bin/python manage.py cleanup_documents

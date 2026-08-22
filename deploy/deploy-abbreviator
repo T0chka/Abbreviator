@@ -1,0 +1,21 @@
+#!/bin/bash
+set -e
+
+cd /home/tonia/datadelic.dev/Abbreviator
+
+echo "Updating code..."
+git pull --ff-only origin main
+
+echo "Syncing dependencies..."
+~/.local/bin/uv sync --frozen
+
+echo "Applying migrations..."
+~/.local/bin/uv run python manage.py migrate --noinput
+
+echo "Collecting static files..."
+STATIC_ROOT=/home/tonia/datadelic.dev/static-root/public/abbrstatic/ STATIC_URL=/abbrstatic/ ~/.local/bin/uv run python manage.py collectstatic --noinput
+
+echo "Restarting service..."
+sudo systemctl restart abbreviator
+
+echo "Deploy complete."
