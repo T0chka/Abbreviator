@@ -12,6 +12,7 @@ from django.core.files.storage import FileSystemStorage
 from django.http import FileResponse, HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.timezone import now
+from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
 from .document_session import (
@@ -141,6 +142,7 @@ def end_document_session(request: HttpRequest) -> HttpResponse:
     return HttpResponse(status=204)
 
 
+@ensure_csrf_cookie
 @require_http_methods(['GET'])
 def process_file_with_session(
     request: HttpRequest,

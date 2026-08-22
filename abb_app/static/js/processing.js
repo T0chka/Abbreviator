@@ -47,7 +47,10 @@ async function updateDifferenceSection() {
 async function fetchWrapper(url, data = null) {
     const options = {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'}
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        }
     };
 
     if (data) {

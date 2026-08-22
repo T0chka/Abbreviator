@@ -10,9 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from pathlib import Path
 import os
 import sys
+from pathlib import Path
+
+from dotenv import load_dotenv
 
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -21,15 +23,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
-
-SECRET_KEY = (
-    os.environ.get('SECRET_KEY')
-    if 'SECRET_KEY' in os.environ
-    else 'your-default-secret-key'
-)
+load_dotenv(BASE_DIR / '.env')
+SECRET_KEY = os.environ['SECRET_KEY']
 
 DEBUG = ('runserver' in sys.argv)
 ALLOWED_HOSTS = ['datadelic.dev', '127.0.0.1']
+
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 if not DEBUG:
     FORCE_SCRIPT_NAME = '/abbreviator/'
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',

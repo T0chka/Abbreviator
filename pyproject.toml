@@ -7,6 +7,7 @@ dependencies = [
     "django>=5.2,<5.3",
     "gunicorn; sys_platform != 'win32'",
     "python-docx",
+    "python-dotenv>=1.2.3",
     "regex",
     "requests",
 ]
