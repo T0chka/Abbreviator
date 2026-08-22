@@ -28,8 +28,23 @@ EXCLUDE_TERMS = {
     'ДАННЫХ', 'ЧЕЛОВЕКА', 'ОБЩЕСТВО', 'ЦЕНТР', 'АКТИВНЫХ', 'ВЕЩЕСТВ',
     'НАУЧНЫЙ', 'ОТЧЕТ', 'ОБЗОР', 'Каплана-Мейера', 'Стивенса-Джонсона',
     'Спрейг-Доули', 'Спрег-Доули', 'Мантеля-Хензеля', 'Нью-Йоркской',
-    'Лонг-Эванс', 'ГмбХ', 'ТАБЛИЦ', 'РИСУНКОВ', 'ДАННЫЕ'
+    'Лонг-Эванс', 'ГмбХ', 'ТАБЛИЦ', 'РИСУНКОВ', 'ДАННЫЕ', 'СТРАНИЦА',
+    'СПОНСОРА', 'ЦЕНТРА', 'ТЕРМИНЫ', 'ЦЕЛЬ'
 }
+
+ROMAN_NUMERAL_PATTERN = re.compile(
+    r'(?=[IVXLCDM]+$)M{0,3}(?:CM|CD|D?C{0,3})'
+    r'(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})',
+    re.IGNORECASE
+)
+ROMAN_STAGE_PATTERN = re.compile(
+    r'(?=[IVXLCDM]+[ABCАВС]$)'
+    r'M{0,3}(?:CM|CD|D?C{0,3})'
+    r'(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})'
+    r'[ABCАВС]',
+    re.IGNORECASE
+)
+
 
 class Abbreviation(TypedDict):
     """Universal abbreviation structure"""
@@ -153,10 +168,6 @@ class TextProcessor:
                 section.upper() for section in skip_sections
             }
         self.exclude_terms = exclude_terms
-        self.roman_pattern = re.compile(
-            r'^(?:[IVXLCDM]+(?:-[IVXLCDM]+)?)[A-Za-zА-Яа-яёЁ]*$',
-            re.IGNORECASE
-        )
 
     def extract_relevant_text(self, doc: Document) -> str:
         """
@@ -216,7 +227,8 @@ class TextProcessor:
         Extract abbreviations from text.
 
         Exact dictionary matches are always included. Unknown tokens must satisfy
-        the abbreviation heuristics.
+        the abbreviation heuristics. Compound and derived forms are removed when
+        their standalone abbreviations are already present.
         """
         doc_abbs: Counter[str] = Counter()
 
@@ -233,8 +245,7 @@ class TextProcessor:
 
             if not re.search(r'[A-ZА-ЯЁ].*[A-ZА-ЯЁ]', candidate):
                 continue
-
-            if self.roman_pattern.match(candidate):
+            if self._is_roman_token(candidate):
                 continue
             if candidate in self.exclude_terms:
                 continue
@@ -243,7 +254,52 @@ class TextProcessor:
 
             doc_abbs[candidate] += 1
 
+        standalone = set(doc_abbs)
+
+        for candidate in list(doc_abbs):
+            if candidate in known_abbreviations:
+                continue
+
+            parts = candidate.split('/')
+            if (
+                len(parts) > 1
+                and all(parts)
+                and all(part in standalone for part in parts)
+            ):
+                del doc_abbs[candidate]
+                continue
+
+            for abbreviation in standalone:
+                if abbreviation == candidate:
+                    continue
+
+                if candidate.startswith(f'{abbreviation}-'):
+                    affix = candidate[len(abbreviation) + 1:]
+                elif candidate.endswith(f'-{abbreviation}'):
+                    affix = candidate[:-len(abbreviation) - 1]
+                else:
+                    continue
+
+                if (
+                    len(affix) >= 2
+                    and re.fullmatch(r'[А-Яа-яЁё]+', affix)
+                    and re.search(r'[а-яё]', affix)
+                ):
+                    del doc_abbs[candidate]
+                    break
+
         return doc_abbs
+
+    @staticmethod
+    def _is_roman_token(candidate: str) -> bool:
+        parts = candidate.split('-')
+        if len(parts) > 2:
+            return False
+        return all(
+            ROMAN_NUMERAL_PATTERN.fullmatch(part)
+            or ROMAN_STAGE_PATTERN.fullmatch(part)
+            for part in parts
+        )
 
     def _clean_abbreviation(self, match: str) -> str:
         """Helper method to clean and format abbreviation matches."""
