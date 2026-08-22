@@ -12,11 +12,6 @@ from typing import (
 )
 
 
-import logging
-
-standard_logger = logging.getLogger('django')
-standard_logger.error("STARTING TEXT EXTRACTION")
-
 SECTION_PATTERNS = [
     'ПЕРЕЧЕНЬ СОКРАЩЕНИЙ И ОПРЕДЕЛЕНИЯ ТЕРМИНОВ', 'СПИСОК СОКРАЩЕНИЙ'
 ]
@@ -33,7 +28,7 @@ EXCLUDE_TERMS = {
     'ДАННЫХ', 'ЧЕЛОВЕКА', 'ОБЩЕСТВО', 'ЦЕНТР', 'АКТИВНЫХ', 'ВЕЩЕСТВ',
     'НАУЧНЫЙ', 'ОТЧЕТ', 'ОБЗОР', 'Каплана-Мейера', 'Стивенса-Джонсона',
     'Спрейг-Доули', 'Спрег-Доули', 'Мантеля-Хензеля', 'Нью-Йоркской',
-    'Лонг-Эванс', 'ГмбХ', 'ТАБЛИЦ', 'РИСУНКОВ'
+    'Лонг-Эванс', 'ГмбХ', 'ТАБЛИЦ', 'РИСУНКОВ', 'ДАННЫЕ'
 }
 
 class Abbreviation(TypedDict):
@@ -66,13 +61,8 @@ class AbbreviationTableExtractor:
         """Extract abbreviations table from document"""
         table_element = self._extract_table_element(doc)
         if table_element is None:
-            print(f"[INFO] No relevant abbreviation table found")
             return []
-        
-        print("[INFO] Found table with",
-              f"{len(table_element.findall('.//w:tr', namespaces=self.NS))} rows"
-              )
-            
+
         return self._parse_table(table_element)
     
     def _extract_table_element(self, doc: Document) -> Optional[CT_Tbl]:
@@ -118,16 +108,6 @@ class AbbreviationTableExtractor:
         abb_entries: Dict[str, List[str]] = {}
         rows = table_element.findall('.//w:tr', namespaces=self.NS)
         
-        # TMP: debugging
-        header_cells = rows[0].findall('.//w:tc', namespaces=self.NS)
-        header_texts = [
-            ''.join(
-                t.text for t in cell.findall('.//w:t', namespaces=self.NS) if t.text
-                ).strip()
-            for cell in header_cells
-        ]
-        print(f"[INFO] Header: {header_texts}")
-        
         # Get abbreviations and descriptions
         for idx, row in enumerate(rows):
             cell_values = [
@@ -146,8 +126,6 @@ class AbbreviationTableExtractor:
                         abb_entries[abb].append(description)
                 else:
                     abb_entries[abb] = [description]
-            else:
-                print(f"[WARNING] Unexpected row structure: {cell_values}")
 
         return [
             {
@@ -207,8 +185,7 @@ class TextProcessor:
                     (style_name.startswith('Heading') or 'Заголовок' in style_name)
                 )
                 
-            except Exception as e:
-                standard_logger.error(f"Error in para {i}: {str(e)}")
+            except Exception:
                 is_heading = False
             
             is_bold = False
@@ -228,7 +205,6 @@ class TextProcessor:
             if not skip:
                 paragraphs.append(para_text)
 
-        standard_logger.error("EXTRACTION COMPLETED")
         return ' '.join(paragraphs)
 
     def extract_abbreviations(
@@ -267,7 +243,6 @@ class TextProcessor:
 
             doc_abbs[candidate] += 1
 
-        print(f"Found {len(doc_abbs)} abbreviations")
         return doc_abbs
 
     def _clean_abbreviation(self, match: str) -> str:
@@ -332,8 +307,6 @@ def process_abbreviations(
     )
     processed_abbs: List[Abbreviation] = []
     
-    print("Starting processing abbreviations")
-
     for abb, count in raw_abbs.items():
         contexts = text_processor.find_abbreviation_context(text, abb)
         
@@ -367,9 +340,8 @@ def process_abbreviations(
                             else processed_abb['descriptions']
                         )
                     })
-                    print(f"Processed validated abbreviation: {processed_abb}\n\n")
-            except ValueError as e:
-                print(f"[ERROR] Failed to validate abbreviation '{abb}': {e}")
+            except ValueError:
+                pass
             
         processed_abbs.append(processed_abb)
     
@@ -832,7 +804,6 @@ def split_by_language(text):
 
     pattern = r'[\p{Script=Cyrillic}\p{Script=Latin}\p{N}_-]+[.,;:!?]*|\S'
     words = regex.findall(pattern, text)
-    # print(words)
 
     for word in words:
         lang = detect_string_alphabet(word)

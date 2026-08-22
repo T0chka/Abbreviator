@@ -38,12 +38,7 @@ from .services.llm import (
 
 DEMO_SESSION_ID = 'test_drive'
 
-logger = logging.getLogger('abb_app')
-
-
-if not logger.hasHandlers():
-    logger.addHandler(logging.StreamHandler())
-    logger.setLevel(logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
 def generate_session_id() -> str:
@@ -106,12 +101,6 @@ def upload_file(request: HttpRequest) -> HttpResponse:
 
     delete_session_document(request)
 
-    size_mb = uploaded_file.size / (1024 * 1024)
-    logger.info(
-        'Uploading file: %s, size: %.1f MB',
-        uploaded_file.name,
-        size_mb
-    )
 
     requested_id = generate_session_id()
     filename = FileSystemStorage().save(
@@ -316,10 +305,10 @@ def make_abbreviation_table(
             'attachment; filename=abbreviation_table.docx'
         )
         return response
-    except Exception as exc:
-        logger.error('Failed to generate table', exc_info=True)
+    except Exception:
+        logger.exception('Failed to generate abbreviation table')
         return JsonResponse(
-            {'success': False, 'error': str(exc)},
+            {'success': False, 'error': 'Не удалось сгенерировать таблицу.'},
             status=500,
         )
 
@@ -428,7 +417,7 @@ def generate_description(request: HttpRequest) -> JsonResponse:
             contexts=contexts,
         )
     except LLMServiceError:
-        logger.error('Failed to generate description', exc_info=True)
+        logger.exception('Failed to generate AI description')
         return JsonResponse(
             {
                 'success': False,

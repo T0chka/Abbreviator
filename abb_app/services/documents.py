@@ -1,6 +1,4 @@
 import io
-import logging
-
 from dataclasses import dataclass
 from typing import Dict, List
 
@@ -15,9 +13,6 @@ from abb_app.utils import (
 )
 
 from .abbreviations import load_approved_dictionary
-
-
-logger = logging.getLogger('abb_app')
 extractor = AbbreviationTableExtractor()
 formatter = AbbreviationFormatter()
 generator = AbbreviationTableGenerator()
@@ -30,13 +25,7 @@ class ProcessedDocument:
 
 
 def process_document(file_path: str) -> ProcessedDocument:
-    logger.debug('Processing file: %s', file_path)
-
     dictionary = load_approved_dictionary()
-    logger.debug(
-        'Loaded abbreviation dictionary: %s',
-        len(dictionary),
-    )
 
     document = Document(file_path)
     initial_abbreviations = extractor.get_abbreviation_table(document)

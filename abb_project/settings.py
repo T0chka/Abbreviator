@@ -147,3 +147,29 @@ GIGACHAT_CREDENTIALS = os.environ.get('GIGACHAT_CREDENTIALS', '')
 GIGACHAT_MODEL = os.environ.get('GIGACHAT_MODEL', 'GigaChat-3-Ultra')
 GIGACHAT_SCOPE = os.environ.get('GIGACHAT_SCOPE', 'GIGACHAT_API_PERS')
 GIGACHAT_CA_BUNDLE = os.environ.get('GIGACHAT_CA_BUNDLE', '')
+
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'console': {
+            'format': '{levelname} {name}: {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'console',
+        },
+    },
+    'loggers': {
+        'abb_app': {
+            'handlers': ['console'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+    },
+}
