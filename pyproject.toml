@@ -8,7 +8,6 @@ dependencies = [
     "gunicorn; sys_platform != 'win32'",
     "python-docx",
     "python-dotenv>=1.2.3",
-    "regex",
     "requests",
 ]
 

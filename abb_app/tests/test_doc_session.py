@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 
 from django.test import SimpleTestCase
 
-from abb_app.document_session import (
+from abb_app.services.sessions import (
     DEMO_FILENAME,
     cleanup_expired_documents,
 )

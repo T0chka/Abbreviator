@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase
 
-from abb_app.utils import CharacterValidator, TextProcessor
+from abb_app.services.extraction import CharacterValidator, TextProcessor
 
 
 class TextProcessorTests(SimpleTestCase):

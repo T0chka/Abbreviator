@@ -4,7 +4,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import SimpleTestCase
 from docx import Document
 
-from abb_app.uploads import UploadValidationError, validate_docx_upload
+from abb_app.services.uploads import UploadValidationError, validate_docx_upload
 
 
 class UploadValidationTests(SimpleTestCase):

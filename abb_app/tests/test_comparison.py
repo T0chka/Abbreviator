@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase
 
-from abb_app.utils import compare_abbreviations
+from abb_app.services.abbreviations import compare_abbreviations
 
 
 class AbbreviationComparisonTests(SimpleTestCase):

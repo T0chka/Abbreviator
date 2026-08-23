@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 
-from abb_app.document_session import cleanup_expired_documents
+from abb_app.services.sessions import cleanup_expired_documents
 
 
 class Command(BaseCommand):

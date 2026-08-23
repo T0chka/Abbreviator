@@ -15,15 +15,10 @@ from django.utils.timezone import now
 from django.views.decorators.csrf import ensure_csrf_cookie
 from django.views.decorators.http import require_http_methods
 
-from .document_session import (
-    DEMO_FILENAME,
-    delete_session_document,
-    touch_session_document,
-)
 from .models import AbbreviationEntry
-from .uploads import UploadValidationError, validate_docx_upload
-from .utils import Abbreviation, compare_abbreviations
 from .services.abbreviations import (
+    Abbreviation,
+    compare_abbreviations,
     get_selected_abbreviations,
     update_abbreviation_selection,
 )
@@ -35,6 +30,12 @@ from .services.llm import (
     LLMServiceError,
     generate_abbreviation_description,
 )
+from .services.sessions import (
+    DEMO_FILENAME,
+    delete_session_document,
+    touch_session_document,
+)
+from .services.uploads import UploadValidationError, validate_docx_upload
 
 
 DEMO_SESSION_ID = 'test_drive'
