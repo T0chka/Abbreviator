@@ -10,11 +10,18 @@
     --bg-accent2: #D3C5BF;
     --text-primary: #46413d;
     --border: 1px solid var(--bg-accent-hover);
-    --success-color: #64a863;
+    --success-color: #557A64;
     --success-hover: color-mix(in srgb, var(--success-color) 80%, black);
-    --danger-color: #f44336;
+    --danger-color: #A95650;
     --danger-hover: color-mix(in srgb, var(--danger-color) 80%, black);
     --link-color: #007bff;
+    --scrollbar-track: var(--bg-accent);
+    --scrollbar-thumb: color-mix(
+        in srgb, var(--primary-color) 42%, var(--bg-accent2)
+    );
+    --scrollbar-thumb-hover: color-mix(
+        in srgb, var(--primary-color) 62%, var(--bg-accent2)
+    );
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -32,6 +39,34 @@
 /* ==========================================================================
    Base Styles
    ========================================================================== */
+* {
+    scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+    scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+    border: 2px solid var(--scrollbar-track);
+    border-radius: 999px;
+    background: var(--scrollbar-thumb);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+    background: var(--scrollbar-track);
+}
+
 body {
     padding: 0 40px;
     max-width: 1200px;

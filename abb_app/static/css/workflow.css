@@ -299,6 +299,10 @@ footer p {
     box-shadow: var(--shadow-sm);
 }
 
+.workflow-tool[open] {
+    margin-bottom: 8px;
+}
+
 .workflow-tool-summary {
     display: flex;
     min-height: 42px;
@@ -490,7 +494,7 @@ body.is-resizing-workflow {
 
 .table-preview th:first-child,
 .table-preview td:first-child {
-    width: 28%;
+    width: 18%;
 }
 
 .table-preview-empty {
@@ -592,11 +596,6 @@ body.is-resizing-workflow {
 }
 
 @media (max-width: 760px) {
-    .workflow-tools {
-        margin-right: -16px;
-        margin-left: -16px;
-    }
-
     .global-settings-panel {
         right: 72px;
         width: min(420px, calc(100vw - 92px));

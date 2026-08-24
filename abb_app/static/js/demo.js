@@ -203,9 +203,14 @@ document.addEventListener('DOMContentLoaded', () => {
         blocker.classList.add('is-hidden');
         highlight.classList.add('is-hidden');
         popover.classList.add('is-hidden');
+        comparisonBlock.open = false;
 
         window.removeEventListener('resize', schedulePosition);
         window.removeEventListener('scroll', schedulePosition);
+
+        requestAnimationFrame(() => {
+            window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+        });
     }
 
     nextButton.addEventListener('click', () => {
