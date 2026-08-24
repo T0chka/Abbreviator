@@ -220,9 +220,17 @@ h2 {
     border-radius: var(--border-radius);
 }
 
-.input-group input {
-    flex-grow: 1;
+.description-input-wrap {
+    position: relative;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.description-input-wrap input {
+    width: 100%;
+    box-sizing: border-box;
     padding: 0.75rem 1.5rem;
+    padding-right: 44px;
     border: var(--border);
     border-radius: var(--border-radius);
     font-size: 0.95rem;
@@ -230,33 +238,37 @@ h2 {
     transition: border-color var(--transition-fast);
 }
 
-.input-group input:focus {
+.description-input-wrap input:focus {
     outline: none;
     border-color: var(--primary-color);
 }
 
 /* Magic wand button */
-.input-group .generate-btn {
+.description-input-wrap .generate-btn {
     position: absolute;
-    right: 140px;
+    top: 50%;
+    right: 4px;
     background: none;
     border: none;
     box-shadow: none;
     color: var(--text-primary);
-    padding: 0.75rem;
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    transform: translateY(-50%);
 }
 
 /* Remove hover effects from button */
-.input-group .generate-btn:hover {
+.description-input-wrap .generate-btn:hover {
     background: none;
     box-shadow: none;
+    transform: translateY(-50%);
 }
 
 /* Icon animation */
 .magic-wand-icon {
+    font-size: 20px;
     transition: transform var(--transition-fast);
 }
 
@@ -701,7 +713,7 @@ table.dataTable thead th.sorting_desc::after {
 /* ==========================================================================
    Media Queries
    ========================================================================== */
-   @media screen and (max-width: 768px) {
+@media screen and (max-width: 768px) {
     body {
         padding: 0 20px;
     }
@@ -723,12 +735,28 @@ table.dataTable thead th.sorting_desc::after {
     }
 
     .btn-select-option {
-        margin: 0 12px ;
+        margin: 0 12px;
     }
 
     .input-group {
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         margin: 0 12px;
+    }
+
+    .description-input-wrap {
+        grid-column: 1 / -1;
+    }
+
+    .input-group > .btn-base {
+        width: 100%;
+    }
+
+    .tooltip .tooltiptext,
+    .fab .tooltiptext,
+    .abb-description .tooltiptext {
+        padding: 6px 8px;
+        font-size: 0.75rem;
     }
 
     /* FAB Container */

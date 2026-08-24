@@ -178,25 +178,22 @@
                 {% endif %}
 
                 <!-- Custom description input -->
-                <div class="input-group" id="input_group_{{ abb.abbreviation }}"
-                     style="position: relative;">
-                    <input type="text"
-                           id="desc_{{ abb.abbreviation }}"
-                           placeholder="Введите расшифровку"
-                           style="padding-right: 40px;"
-                           >
-                    <button class="generate-btn"
-                            type="button"
-                            data-processing-action="generate-description"
-                            style="position: absolute;">
-                        <div class="tooltip tooltip-center">
-                            <span class="material-icons-outlined magic-wand-icon"
-                                  style="font-size: 20px;">
-                                auto_fix_high
-                            </span>
-                            <span class="tooltiptext">Сгенерировать расшифровку</span>
-                        </div>
-                    </button>
+                <div class="input-group" id="input_group_{{ abb.abbreviation }}">
+                    <div class="description-input-wrap">
+                        <input type="text"
+                               id="desc_{{ abb.abbreviation }}"
+                               placeholder="Введите расшифровку">
+                        <button class="generate-btn"
+                                type="button"
+                                data-processing-action="generate-description">
+                            <div class="tooltip tooltip-center">
+                                <span class="material-icons-outlined magic-wand-icon">
+                                    auto_fix_high
+                                </span>
+                                <span class="tooltiptext">Сгенерировать расшифровку</span>
+                            </div>
+                        </button>
+                    </div>
                     <button data-processing-action="add-description"
                             id="add_btn_{{ abb.abbreviation }}"
                             class="btn-base btn-success">
