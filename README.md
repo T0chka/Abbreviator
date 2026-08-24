@@ -21,7 +21,7 @@ The current dictionary is focused on medical and pharmaceutical documentation, w
 
 ## Privacy by design
 
-Uploaded documents are processed temporarily and expire after 10 minutes of inactivity. Production cleanup runs every 5 minutes.
+Uploaded documents and extracted session data expire after 10 minutes of inactivity. Production cleanup removes expired documents and Django session records every 5 minutes.
 
 AI generation is opt-in for each request. Only the abbreviation and the context fragments shown to the user are sent to the GigaChat API after explicit confirmation; the full document and filename are not sent. Document text is not written to production application logs or analytics.
 

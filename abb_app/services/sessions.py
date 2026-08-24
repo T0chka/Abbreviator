@@ -16,7 +16,9 @@ def delete_session_document(request: HttpRequest) -> None:
         FileSystemStorage().delete(filename)
 
 
-def touch_session_document(request: HttpRequest) -> None:
+def refresh_document_session(request: HttpRequest) -> None:
+    request.session.set_expiry(settings.DOCUMENT_SESSION_TIMEOUT_SECONDS)
+
     filename = request.session.get(SESSION_FILE_KEY)
     if not filename or filename == DEMO_FILENAME:
         return

@@ -5,6 +5,7 @@ from django.test import TestCase
 from docx import Document
 
 from abb_app.models import AbbreviationEntry
+from abb_app.services.sessions import SESSION_FILE_KEY
 
 
 class ProcessingViewTests(TestCase):
@@ -23,16 +24,38 @@ class ProcessingViewTests(TestCase):
             doc.add_paragraph('У пациента определяли уровень T4.')
             doc.save(path)
 
-            with self.settings(MEDIA_ROOT=media_root):
+            session = self.client.session
+            session[SESSION_FILE_KEY] = path.name
+            session.save()
+
+            with self.settings(
+                MEDIA_ROOT=media_root,
+                DOCUMENT_SESSION_TIMEOUT_SECONDS=600,
+            ):
                 response = self.client.get(f'/process/{session_id}/')
+                expiry_age = self.client.session.get_expiry_age()
 
             self.assertEqual(response.status_code, 200)
             self.assertTemplateUsed(response, 'content.html')
+            self.assertGreaterEqual(expiry_age, 590)
+            self.assertLessEqual(expiry_age, 600)
 
             doc_abbs = self.client.session['doc_abbs']
             self.assertEqual(len(doc_abbs), 1)
             self.assertEqual(doc_abbs[0]['abbreviation'], 'T4')
             self.assertEqual(doc_abbs[0]['descriptions'], ['thyroxine'])
+
+    def test_document_url_requires_matching_django_session(self):
+        with TemporaryDirectory() as media_root:
+            session_id = 'test-session'
+            path = Path(media_root) / f'{session_id}.docx'
+            Document().save(path)
+
+            with self.settings(MEDIA_ROOT=media_root):
+                response = self.client.get(f'/process/{session_id}/')
+
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response.url, '/')
 
 
 class TableGenerationViewTests(TestCase):

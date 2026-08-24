@@ -32,8 +32,9 @@ from .services.llm import (
 )
 from .services.sessions import (
     DEMO_FILENAME,
+    SESSION_FILE_KEY,
     delete_session_document,
-    touch_session_document,
+    refresh_document_session,
 )
 from .services.uploads import UploadValidationError, validate_docx_upload
 
@@ -175,14 +176,14 @@ def upload_file(request: HttpRequest) -> HttpResponse:
 
     delete_session_document(request)
 
-
     requested_id = generate_session_id()
     filename = FileSystemStorage().save(
         f'{requested_id}.docx',
         uploaded_file
     )
     session_id = os.path.splitext(filename)[0]
-    request.session['uploaded_file_path'] = filename
+    request.session[SESSION_FILE_KEY] = filename
+    refresh_document_session(request)
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({'session_id': session_id})
@@ -204,7 +205,7 @@ def download_demo_document(_request: HttpRequest) -> FileResponse:
 
 @require_http_methods(['POST'])
 def touch_document_session(request: HttpRequest) -> HttpResponse:
-    touch_session_document(request)
+    refresh_document_session(request)
     return HttpResponse(status=204)
 
 
@@ -225,15 +226,17 @@ def process_file_with_session(
     is_demo = session_id == DEMO_SESSION_ID
     filename = DEMO_FILENAME if is_demo else f'{session_id}.docx'
 
-    if not is_demo and not fs.exists(filename):
+    session_filename = request.session.get(SESSION_FILE_KEY)
+    if not is_demo and (
+        session_filename != filename or not fs.exists(filename)
+    ):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'status': 'error'}, status=404)
 
         messages.error(request, 'Сессия не найдена или истекла')
         return redirect('upload_file')
 
-    request.session['uploaded_file_path'] = filename
-    touch_session_document(request)
+    request.session[SESSION_FILE_KEY] = filename
     return process_and_display(request, is_demo=is_demo)
 
 
@@ -338,7 +341,7 @@ def process_and_display(
     request: HttpRequest,
     is_demo: bool = False,
 ) -> HttpResponse:
-    file_name = request.session.get('uploaded_file_path')
+    file_name = request.session.get(SESSION_FILE_KEY)
     if not file_name:
         return render(
             request,
@@ -349,7 +352,8 @@ def process_and_display(
         )
 
     request.session.clear()
-    request.session['uploaded_file_path'] = file_name
+    request.session[SESSION_FILE_KEY] = file_name
+    refresh_document_session(request)
     file_path = FileSystemStorage().path(file_name)
 
     processed = process_document(file_path)

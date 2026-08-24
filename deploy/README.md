@@ -1,12 +1,13 @@
 # Production deployment
 
 The production instance runs Django under Gunicorn, proxied by nginx at
-`/abbreviator/`. Uploaded documents are removed by a systemd timer.
+`/abbreviator/`. A systemd timer removes expired documents and Django
+session records.
 
 ## Files
 
 - `systemd/abbreviator.service` — Gunicorn service.
-- `systemd/abbreviator-cleanup.service` — expired-document cleanup job.
+- `systemd/abbreviator-cleanup.service` — expired-document and Django session cleanup job.
 - `systemd/abbreviator-cleanup.timer` — runs cleanup every 5 minutes.
 - `nginx/abbreviator.conf` — nginx location block for the application.
 - `deploy-abbreviator` — production update script.
