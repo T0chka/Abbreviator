@@ -14,7 +14,7 @@
     {% block extra_css %}{% endblock %}
     {% include 'partials/analytics.html' %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     {% block content %}{% endblock %}
 
     <!-- CSRF Token -->

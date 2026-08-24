@@ -1,29 +1,79 @@
-<h3>Есть в исходном списке, но нет в новом</h3>
-<ul>
-    {% if missing_abbs is not None %}
-        {% if missing_abbs %}
-            {% for old_abb in missing_abbs %}
-                <li>{{ old_abb.abbreviation }} - {{ old_abb.descriptions.0 }}</li>
-            {% endfor %}
-        {% else %}
-            <p>Все аббревиатуры из исходного списка присутствуют в новом списке</p>
-        {% endif %}
-    {% else %}
-        <p>Исходный список аббревиатур не найден</p>
-    {% endif %}
-</ul>
+<section class="comparison-table">
+    <h3 class="comparison-table-title">
+        Есть в исходной таблице, но нет в новой
+    </h3>
+    <div class="table-preview-wrapper">
+        <table class="table-preview">
+            <thead>
+                <tr>
+                    <th>Аббревиатура</th>
+                    <th>Расшифровка</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if missing_abbs is not None %}
+                    {% if missing_abbs %}
+                        {% for item in missing_abbs %}
+                        <tr>
+                            <td>{% include 'partials/abbreviation_text.html' with abbreviation=item.abbreviation highlighted=item.highlighted only %}</td>
+                            <td>{{ item.descriptions.0|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="2" class="table-preview-message">
+                                Нет
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% else %}
+                    <tr>
+                        <td colspan="2" class="table-preview-message">
+                            Исходная таблица не найдена
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>
 
-<h3>Есть в новом списке, но нет в исходном</h3>
-<ul>
-    {% if new_found is not None %}
-        {% if new_found %}
-            {% for new in new_found %}
-                <li>{{ new.abbreviation }} - {{ new.descriptions.0 }}</li>
-            {% endfor %}
-        {% else %}
-            <p>Все аббревиатуры из нового списка присутствуют в исходном списке</p>
-        {% endif %}
-    {% else %}
-        <p>В новом списке еще нет ни одной аббревиатуры</p>
-    {% endif %}
-</ul>
+<section class="comparison-table">
+    <h3 class="comparison-table-title">
+        Есть в новой таблице, но нет в исходной
+    </h3>
+    <div class="table-preview-wrapper">
+        <table class="table-preview">
+            <thead>
+                <tr>
+                    <th>Аббревиатура</th>
+                    <th>Расшифровка</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if new_found is not None %}
+                    {% if new_found %}
+                        {% for item in new_found %}
+                        <tr>
+                            <td>{% include 'partials/abbreviation_text.html' with abbreviation=item.abbreviation highlighted=item.highlighted only %}</td>
+                            <td>{{ item.description|default:"—" }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="2" class="table-preview-message">
+                                Нет
+                            </td>
+                        </tr>
+                    {% endif %}
+                {% else %}
+                    <tr>
+                        <td colspan="2" class="table-preview-message">
+                            Пока нет подтверждённых сокращений
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</section>

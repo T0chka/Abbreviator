@@ -1,80 +1,49 @@
+{% load static %}
 <div class="fab-container">
     {% if page == 'process' %}
-        <a href="{% url 'upload_file' %}" class="fab new-upload-fab tooltip tooltip-left">
-            <span class="material-icons">upload_file</span>
-            <span class="tooltiptext">Загрузить новый файл</span>
-        </a>
-        <a href="{% url 'dictionary' %}" class="fab dictionary-fab tooltip tooltip-left">
-            <span class="material-symbols-outlined icon-book">book_6</span>
-            <span class="material-icons-outlined icon-auto-stories">auto_stories</span>
-            <span class="tooltiptext">Словарь</span>
-        </a>
-        
+    <a href="{% url 'upload_file' %}"
+       class="fab new-upload-fab tooltip tooltip-left">
+        <span class="material-icons">upload_file</span>
+        <span class="tooltiptext">Загрузить новый файл</span>
+    </a>
+    <a href="{% url 'dictionary' %}"
+       class="fab dictionary-fab tooltip tooltip-left"
+       data-fab-action="save-page-state">
+        <span class="material-symbols-outlined icon-book">book_6</span>
+        <span class="material-icons-outlined icon-auto-stories">auto_stories</span>
+        <span class="tooltiptext">Словарь</span>
+    </a>
+    <div class="fab-settings-control">
+        <button type="button"
+                class="fab settings-fab tooltip tooltip-left"
+                data-processing-action="toggle-global-settings"
+                aria-controls="global-settings-panel"
+                aria-expanded="false">
+            <span class="material-icons-outlined">settings</span>
+            <span class="tooltiptext">Настройки</span>
+        </button>
+        {% include 'partials/settings_panel.html' %}
+    </div>
     {% elif page == 'dictionary' %}
-        <a href="javascript:void(0);" onclick="window.history.back();" class="fab back-fab tooltip tooltip-left">
-            <span class="material-icons">arrow_back</span>
-            <span class="tooltiptext">Назад</span>
-        </a>
+    <button type="button"
+            class="fab back-fab tooltip tooltip-left"
+            data-fab-action="back">
+        <span class="material-icons">arrow_back</span>
+        <span class="tooltiptext">Назад</span>
+    </button>
     {% endif %}
-    
-    <!-- Common buttons -->
-    <a onclick="scrollToTop()" class="fab scroll-up-fab tooltip tooltip-left">
+
+    <button type="button"
+            class="fab scroll-up-fab tooltip tooltip-left"
+            data-fab-action="scroll-top">
         <span class="material-icons">arrow_upward</span>
         <span class="tooltiptext">Наверх</span>
-    </a>
-    <a onclick="scrollToBottom()" class="fab scroll-down-fab tooltip tooltip-left">
+    </button>
+    <button type="button"
+            class="fab scroll-down-fab tooltip tooltip-left"
+            data-fab-action="scroll-bottom">
         <span class="material-icons">arrow_downward</span>
         <span class="tooltiptext">Вниз</span>
-    </a>
+    </button>
 </div>
-
-<script>
-    function scrollToTop() {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-
-    function scrollToBottom() {
-        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-    }
-
-    
-    function savePageState() {
-        const pageState = {
-            scrollPosition: window.scrollY,
-            formData: Array.from(document.querySelectorAll('input, textarea')).map(input => ({
-                id: input.id,
-                value: input.value
-            })),
-        };
-        sessionStorage.setItem('pageState', JSON.stringify(pageState));
-        console.log('[DEBUG] Page state saved:', pageState);
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const dictionaryFab = document.querySelector('.dictionary-fab');
-        if (dictionaryFab) {
-            dictionaryFab.addEventListener('click', savePageState);
-        }
-    });
-
-    function restorePageState() {
-        const savedState = sessionStorage.getItem('pageState');
-        if (savedState) {
-            const pageState = JSON.parse(savedState);
-
-            window.scrollTo(0, pageState.scrollPosition);
-
-            pageState.formData.forEach(({ id, value }) => {
-                const input = document.getElementById(id);
-                if (input) {
-                    input.value = value;
-                }
-            });
-
-            sessionStorage.removeItem('pageState');
-            console.log('[DEBUG] Page state restored:', pageState);
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', restorePageState);
-</script>
+<script src="{% static 'js/fab.js' %}"></script>

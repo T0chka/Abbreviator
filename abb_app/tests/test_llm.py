@@ -17,6 +17,8 @@ class GenerateDescriptionViewTests(TestCase):
                 'contexts': [
                     'Первый фрагмент T4.',
                     'Второй фрагмент T4.',
+                    'Третий фрагмент T4.',
+                    'Четвёртый фрагмент T4.',
                 ],
             },
         ]
@@ -31,6 +33,7 @@ class GenerateDescriptionViewTests(TestCase):
             data=json.dumps({
                 'abbreviation': 'T4',
                 'confirmed': True,
+                'context_limit': 3,
             }),
             content_type='application/json',
         )
@@ -41,6 +44,7 @@ class GenerateDescriptionViewTests(TestCase):
             contexts=[
                 'Первый фрагмент T4.',
                 'Второй фрагмент T4.',
+                'Третий фрагмент T4.',
             ],
         )
 

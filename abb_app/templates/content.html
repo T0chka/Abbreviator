@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block body_class %}processing-page{% endblock %}
+
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/workflow.css' %}">
 {% if is_demo %}
@@ -20,6 +22,7 @@
      data-update-url="{% url 'update_abbreviation' %}"
      data-difference-url="{% url 'update_difference_section' %}"
      data-export-url="{% url 'make_abbreviation_table' %}"
+     data-preview-url="{% url 'preview_abbreviation_table' %}"
      data-generate-url="{% url 'generate_description' %}"
      data-compare-with-existing="{{ is_demo|yesno:'true,false' }}"
      hidden></div>
@@ -32,10 +35,10 @@
         <code>{{ llm_model }}</code>.
     </p>
     <p>Другие части документа и имя файла не отправляются.</p>
-    <div class="llm-consent-summary"></div>
+    <div class="llm-consent-summary">
         <p><strong>Сокращение:</strong> <span id="llm-consent-abbreviation"></span></p>
         <p><strong>Контекст, который будет отправлен:</strong></p>
-    <div id="llm-consent-contexts"></div>
+        <div id="llm-consent-contexts"></div>
     </div>
     <div class="dialog-actions">
         <button type="button"
@@ -77,19 +80,7 @@
 </dialog>
 {% endif %}
 
-{% if has_initial_abbs %}
-<div id="comparison-block" class="is-hidden">
-    <h2>Проверка таблицы сокращений</h2>
-    <div class="main-content">
-        <div id="differences-section">
-            <p>В исходной таблице: {{ initial_abbs_count }} сокращений.</p>
-            <p>
-                Сравнение будет обновляться по мере подтверждения расшифровок.
-            </p>
-        </div>
-    </div>
-</div>
-{% endif %}
+{% include 'partials/workflow_tools.html' %}
 
 <!-- Section with abbreviation list -->
 <h2>Добавление аббревиатур и расшифровок</h2>
@@ -104,27 +95,10 @@
                     {% if abb.selected_description %}✓{% endif %}
                 </span>
 
-                <!-- Abbreviation with tooltip if highlighted exists -->
-                {% if abb.correct_form %}
+                <!-- Abbreviation with mixed-alphabet highlighting -->
                 <div class="abb-description">
-                    <h4>
-                        {% spaceless %}
-                        {% for char in abb.highlighted %}
-                            {% if char.mismatch %}
-                            <span class="tooltip tooltip-right red">{{ char.char }}<span class="tooltiptext">
-                                {{ char.tooltip }}</span></span>
-                            {% else %}
-                            <span>{{ char.char }}</span>
-                            {% endif %}
-                        {% endfor %}
-                        {% endspaceless %}
-                    </h4>
+                    <h4>{% include 'partials/abbreviation_text.html' with abbreviation=abb.abbreviation highlighted=abb.highlighted only %}</h4>
                 </div>
-                {% else %}
-                <div class="abb-description">
-                    <h4>{{ abb.abbreviation }}</h4>
-                </div>
-                {% endif %}
 
                 <!-- Description text -->
                 <span class="description-text" id="description_text_{{ abb.abbreviation }}">
@@ -134,8 +108,60 @@
                 </span>
             </div>
 
-            <!-- Toggle button -->
-            <button class="toggle-btn" id="toggle_btn_{{ abb.abbreviation }}">▼</button>
+            <div class="abb-title-controls">
+                <button type="button"
+                        class="card-settings-btn tooltip tooltip-left"
+                        data-processing-action="toggle-card-settings"
+                        aria-label="Настройки контекста">
+                    <span class="material-icons-outlined">settings</span>
+                    <span class="tooltiptext">Настройки контекста</span>
+                </button>
+                <button type="button"
+                        class="toggle-btn tooltip tooltip-left"
+                        id="toggle_btn_{{ abb.abbreviation }}"
+                        aria-label="Свернуть карточку">
+                    <span class="material-icons">expand_less</span>
+                    <span class="tooltiptext">Свернуть карточку</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="card-context-settings is-hidden">
+            <label>Максимальное количество фрагментов контекста</label>
+            <div class="context-range-control">
+                <input type="range" min="0" max="4" step="1" value="1"
+                       data-context-setting="limit"
+                       data-context-scope="card">
+                <div class="context-range-labels" aria-hidden="true">
+                    <span>1</span>
+                    <span>3</span>
+                    <span>5</span>
+                    <span>10</span>
+                    <span>Все</span>
+                </div>
+            </div>
+
+            <label class="context-setting-label">
+                Количество отображаемых символов вокруг аббревиатуры
+            </label>
+            <div class="context-range-control">
+                <input type="range" min="0" max="4" step="1" value="1"
+                       data-context-setting="window"
+                       data-context-scope="card">
+                <div class="context-range-labels" aria-hidden="true">
+                    <span>25</span>
+                    <span>50</span>
+                    <span>75</span>
+                    <span>100</span>
+                    <span>150</span>
+                </div>
+            </div>
+
+            <button type="button"
+                    class="card-settings-reset is-hidden"
+                    data-processing-action="reset-card-context">
+                Применить общие настройки
+            </button>
         </div>
 
         <!-- Collapsible content -->
@@ -188,8 +214,8 @@
             <!-- Contexts section -->
             {% if abb.contexts %}
                 {% for context in abb.contexts %}
-                    <div class="context-item">
-                        <p>{{ context }}</p>
+                    <div class="context-item{% if forloop.counter > 3 %} is-hidden{% endif %}">
+                        <p class="context-text">{{ context }}</p>
                     </div>
                 {% endfor %}
             {% endif %}

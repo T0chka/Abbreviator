@@ -57,15 +57,6 @@ h2 {
     text-wrap: balance;
 }
 
-/* ==========================================================================
-   Differences Section
-   ========================================================================== */
-#differences-section {
-    min-height: 200px;
-    max-height: 450px;
-    overflow-y: auto;
-}
-
 .fixed-header {
     position: sticky;
     background-color: var(--bg-light);
@@ -363,8 +354,32 @@ h2 {
 }
 
 /* Specific FAB Styles */
-.scroll-up-fab, .scroll-down-fab, .dictionary-fab, .back-fab, .new-upload-fab {
+.scroll-up-fab,
+.scroll-down-fab,
+.dictionary-fab,
+.back-fab,
+.new-upload-fab,
+.settings-fab {
     color: var(--primary-color);
+}
+
+.fab-settings-control {
+    position: relative;
+    width: 50px;
+    height: 50px;
+}
+
+.settings-fab .material-icons-outlined {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--transition-fast);
+}
+
+.settings-fab:hover .material-icons-outlined {
+    transform: rotate(30deg);
 }
 
 /* Dictionary FAB */
@@ -688,7 +703,8 @@ table.dataTable thead th.sorting_desc::after {
         gap: 10px;
     }
 
-    .fab {
+    .fab,
+    .fab-settings-control {
         width: 40px;
         height: 40px;
     }

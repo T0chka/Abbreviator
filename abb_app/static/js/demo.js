@@ -39,7 +39,9 @@ document.addEventListener('DOMContentLoaded', () => {
         {
             name: 'context',
             expand: firstCard,
-            targets: () => firstCard.querySelectorAll('.context-item')
+            targets: () => firstCard.querySelectorAll(
+                '.context-item:not(.is-hidden)'
+            )
         },
         {
             name: 'description',
@@ -61,6 +63,10 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         {
             name: 'comparison',
+            prepare: () => {
+                comparisonBlock.classList.remove('is-hidden');
+                comparisonBlock.open = true;
+            },
             targets: () => comparisonBlock
         }
     ];
@@ -186,6 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (step.expand) {
             expandCard(step.expand);
         }
+        step.prepare?.();
 
         requestAnimationFrame(() => renderStep(step));
     }
@@ -216,6 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     startButton.addEventListener('click', () => {
         introDialog.close();
         comparisonBlock.classList.remove('is-hidden');
+        comparisonBlock.open = false;
 
         window.addEventListener('resize', schedulePosition);
         window.addEventListener('scroll', schedulePosition, {

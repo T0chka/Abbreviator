@@ -10,8 +10,13 @@ from docx.oxml.table import CT_Tbl
 from docx.shared import Cm, Pt, RGBColor
 from docx.table import _Cell, Table
 
-from .abbreviations import Abbreviation, load_approved_dictionary
-from .extraction import process_abbreviations
+from .abbreviations import (
+    Abbreviation,
+    HighlightedCharacter,
+    TableEntry,
+    load_approved_dictionary,
+)
+from .extraction import CharacterValidator, process_abbreviations
 
 
 SECTION_PATTERNS = [
@@ -143,46 +148,61 @@ class AbbreviationFormatter:
         )
         return f"{english_part_capitalized} {russian_part}".strip()
 
-    def clean_and_sort_abbreviations(
-            self, abbreviations: List[Dict[str, str]]
-        ) -> List[Dict[str, str]]:
-        """
-        Clean and sort abbreviations:
-        - Strips whitespace
-        - Formats descriptions for abbreviations with English letters
-        - Capitalizes first letters after digits
-        - Removes duplicates
-        - Sorts by abbreviation and description
-        """
-        # Create a copy to avoid modifying the original
-        cleaned: List[Dict[str, str]] = []
-        seen = set()  # For duplicate detection
+    def format_table_entries(
+        self,
+        entries: List[TableEntry],
+    ) -> List[TableEntry]:
+        """Format descriptions without changing table row identity."""
+        formatted: List[TableEntry] = []
 
-        for entry in abbreviations:
-            # Strip whitespace
-            abb = entry['abbreviation'].strip()
-            desc = entry['description'].strip()
+        for entry in entries:
+            abbreviation = entry['abbreviation'].strip()
+            description = entry['description'].strip()
 
-            # Format if contains English letters
-            if re.search(r'[A-Za-z]', abb):
-                desc = self.format_description(
-                    {'abbreviation': abb, 'description': desc}
-                )
-
-            # Capitalize after digits
-            desc = self._capitalize_after_digits(desc)
-
-            # Create unique key for deduplication
-            unique_key = (abb, desc)
-            if unique_key not in seen:
-                seen.add(unique_key)
-                cleaned.append({
-                    'abbreviation': abb,
-                    'description': desc
+            if re.search(r'[A-Za-z]', abbreviation):
+                description = self.format_description({
+                    'abbreviation': abbreviation,
+                    'description': description,
                 })
 
-        # Sort by abbreviation and description
-        return sorted(cleaned, key=lambda x: (x['abbreviation'], x['description']))
+            description = self._capitalize_after_digits(description)
+            formatted.append({
+                'abbreviation': abbreviation,
+                'description': description,
+                'highlighted': entry.get('highlighted'),
+            })
+
+        return formatted
+
+    def sort_abbreviations(
+        self,
+        abbreviations: List[TableEntry],
+        sort_mode: str,
+        script_order: str,
+    ) -> List[TableEntry]:
+        """Sort table entries by script group and configured row order."""
+        def script_rank(abbreviation: str) -> int:
+            for char in abbreviation:
+                if re.match(r'[А-Яа-яЁё]', char):
+                    return 0 if script_order == 'cyrillic_first' else 1
+                if re.match(r'[A-Za-z]', char):
+                    return 0 if script_order == 'latin_first' else 1
+            return 2
+
+        if sort_mode == 'appearance':
+            return sorted(
+                abbreviations,
+                key=lambda entry: script_rank(entry['abbreviation']),
+            )
+
+        return sorted(
+            abbreviations,
+            key=lambda entry: (
+                script_rank(entry['abbreviation']),
+                entry['abbreviation'].casefold(),
+                entry['description'].casefold(),
+            ),
+        )
 
     def _capitalize_by_abbreviation(
             self, text: str, abbr_letters: str
@@ -227,7 +247,7 @@ class AbbreviationTableGenerator:
         self.font_name = 'Times New Roman'
         self.font_size = 12  # pt
 
-    def generate_document(self, table_entries: List[Abbreviation]) -> Document:
+    def generate_document(self, table_entries: List[TableEntry]) -> Document:
         """
         Generate a Word document with formatted abbreviation table.
         """
@@ -254,7 +274,11 @@ class AbbreviationTableGenerator:
 
         return doc
 
-    def _create_table(self, doc: Document, table_entries: List[Abbreviation]) -> Table:
+    def _create_table(
+        self,
+        doc: Document,
+        table_entries: List[TableEntry],
+    ) -> Table:
         """Create and format table with header and data rows."""
         # Create table with header
         table = doc.add_table(rows=1, cols=2)
@@ -332,11 +356,32 @@ class ProcessedDocument:
     initial_abbreviations: List[Abbreviation]
 
 
+@dataclass(frozen=True)
+class DisplayAbbreviation:
+    source_abbreviation: str
+    correct_form: Optional[str]
+    display_abbreviation: str
+    description: str
+    highlighted: Optional[List[HighlightedCharacter]]
+
+
 def process_document(file_path: str) -> ProcessedDocument:
     dictionary = load_approved_dictionary()
 
     document = Document(file_path)
     initial_abbreviations = extractor.get_abbreviation_table(document)
+    validator = CharacterValidator()
+    for entry in initial_abbreviations:
+        try:
+            validation = validator.validate_abbreviation(
+                entry['abbreviation'],
+                dictionary,
+            )
+        except ValueError:
+            continue
+        if validation.get('correct_form'):
+            entry['highlighted'] = validation.get('highlighted')
+
     abbreviations = process_abbreviations(document, dictionary)
 
     return ProcessedDocument(
@@ -345,11 +390,97 @@ def process_document(file_path: str) -> ProcessedDocument:
     )
 
 
+def prepare_abbreviation_table_entries(
+    doc_abbs: List[Abbreviation],
+    initial_abbreviations: Optional[List[Abbreviation]] = None,
+    sort_mode: str = 'alphabetical',
+    script_order: str = 'latin_first',
+    use_correct_form: bool = True,
+    scope: str = 'all',
+) -> List[TableEntry]:
+    """Build display rows shared by preview, comparison, and Word export."""
+    selected_by_display: Dict[str, DisplayAbbreviation] = {}
+
+    for entry in doc_abbs:
+        description = entry.get('selected_description')
+        if description is None:
+            continue
+
+        source_abbreviation = entry['abbreviation'].strip()
+        correct_form = entry.get('correct_form')
+        display_abbreviation = (
+            correct_form
+            if use_correct_form and correct_form
+            else source_abbreviation
+        )
+        highlighted = (
+            entry.get('highlighted')
+            if display_abbreviation == source_abbreviation
+            else None
+        )
+        candidate = DisplayAbbreviation(
+            source_abbreviation=source_abbreviation,
+            correct_form=correct_form,
+            display_abbreviation=display_abbreviation,
+            description=description,
+            highlighted=highlighted,
+        )
+
+        existing = selected_by_display.get(display_abbreviation)
+        if existing is None:
+            selected_by_display[display_abbreviation] = candidate
+            continue
+
+        candidate_rank = (
+            candidate.correct_form == candidate.display_abbreviation
+            and candidate.source_abbreviation != candidate.display_abbreviation,
+            candidate.source_abbreviation.casefold(),
+            candidate.source_abbreviation,
+            candidate.description.casefold(),
+            candidate.description,
+        )
+        existing_rank = (
+            existing.correct_form == existing.display_abbreviation
+            and existing.source_abbreviation != existing.display_abbreviation,
+            existing.source_abbreviation.casefold(),
+            existing.source_abbreviation,
+            existing.description.casefold(),
+            existing.description,
+        )
+        if candidate_rank < existing_rank:
+            selected_by_display[display_abbreviation] = candidate
+
+    rows: List[TableEntry] = [
+        {
+            'abbreviation': entry.display_abbreviation,
+            'description': entry.description,
+            'highlighted': entry.highlighted,
+        }
+        for entry in selected_by_display.values()
+    ]
+
+    if scope == 'new':
+        initial_names = {
+            entry['abbreviation']
+            for entry in (initial_abbreviations or [])
+        }
+        rows = [
+            entry for entry in rows
+            if entry['abbreviation'] not in initial_names
+        ]
+
+    formatted = formatter.format_table_entries(rows)
+    return formatter.sort_abbreviations(
+        formatted,
+        sort_mode=sort_mode,
+        script_order=script_order,
+    )
+
+
 def build_abbreviation_table_docx(
-    abbreviations: List[Dict[str, str]],
+    abbreviations: List[TableEntry],
 ) -> bytes:
-    cleaned = formatter.clean_and_sort_abbreviations(abbreviations)
-    document = generator.generate_document(cleaned)
+    document = generator.generate_document(abbreviations)
 
     stream = io.BytesIO()
     document.save(stream)

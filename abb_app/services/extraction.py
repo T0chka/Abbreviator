@@ -1,10 +1,10 @@
 import re
 from collections import Counter
-from typing import List, Set, Union
+from typing import List, Set
 
 from docx import Document
 
-from .abbreviations import Abbreviation
+from .abbreviations import Abbreviation, HighlightedCharacter
 
 
 SKIP_SECTIONS = [
@@ -201,9 +201,9 @@ class TextProcessor:
             self,
             text: str,
             abbreviation: str,
-            window: int = 50,
+            window: int = 150,
             max_contexts: int = 1000
-        ) -> Union[str, List[str]]:
+        ) -> List[str]:
         """
         Finds and returns snippets of text around occurrences of the abbreviation.
         Limits the number of contexts returned to `max_contexts`.
@@ -215,7 +215,11 @@ class TextProcessor:
         for match in matches:
             start = max(0, match.start() - window)
             end = min(len(text), match.end() + window)
-            snippet = "..." + text[start:end].strip() + "..."
+            snippet = text[start:end].strip()
+            if start > 0:
+                snippet = f'...{snippet}'
+            if end < len(text):
+                snippet = f'{snippet}...'
             if max_contexts == 1:
                 return [snippet]
             contexts.add(snippet)
@@ -341,9 +345,9 @@ class CharacterValidator:
 
     def _highlight_mismatch_characters(
             self, user_abb: str, dict_abb: str
-            ) -> str:
+            ) -> list[HighlightedCharacter]:
         """
-        Compare each character and return a list of dictionaries
+        Compare each character and return structured rendering metadata
         with mismatch information for template rendering.
         """
         highlighted = []
@@ -371,17 +375,29 @@ class CharacterValidator:
                 })
         return highlighted
     
-    def _highlight_mixed_characters(self, abb: str) -> str:
-        """Marks each character with its script type"""
-        highlighted = []
-        for ch in abb:
-            if ch in self.cyr2lat:
-                highlighted.append(f"{ch}(Cyr)")
-            elif ch in self.lat2cyr:
-                highlighted.append(f"{ch}(Lat)")
+    def _highlight_mixed_characters(
+        self,
+        abb: str,
+    ) -> list[HighlightedCharacter]:
+        """Return script metadata when no canonical form is known."""
+        highlighted: list[HighlightedCharacter] = []
+        for char in abb:
+            if char in self.cyr2lat:
+                tooltip = f'{char} - кириллическая'
+            elif char in self.lat2cyr:
+                tooltip = f'{char} - латинская'
             else:
-                highlighted.append(ch)
-        return "".join(highlighted)
+                tooltip = ''
+
+            part: HighlightedCharacter = {
+                'char': char,
+                'mismatch': False,
+            }
+            if tooltip:
+                part['tooltip'] = tooltip
+            highlighted.append(part)
+
+        return highlighted
 
 
 def process_abbreviations(

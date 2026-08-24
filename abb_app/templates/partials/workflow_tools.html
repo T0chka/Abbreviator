@@ -1,0 +1,54 @@
+<div id="workflow-tools" class="workflow-tools">
+    {% if has_initial_abbs %}
+    <details id="comparison-block"
+             class="workflow-tool {% if not is_demo %}is-hidden{% endif %}">
+        <summary class="workflow-tool-summary">
+            <span class="material-icons-outlined workflow-tool-icon">fact_check</span>
+            <span class="workflow-tool-label">Проверка таблицы сокращений</span>
+            <span class="workflow-toggle tooltip tooltip-left">
+                <span class="material-icons">expand_more</span>
+                <span class="tooltiptext">Развернуть</span>
+            </span>
+        </summary>
+        <div class="workflow-tool-body">
+            <div id="differences-section">
+                <p>В исходной таблице: {{ initial_abbs_count }} сокращений.</p>
+                <p>
+                    Сравнение будет обновляться по мере подтверждения расшифровок.
+                </p>
+            </div>
+        </div>
+        <div class="workflow-resize-handle"
+             data-workflow-resize aria-hidden="true"></div>
+    </details>
+    {% endif %}
+
+    <details id="table-preview-tool" class="workflow-tool">
+        <summary class="workflow-tool-summary">
+            <span class="material-icons-outlined workflow-tool-icon">table_view</span>
+            <span class="workflow-tool-label">Итоговая таблица</span>
+            <span class="workflow-toggle tooltip tooltip-left">
+                <span class="material-icons">expand_more</span>
+                <span class="tooltiptext">Развернуть</span>
+            </span>
+        </summary>
+        <div class="workflow-tool-body">
+            <p id="table-preview-empty" class="table-preview-empty">
+                В итоговой таблице пока нет строк.
+            </p>
+            <div id="table-preview-wrapper" class="table-preview-wrapper is-hidden">
+                <table class="table-preview">
+                    <thead>
+                        <tr>
+                            <th>Аббревиатура</th>
+                            <th>Расшифровка</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-preview-body"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="workflow-resize-handle"
+             data-workflow-resize aria-hidden="true"></div>
+    </details>
+</div>

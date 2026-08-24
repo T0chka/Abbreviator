@@ -1,0 +1,9 @@
+{% if highlighted %}{% spaceless %}
+    {% for char in highlighted %}
+        {% if char.mismatch %}
+            <span class="tooltip tooltip-right red">{{ char.char }}{% if char.tooltip %}<span class="tooltiptext">{{ char.tooltip }}</span>{% endif %}</span>
+        {% else %}
+            <span>{{ char.char }}</span>
+        {% endif %}
+    {% endfor %}
+{% endspaceless %}{% else %}{{ abbreviation }}{% endif %}

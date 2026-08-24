@@ -19,20 +19,16 @@ class AbbreviationComparisonTests(SimpleTestCase):
             {
                 'abbreviation': 'T4',
                 'description': 'Thyroxine',
+                'highlighted': None,
             },
             {
                 'abbreviation': 'MRI',
                 'description': 'Magnetic resonance imaging',
+                'highlighted': None,
             },
         ]
 
         result = compare_abbreviations(old_abbs, new_abbs)
 
         self.assertEqual(result['missing_abbs'], [old_abbs[0]])
-        self.assertEqual(
-            result['new_found'],
-            [{
-                'abbreviation': 'MRI',
-                'descriptions': ['Magnetic resonance imaging'],
-            }],
-        )
+        self.assertEqual(result['new_found'], [new_abbs[1]])

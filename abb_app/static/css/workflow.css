@@ -230,7 +230,7 @@
    Upload footer
    ========================================================================== */
 
-   footer p {
+footer p {
     position: fixed;
     right: 0;
     bottom: 0;
@@ -267,4 +267,339 @@
 
 .footer-separator {
     color: var(--text-primary);
+}
+/* ==========================================================================
+   Sticky workflow tools
+   ========================================================================== */
+
+.processing-page {
+    max-width: 1500px;
+}
+
+.workflow-tools {
+    position: sticky;
+    top: 0;
+    z-index: 800;
+    display: grid;
+    gap: 6px;
+    margin: 0 0 24px;
+    padding: 8px 0;
+    background: color-mix(in srgb, var(--bg-light) 94%, transparent);
+    backdrop-filter: blur(8px);
+}
+
+.workflow-tools:has(.workflow-tool[open]) {
+    margin-bottom: 36px;
+}
+
+.workflow-tool {
+    border: var(--border);
+    border-radius: var(--border-radius);
+    background: var(--bg-light);
+    box-shadow: var(--shadow-sm);
+}
+
+.workflow-tool-summary {
+    display: flex;
+    min-height: 42px;
+    padding: 0 14px;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-primary);
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+}
+
+.workflow-tool-summary::-webkit-details-marker {
+    display: none;
+}
+
+.workflow-toggle {
+    margin-left: auto;
+    line-height: 1;
+}
+
+.workflow-toggle .material-icons {
+    font-size: 20px;
+}
+
+.workflow-tool-icon {
+    font-size: 20px;
+}
+
+.workflow-tool-body {
+    min-height: 110px;
+    max-height: 48vh;
+    box-sizing: border-box;
+    padding: 14px 16px 16px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-top: var(--border);
+}
+
+.workflow-resize-handle {
+    position: relative;
+    height: 8px;
+    margin-top: -4px;
+    cursor: ns-resize;
+    touch-action: none;
+}
+
+.workflow-resize-handle::after {
+    position: absolute;
+    bottom: 2px;
+    left: 50%;
+    width: 44px;
+    height: 2px;
+    border-radius: 2px;
+    background: var(--primary-color);
+    content: '';
+    opacity: 0;
+    transform: translateX(-50%);
+    transition: opacity var(--transition-fast);
+}
+
+.workflow-resize-handle:hover::after {
+    opacity: 0.35;
+}
+
+body.is-resizing-workflow {
+    cursor: ns-resize;
+    user-select: none;
+}
+
+.global-settings-panel {
+    position: fixed;
+    top: 50%;
+    right: 96px;
+    width: clamp(340px, 32vw, 520px);
+    max-height: min(78vh, 720px);
+    box-sizing: border-box;
+    padding: 18px;
+    overflow-y: auto;
+    border: var(--border);
+    border-radius: var(--border-radius);
+    background: var(--bg-light);
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(12px, -50%) scale(0.98);
+    transform-origin: right center;
+    transition: opacity var(--transition-fast),
+        transform var(--transition-fast);
+    visibility: hidden;
+}
+
+.global-settings-panel.is-open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(0, -50%) scale(1);
+    visibility: visible;
+}
+
+.global-settings-title {
+    margin: 0 0 16px;
+    padding: 0;
+    border-radius: 0;
+    color: var(--text-primary);
+    background: transparent;
+    box-shadow: none;
+    font-size: 1.1rem;
+    text-align: left;
+}
+
+.settings-section + .settings-section {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: var(--border);
+}
+
+.settings-section h3 {
+    margin: 0 0 10px;
+    font-size: 1rem;
+}
+
+.settings-section > label:not(.settings-checkbox) {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.settings-section > .context-setting-label {
+    margin-top: 22px;
+}
+
+.settings-fieldset {
+    display: grid;
+    gap: 6px;
+    margin: 0 0 14px;
+    padding: 10px 12px 12px;
+    border: var(--border);
+    border-radius: var(--border-radius);
+}
+
+.settings-fieldset legend {
+    padding: 0 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.settings-fieldset label,
+.settings-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+#global-settings-panel input[type='radio'],
+#global-settings-panel input[type='checkbox'] {
+    accent-color: var(--primary-color);
+}
+
+.context-range-control {
+    width: 100%;
+}
+
+.context-range-control input[type='range'] {
+    width: 100%;
+    accent-color: var(--primary-color);
+}
+
+.context-range-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: -2px;
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--text-primary) 70%, white);
+}
+
+.table-preview {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.table-preview th,
+.table-preview td {
+    padding: 6px 8px;
+    border: var(--border);
+    text-align: left;
+    vertical-align: top;
+}
+
+.table-preview th:first-child,
+.table-preview td:first-child {
+    width: 28%;
+}
+
+.table-preview-empty {
+    margin: 0;
+}
+
+.comparison-table + .comparison-table {
+    margin-top: 18px;
+}
+
+.comparison-table-title {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+}
+
+.table-preview-message {
+    color: color-mix(in srgb, var(--text-primary) 70%, white);
+}
+
+/* ==========================================================================
+   Per-card context settings
+   ========================================================================== */
+
+.abbreviation-item {
+    position: relative;
+}
+
+.abb-title-controls {
+    display: flex;
+    align-items: center;
+}
+
+.card-settings-btn {
+    display: flex;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    color: var(--text-primary);
+    background: transparent;
+    cursor: pointer;
+}
+
+.card-settings-btn .material-icons-outlined {
+    font-size: 20px;
+    transition: transform var(--transition-fast);
+}
+
+.card-settings-btn:hover .material-icons-outlined {
+    transform: rotate(30deg);
+}
+
+.abb-title-controls .toggle-btn .material-icons {
+    font-size: 20px;
+}
+
+.card-context-settings {
+    position: absolute;
+    z-index: 50;
+    top: 46px;
+    right: 16px;
+    width: min(360px, calc(100% - 32px));
+    box-sizing: border-box;
+    padding: 14px 16px;
+    border: var(--border);
+    border-radius: var(--border-radius);
+    background: var(--bg-light);
+    box-shadow: var(--shadow-md);
+}
+
+.card-context-settings > label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.card-context-settings > .context-setting-label {
+    margin-top: 16px;
+}
+
+.card-settings-reset {
+    margin-top: 8px;
+    padding: 0;
+    border: 0;
+    color: var(--text-primary);
+    background: transparent;
+    font-family: var(--font-stack);
+    font-size: 0.8rem;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+#llm-consent-contexts {
+    max-height: 42vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 760px) {
+    .workflow-tools {
+        margin-right: -16px;
+        margin-left: -16px;
+    }
+
+    .global-settings-panel {
+        right: 72px;
+        width: min(420px, calc(100vw - 92px));
+        max-height: calc(100vh - 32px);
+    }
 }

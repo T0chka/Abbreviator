@@ -1,0 +1,104 @@
+<aside id="global-settings-panel"
+       class="global-settings-panel"
+       aria-hidden="true"
+       aria-labelledby="global-settings-title">
+    <h2 id="global-settings-title" class="global-settings-title">Настройки</h2>
+
+    <section class="settings-section">
+        <h3>Контекст</h3>
+        <label for="global-context-limit">
+            Максимальное количество фрагментов контекста на карточке
+        </label>
+        <div class="context-range-control">
+            <input id="global-context-limit"
+                   type="range"
+                   min="0"
+                   max="4"
+                   step="1"
+                   value="1"
+                   data-context-setting="limit"
+                   data-context-scope="global">
+            <div class="context-range-labels" aria-hidden="true">
+                <span>1</span>
+                <span>3</span>
+                <span>5</span>
+                <span>10</span>
+                <span>Все</span>
+            </div>
+        </div>
+
+        <label for="global-context-window" class="context-setting-label">
+            Количество отображаемых символов вокруг аббревиатуры
+        </label>
+        <div class="context-range-control">
+            <input id="global-context-window"
+                   type="range"
+                   min="0"
+                   max="4"
+                   step="1"
+                   value="1"
+                   data-context-setting="window"
+                   data-context-scope="global">
+            <div class="context-range-labels" aria-hidden="true">
+                <span>25</span>
+                <span>50</span>
+                <span>75</span>
+                <span>100</span>
+                <span>150</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="settings-section">
+        <h3>Итоговая таблица</h3>
+        <fieldset class="settings-fieldset">
+            <legend>Языковой приоритет</legend>
+            <label>
+                <input id="table-script-cyrillic" type="radio"
+                       name="table-script-order" value="cyrillic_first">
+                Сначала кириллица, затем латиница
+            </label>
+            <label>
+                <input id="table-script-latin" type="radio"
+                       name="table-script-order" value="latin_first" checked>
+                Сначала латиница, затем кириллица
+            </label>
+        </fieldset>
+
+        <fieldset class="settings-fieldset">
+            <legend>Порядок строк</legend>
+            <label>
+                <input id="table-sort-alphabetical" type="radio"
+                       name="table-sort-mode" value="alphabetical" checked>
+                По алфавиту
+            </label>
+            <label>
+                <input id="table-sort-appearance" type="radio"
+                       name="table-sort-mode" value="appearance">
+                По порядку появления в документе
+            </label>
+        </fieldset>
+
+        <label class="settings-checkbox">
+            <input id="use-correct-form" type="checkbox" checked>
+            Исправлять написание аббревиатуры при смешении
+            кириллицы и латиницы
+        </label>
+
+        {% if has_initial_abbs %}
+        <fieldset class="settings-fieldset">
+            <legend>Состав экспортируемой таблицы</legend>
+            <label>
+                <input id="table-scope-all" type="radio"
+                       name="table-scope" value="all" checked>
+                Все подтверждённые сокращения
+            </label>
+            <label>
+                <input id="table-scope-new" type="radio"
+                       name="table-scope" value="new">
+                Только отсутствующие в исходной таблице
+            </label>
+        </fieldset>
+        {% endif %}
+    </section>
+</aside>
