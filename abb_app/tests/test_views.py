@@ -1,4 +1,5 @@
 import io
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from django.test import TestCase
@@ -45,6 +46,49 @@ class ProcessingViewTests(TestCase):
             self.assertEqual(len(doc_abbs), 1)
             self.assertEqual(doc_abbs[0]['abbreviation'], 'T4')
             self.assertEqual(doc_abbs[0]['descriptions'], ['thyroxine'])
+
+    def test_refresh_preserves_reviewed_abbreviation_state(self):
+        AbbreviationEntry.objects.create(
+            abbreviation='T4',
+            description='thyroxine',
+            status='approved',
+        )
+
+        with TemporaryDirectory() as media_root:
+            session_id = 'test-session'
+            path = Path(media_root) / f'{session_id}.docx'
+
+            doc = Document()
+            doc.add_paragraph('У пациента определяли уровень T4.')
+            doc.save(path)
+
+            session = self.client.session
+            session[SESSION_FILE_KEY] = path.name
+            session.save()
+
+            with self.settings(
+                MEDIA_ROOT=media_root,
+                DOCUMENT_SESSION_TIMEOUT_SECONDS=600,
+            ):
+                first = self.client.get(f'/process/{session_id}/')
+                update = self.client.post(
+                    '/update_abbreviation/',
+                    data=json.dumps({
+                        'abbreviation': 'T4',
+                        'description': 'thyroxine',
+                        'action': 'add',
+                    }),
+                    content_type='application/json',
+                )
+                refreshed = self.client.get(f'/process/{session_id}/')
+
+            self.assertEqual(first.status_code, 200)
+            self.assertEqual(update.status_code, 200)
+            self.assertEqual(refreshed.status_code, 200)
+            self.assertEqual(
+                self.client.session['doc_abbs'][0]['selected_description'],
+                'thyroxine',
+            )
 
     def test_document_url_requires_matching_django_session(self):
         with TemporaryDirectory() as media_root:

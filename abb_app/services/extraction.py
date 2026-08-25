@@ -208,7 +208,8 @@ class TextProcessor:
         Finds and returns snippets of text around occurrences of the abbreviation.
         Limits the number of contexts returned to `max_contexts`.
         """
-        contexts: Set[str] = set()
+        contexts: List[str] = []
+        seen_contexts: Set[str] = set()
         matches = re.finditer(
             rf'(?<!\w){re.escape(abbreviation)}(?!\w)', text
         )
@@ -222,9 +223,11 @@ class TextProcessor:
                 snippet = f'{snippet}...'
             if max_contexts == 1:
                 return [snippet]
-            contexts.add(snippet)
-            
-        return list(contexts)
+            if snippet not in seen_contexts:
+                seen_contexts.add(snippet)
+                contexts.append(snippet)
+
+        return contexts
 
 
 class CharacterValidator:

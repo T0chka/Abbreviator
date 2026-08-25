@@ -14,6 +14,20 @@ class TextProcessorTests(SimpleTestCase):
 
         self.assertEqual(result['T4'], 1)
 
+    def test_contexts_keep_document_order(self):
+        processor = TextProcessor()
+        text = 'first-context ABC separator second-context ABC end'
+
+        contexts = processor.find_abbreviation_context(
+            text,
+            'ABC',
+            window=20,
+        )
+
+        self.assertEqual(len(contexts), 2)
+        self.assertIn('first-context', contexts[0])
+        self.assertIn('second-context', contexts[1])
+
     def test_unknown_standard_abbreviation_is_detected(self):
         processor = TextProcessor()
 

@@ -8,6 +8,7 @@ from django.http import HttpRequest
 
 DEMO_FILENAME = 'test_drive.docx'
 SESSION_FILE_KEY = 'uploaded_file_path'
+PROCESSED_FILE_SESSION_KEY = 'processed_file_path'
 
 
 def delete_session_document(request: HttpRequest) -> None:

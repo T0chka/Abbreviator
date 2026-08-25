@@ -32,6 +32,7 @@ from .services.llm import (
 )
 from .services.sessions import (
     DEMO_FILENAME,
+    PROCESSED_FILE_SESSION_KEY,
     SESSION_FILE_KEY,
     delete_session_document,
     refresh_document_session,
@@ -351,17 +352,24 @@ def process_and_display(
             ),
         )
 
-    request.session.clear()
-    request.session[SESSION_FILE_KEY] = file_name
     refresh_document_session(request)
-    file_path = FileSystemStorage().path(file_name)
 
-    processed = process_document(file_path)
-    doc_abbs = processed.abbreviations
-    initial_abbs = processed.initial_abbreviations
+    if (
+        request.session.get(PROCESSED_FILE_SESSION_KEY) == file_name
+        and 'doc_abbs' in request.session
+        and 'initial_abbs' in request.session
+    ):
+        doc_abbs = request.session['doc_abbs']
+        initial_abbs = request.session['initial_abbs']
+    else:
+        file_path = FileSystemStorage().path(file_name)
+        processed = process_document(file_path)
+        doc_abbs = processed.abbreviations
+        initial_abbs = processed.initial_abbreviations
 
-    request.session['doc_abbs'] = doc_abbs
-    request.session['initial_abbs'] = initial_abbs
+        request.session['doc_abbs'] = doc_abbs
+        request.session['initial_abbs'] = initial_abbs
+        request.session[PROCESSED_FILE_SESSION_KEY] = file_name
     return render(
         request,
         'content.html',
