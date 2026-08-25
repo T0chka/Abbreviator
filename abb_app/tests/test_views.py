@@ -2,6 +2,7 @@ import io
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from django.test import TestCase
+from django.urls import reverse
 from docx import Document
 
 from abb_app.models import AbbreviationEntry
@@ -55,7 +56,7 @@ class ProcessingViewTests(TestCase):
                 response = self.client.get(f'/process/{session_id}/')
 
             self.assertEqual(response.status_code, 302)
-            self.assertEqual(response.url, '/')
+            self.assertEqual(response.url, reverse('upload_file'))
 
 
 class TableGenerationViewTests(TestCase):

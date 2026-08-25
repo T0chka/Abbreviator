@@ -13,7 +13,6 @@ venv/
 .env
 
 # Django Migrations
-**/migrations/
 
 # Logs
 *.log
