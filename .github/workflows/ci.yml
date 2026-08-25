@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SECRET_KEY: ci-only-key-not-used-outside-github-actions
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Check Django configuration
+        run: uv run --frozen python manage.py check
+
+      - name: Check migrations
+        run: uv run --frozen python manage.py makemigrations --check --dry-run
+
+      - name: Run tests
+        run: uv run --frozen python manage.py test
