@@ -372,13 +372,10 @@ def process_document(file_path: str) -> ProcessedDocument:
     initial_abbreviations = extractor.get_abbreviation_table(document)
     validator = CharacterValidator()
     for entry in initial_abbreviations:
-        try:
-            validation = validator.validate_abbreviation(
-                entry['abbreviation'],
-                dictionary,
-            )
-        except ValueError:
-            continue
+        validation = validator.validate_abbreviation(
+            entry['abbreviation'],
+            dictionary,
+        )
         if validation.get('correct_form'):
             entry['highlighted'] = validation.get('highlighted')
 

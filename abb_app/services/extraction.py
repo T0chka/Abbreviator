@@ -1,5 +1,4 @@
 import re
-from collections import Counter
 from typing import List, Set
 
 from docx import Document
@@ -44,13 +43,13 @@ class TextProcessor:
     a Word document.
     """
     def __init__(
-            self,
-            skip_sections: List[str] = SKIP_SECTIONS,
-            exclude_terms: Set[str] = EXCLUDE_TERMS
-        ):
+        self,
+        skip_sections: List[str] = SKIP_SECTIONS,
+        exclude_terms: Set[str] = EXCLUDE_TERMS,
+    ):
         self.skip_sections = {
-                section.upper() for section in skip_sections
-            }
+            section.upper() for section in skip_sections
+        }
         self.exclude_terms = exclude_terms
 
     def extract_relevant_text(self, doc: Document) -> str:
@@ -61,28 +60,18 @@ class TextProcessor:
         """
         paragraphs = []
         skip = False
-        
-        for i, para in enumerate(doc.paragraphs):
+
+        for para in doc.paragraphs:
             para_text = para.text.strip()
             if not para_text:
                 continue
-                
-            try:
-                style_name = None
-                if hasattr(para, 'style') and para.style:
-                    try:
-                        style_name = para.style.name
-                    except:
-                        style_name = None
-                        
-                is_heading = (
-                    style_name and 
-                    (style_name.startswith('Heading') or 'Заголовок' in style_name)
-                )
-                
-            except Exception:
-                is_heading = False
-            
+
+            style_name = para.style.name if para.style else ''
+            is_heading = (
+                style_name.startswith('Heading')
+                or 'Заголовок' in style_name
+            )
+
             is_bold = False
             if not is_heading:
                 for run in para.runs:
@@ -90,7 +79,7 @@ class TextProcessor:
                         is_bold = True
                         break
 
-            if (is_bold or is_heading):
+            if is_bold or is_heading:
                 para_text_upper = para_text.upper()
                 if any(section in para_text_upper for section in self.skip_sections):
                     skip = True
@@ -105,43 +94,37 @@ class TextProcessor:
     def extract_abbreviations(
         self,
         text: str,
-        known_abbreviations: Set[str]
-    ) -> Counter[str]:
-        """
-        Extract abbreviations from text.
-
-        Exact dictionary matches are always included. Unknown tokens must satisfy
-        the abbreviation heuristics. Compound and derived forms are removed when
-        their standalone abbreviations are already present.
-        """
-        doc_abbs: Counter[str] = Counter()
-
+        known_abbreviations: Set[str],
+    ) -> List[str]:
+        """Extract unique abbreviations in document order."""
+        doc_abbs: List[str] = []
+        seen: Set[str] = set()
         text_no_quotes = re.compile(r'«\S+?»|"[^"]+"').sub('', text)
 
         for word in text_no_quotes.split():
             candidate = self._clean_abbreviation(word)
-            if not candidate:
+            if not candidate or candidate in seen:
                 continue
 
-            if candidate in known_abbreviations:
-                doc_abbs[candidate] += 1
-                continue
+            if candidate not in known_abbreviations:
+                if not re.search(r'[A-ZА-ЯЁ].*[A-ZА-ЯЁ]', candidate):
+                    continue
+                if self._is_roman_token(candidate):
+                    continue
+                if candidate in self.exclude_terms:
+                    continue
+                if len(candidate) > 8 and candidate.isalpha():
+                    continue
 
-            if not re.search(r'[A-ZА-ЯЁ].*[A-ZА-ЯЁ]', candidate):
-                continue
-            if self._is_roman_token(candidate):
-                continue
-            if candidate in self.exclude_terms:
-                continue
-            if len(candidate) > 8 and candidate.isalpha():
-                continue
-
-            doc_abbs[candidate] += 1
+            seen.add(candidate)
+            doc_abbs.append(candidate)
 
         standalone = set(doc_abbs)
+        filtered: List[str] = []
 
-        for candidate in list(doc_abbs):
+        for candidate in doc_abbs:
             if candidate in known_abbreviations:
+                filtered.append(candidate)
                 continue
 
             parts = candidate.split('/')
@@ -150,9 +133,9 @@ class TextProcessor:
                 and all(parts)
                 and all(part in standalone for part in parts)
             ):
-                del doc_abbs[candidate]
                 continue
 
+            is_derived = False
             for abbreviation in standalone:
                 if abbreviation == candidate:
                     continue
@@ -169,10 +152,13 @@ class TextProcessor:
                     and re.fullmatch(r'[А-Яа-яЁё]+', affix)
                     and re.search(r'[а-яё]', affix)
                 ):
-                    del doc_abbs[candidate]
+                    is_derived = True
                     break
 
-        return doc_abbs
+            if not is_derived:
+                filtered.append(candidate)
+
+        return filtered
 
     @staticmethod
     def _is_roman_token(candidate: str) -> bool:
@@ -194,16 +180,16 @@ class TextProcessor:
             clean_match = clean_match[1:]
         if clean_match.endswith(')') and clean_match.count('(') == 0:
             clean_match = re.sub(r'\)+$', '', clean_match)
-        
+
         return clean_match.strip('»«][')
 
     def find_abbreviation_context(
-            self,
-            text: str,
-            abbreviation: str,
-            window: int = 150,
-            max_contexts: int = 1000
-        ) -> List[str]:
+        self,
+        text: str,
+        abbreviation: str,
+        window: int = 150,
+        max_contexts: int = 1000,
+    ) -> List[str]:
         """
         Finds and returns snippets of text around occurrences of the abbreviation.
         Limits the number of contexts returned to `max_contexts`.
@@ -337,13 +323,13 @@ class CharacterValidator:
 
 
 def process_abbreviations(
-        doc: Document,
-        abb_dict: List[Abbreviation]
-    ) -> List[Abbreviation]:
+    doc: Document,
+    abb_dict: List[Abbreviation],
+) -> List[Abbreviation]:
     """Process abbreviations found in document"""
     text_processor = TextProcessor()
     validator = CharacterValidator()
-    
+
     # Get abbreviations from document text
     dictionary = {
         entry['abbreviation']: entry
@@ -351,49 +337,32 @@ def process_abbreviations(
     }
 
     text = text_processor.extract_relevant_text(doc)
-    raw_abbs = text_processor.extract_abbreviations(
-        text,
-        set(dictionary)
-    )
+    raw_abbs = text_processor.extract_abbreviations(text, set(dictionary))
     processed_abbs: List[Abbreviation] = []
-    
-    for abb, count in raw_abbs.items():
+
+    for abb in raw_abbs:
         contexts = text_processor.find_abbreviation_context(text, abb)
-        
         dict_entry = dictionary.get(abb)
         descriptions = dict_entry['descriptions'] if dict_entry else []
-        is_ai_generated = False        
-            
+
         processed_abb: Abbreviation = {
             'abbreviation': abb,
             'descriptions': descriptions,
-            'selected_description': None,  # Will be set by user
-            'count': count,
+            'selected_description': None,
             'contexts': contexts,
             'correct_form': None,
             'highlighted': None,
-            'status': None,
-            'is_ai_generated': is_ai_generated
         }
-            
-        # Search homoglyph-equivalent dictionary spelling only when exact
-        # approved spelling is absent.
-        if dict_entry is None and len(abb) <= 15:
-            try:
-                val_result = validator.validate_abbreviation(abb, abb_dict)
-                if val_result:
-                    val_descriptions = val_result.get('descriptions', [])
-                    processed_abb.update({
-                        'correct_form': val_result.get('correct_form'),
-                        'highlighted': val_result.get('highlighted'),
-                        'descriptions': (
-                            val_descriptions if val_descriptions 
-                            else processed_abb['descriptions']
-                        )
-                    })
-            except ValueError:
-                pass
-            
+
+        if dict_entry is None:
+            validation = validator.validate_abbreviation(abb, abb_dict)
+            if validation:
+                processed_abb.update({
+                    'correct_form': validation.get('correct_form'),
+                    'highlighted': validation.get('highlighted'),
+                    'descriptions': validation.get('descriptions', []),
+                })
+
         processed_abbs.append(processed_abb)
-    
+
     return processed_abbs

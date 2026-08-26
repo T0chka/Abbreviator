@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class AbbreviationEntry(models.Model):
     """Main model for abbreviation dictionary entries"""
     abbreviation = models.CharField(max_length=50, db_index=True)
@@ -16,10 +17,12 @@ class AbbreviationEntry(models.Model):
         default='for_review',
         db_index=True
     )
-    
+
     class Meta:
+        verbose_name = 'Abbreviation entry'
+        verbose_name_plural = 'Abbreviation entries'
         unique_together = ['abbreviation', 'description']
         ordering = ['abbreviation', '-created_at']
-        
+
     def __str__(self):
         return f"{self.abbreviation} - {self.description}"

@@ -29,8 +29,18 @@ class DictionaryViewTests(TestCase):
             '<span class="homoglyph-latin" title="латиница">A</span>',
             html,
         )
-        self.assertNotIn('openSuggestForm', html)
-        self.assertNotIn('material-icons">edit', html)
+
+    def test_dictionary_hides_unapproved_entries(self):
+        AbbreviationEntry.objects.create(
+            abbreviation='XYZ',
+            description='Pending description',
+            status='for_review',
+        )
+
+        request = RequestFactory().get('/dictionary/')
+        response = dictionary_view(request)
+
+        self.assertNotContains(response, 'Pending description')
 
 
 class DictionaryAdminTests(TestCase):

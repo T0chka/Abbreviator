@@ -90,7 +90,7 @@
         <div class="abb-title" data-processing-action="toggle-abbreviation">
             <div class="abb-title-left" data-abb="{{ abb.abbreviation }}">
                 <!-- Status icon -->
-                <span class="status-icon" id="status_icon_{{ abb.abbreviation }}">
+                <span class="status-icon">
                     {% if abb.selected_description %}✓{% endif %}
                 </span>
 
@@ -100,7 +100,7 @@
                 </div>
 
                 <!-- Description text -->
-                <span class="description-text" id="description_text_{{ abb.abbreviation }}">
+                <span class="description-text">
                     {% if abb.selected_description %}
                         - {{ abb.selected_description }}
                     {% endif %}
@@ -117,7 +117,6 @@
                 </button>
                 <button type="button"
                         class="toggle-btn tooltip tooltip-left"
-                        id="toggle_btn_{{ abb.abbreviation }}"
                         aria-label="Свернуть карточку">
                     <span class="material-icons">expand_less</span>
                     <span class="tooltiptext">Свернуть карточку</span>
@@ -164,7 +163,7 @@
         </div>
 
         <!-- Collapsible content -->
-        <div class="abb-content" id="content_{{ abb.abbreviation }}">
+        <div class="abb-content">
             <!-- Description options -->
             <div class="description-options">
                 {% if abb.descriptions %}
@@ -178,10 +177,9 @@
                 {% endif %}
 
                 <!-- Custom description input -->
-                <div class="input-group" id="input_group_{{ abb.abbreviation }}">
+                <div class="input-group">
                     <div class="description-input-wrap">
                         <input type="text"
-                               id="desc_{{ abb.abbreviation }}"
                                placeholder="Введите расшифровку">
                         <button class="generate-btn"
                                 type="button"
@@ -195,12 +193,10 @@
                         </button>
                     </div>
                     <button data-processing-action="add-description"
-                            id="add_btn_{{ abb.abbreviation }}"
                             class="btn-base btn-success">
                         ✓
                     </button>
                     <button data-processing-action="skip-abbreviation"
-                            id="skip_btn_{{ abb.abbreviation }}"
                             class="btn-base btn-skip">
                         ✗
                     </button>

@@ -17,7 +17,7 @@ class TextProcessorTests(SimpleTestCase):
             {'T4'},
         )
 
-        self.assertEqual(result['T4'], 1)
+        self.assertEqual(result, ['T4'])
 
     def test_contexts_keep_document_order(self):
         processor = TextProcessor()
@@ -41,7 +41,7 @@ class TextProcessorTests(SimpleTestCase):
             set(),
         )
 
-        self.assertEqual(result['ABC'], 1)
+        self.assertEqual(result, ['ABC'])
 
 
 class CharacterValidatorTests(SimpleTestCase):
@@ -114,6 +114,22 @@ class CharacterValidatorTests(SimpleTestCase):
         self.assertEqual(len(result), 1)
         self.assertIsNone(result[0]['correct_form'])
         self.assertEqual(result[0]['descriptions'], ['Exact description'])
+
+    def test_long_homoglyph_form_matches_dictionary_spelling(self):
+        document = Document()
+        document.add_paragraph('ATX-ATX-ATX-ATX-ATX')
+        dictionary = [{
+            'abbreviation': 'АТХ-АТХ-АТХ-АТХ-АТХ',
+            'descriptions': ['Approved description'],
+        }]
+
+        result = process_abbreviations(document, dictionary)
+
+        self.assertEqual(len(result), 1)
+        self.assertEqual(
+            result[0]['correct_form'],
+            'АТХ-АТХ-АТХ-АТХ-АТХ',
+        )
 
     def test_homoglyph_parts_mark_only_homoglyph_characters(self):
         parts = self.validator.homoglyph_parts('ЖA')

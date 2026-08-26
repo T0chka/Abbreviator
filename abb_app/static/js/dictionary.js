@@ -2,7 +2,6 @@ $(document).ready(function () {
     $('#dictionary-table').DataTable({
         dom: 'ltrip',
         language: {
-            search: '',
             lengthMenu: 'Показать _MENU_ записей',
             info: 'Показано _START_ до _END_ из _TOTAL_ записей',
             paginate: {

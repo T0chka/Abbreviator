@@ -13,12 +13,9 @@ class Abbreviation(TypedDict):
     abbreviation: str
     descriptions: List[str]
     selected_description: NotRequired[Optional[str]]
-    count: NotRequired[Optional[int]]
     contexts: NotRequired[Optional[List[str]]]
     correct_form: NotRequired[Optional[str]]
     highlighted: NotRequired[Optional[List[HighlightedCharacter]]]
-    status: NotRequired[Optional[str]]
-    is_ai_generated: NotRequired[bool]
 
 
 class TableEntry(TypedDict):

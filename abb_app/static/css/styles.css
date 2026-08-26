@@ -4,7 +4,7 @@
 :root {
     /* Colors */
     --primary-color: #46413D;
-    --bg-light: #ffffff; 
+    --bg-light: #ffffff;
     --bg-accent: #f2eeec;
     --bg-accent-hover: color-mix(in srgb, var(--bg-accent) 80%, black);
     --bg-accent2: #D3C5BF;
@@ -25,12 +25,12 @@
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    
+
     /* Transitions */
     --transition-fast: 0.2s ease;
     --transition-normal: 0.3s ease;
     --transition-slow: all 0.6s ease-in-out;
-    
+
     /* Typography */
     --font-stack: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
     --border-radius: 4px;
@@ -92,16 +92,6 @@ h2 {
     text-wrap: balance;
 }
 
-.fixed-header {
-    position: sticky;
-    background-color: var(--bg-light);
-    top: 0;
-    padding: 20px 0;
-}
-
-.fixed-header h2 {
-    margin: 0;
-}
 
 /* ==========================================================================
    Abbreviation Cards
@@ -127,10 +117,10 @@ h2 {
 
 .abbreviation-item:hover {
     box-shadow: var(--shadow-md);
-}   
+}
 
 /* Card Header */
-.abb-title { 
+.abb-title {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -146,7 +136,7 @@ h2 {
 }
 
 .abb-title-left.moved {
-    padding-left: 16px; 
+    padding-left: 16px;
 }
 
 .status-icon {
@@ -467,7 +457,7 @@ h2 {
 }
 
 .scroll-up-fab:hover span.material-icons {
-    transform: translateY(-5px); 
+    transform: translateY(-5px);
 }
 
 .scroll-down-fab:hover span.material-icons {
@@ -576,7 +566,7 @@ h2 {
 
 /* Show xx rows dropdown */
 .dataTables_wrapper .dataTables_length select {
-    color: var(--text-primary); 
+    color: var(--text-primary);
     border: var(--border) !important;
 }
 
@@ -785,10 +775,6 @@ table.dataTable thead th.sorting_desc::after {
         font-size: 0.85rem;
     }
 
-    /* Adjust tooltip position for mobile */
-    .tooltip .tooltiptext {
-        display: none; /* или измените позиционирование */
-    }
 
     .generate-buttons-section {
         margin: 0.5rem 0;
