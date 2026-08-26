@@ -618,6 +618,11 @@ h2 {
     color: var(--text-primary) !important;
 }
 
+/* Dictionary legend */
+.statistics {
+    margin-bottom: 18px;
+}
+
 /* Table header */
 #dictionary-table thead th {
     background-color: var(--bg-accent);
@@ -686,24 +691,6 @@ table.dataTable thead th.sorting_desc::after {
     background-color: var(--bg-accent);
 }
 
-
-/* Edit button */
-.edit-button {
-    background-color: var(--bg-light);
-    color: var(--text-primary);
-    padding: 0;
-    border: none;
-    cursor: pointer;
-    transition: var(--transition-fast);
-}
-
-.edit-button .material-icons {
-    font-size: 16px;
-}
-
-.edit-button:hover {
-    transform: scale(1.2);
-}
 
 /* Table bottom border */
 .dataTables_wrapper table.dataTable {

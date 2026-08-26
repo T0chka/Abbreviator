@@ -232,174 +232,107 @@ class TextProcessor:
 
 class CharacterValidator:
     def __init__(self):
-        # Map for character-by-character conversion
         self.cyr2lat = {
             'А': 'A', 'В': 'B', 'С': 'C', 'Е': 'E',
             'Н': 'H', 'К': 'K', 'М': 'M', 'О': 'O',
             'Р': 'P', 'Т': 'T', 'У': 'Y', 'Х': 'X'
         }
-        # Add lowercase mappings
-        self.cyr2lat.update({k.lower(): v.lower() 
-                            for k, v in self.cyr2lat.items()})
-        # Create reverse mapping
-        self.lat2cyr = {v: k for k, v in self.cyr2lat.items()}
+        self.cyr2lat.update({
+            key.lower(): value.lower()
+            for key, value in self.cyr2lat.items()
+        })
+        self.lat2cyr = {value: key for key, value in self.cyr2lat.items()}
 
     def validate_abbreviation(
-            self, 
-            abb: str, 
-            abb_dict: List[Abbreviation]
-        ) -> dict:
-        """
-        Validates an abbreviation for mixed characters.
-        Checks for existing forms in the dictionary.
-        Returns a dict with validation info or empty dict.
-
-        Decision Tree (important returns are shown):
-        Abbreviation
-        └─ has_cyr_chars OR has_lat_chars
-            ├─ Generate forms and search the dictionary
-            │    ├─ Match found (does not matter mixed or not)
-            │    │    ├─ correct_form = matched_form
-            │    │    ├─ descriptions = matched_description
-            │    │    └─ highlighted = highlighted_text for tooltip
-            │    └─ No match found
-            │         ├─ is mixed (has_cyr_chars AND has_lat_chars)
-            │         │     └─ highlighted = highlighted_text for moderation
-            └─ Does not contain both types of characters or not mixed
-                └─ no validation issues found, return empty dict
-
-        Where:
-        - `cyr_chars` and `lat_chars` refer to similar-looking
-        Cyrillic and Latin characters.
-        """
-        has_cyr_chars = any(char in self.cyr2lat for char in abb)
-        has_lat_chars = any(char in self.lat2cyr for char in abb)
-        
-        if not (has_cyr_chars or has_lat_chars):
-            return {}
-    
-        # Generate all possible forms and search dictionary
-        possible_forms = self._generate_all_mixed_forms(abb)
-        matched_entries = [
-            entry for entry in abb_dict 
-            if entry['abbreviation'] in possible_forms
-        ]
-    
-        if matched_entries:
-            # Check for multiple matches
-            unique_forms = set(entry['abbreviation'] for entry in matched_entries)
-            if len(unique_forms) > 1:
-                raise ValueError(
-                    "[ERROR] Mixed-character abbreviations in the dictionary:"
-                    f"\n{matched_entries}"
-                )
-            
-            matched_entry = matched_entries[0]
-            return {
-                "correct_form": matched_entry['abbreviation'],
-                "descriptions": matched_entry['descriptions'],
-                "highlighted": self._highlight_mismatch_characters(
-                    abb, matched_entry['abbreviation']
-                )
-            }
-
-        # Handle case when no dictionary match found but chars are mixed
-        if has_cyr_chars and has_lat_chars:
-            return {
-                "correct_form": None,
-                "descriptions": [],
-                "highlighted": self._highlight_mixed_characters(abb)
-            }
-
-        return {}
-
-    def _generate_all_mixed_forms(self, abb: str) -> set:
-        """Generate all possible character combinations"""
-        results = set()
-        
-        # Add full conversions
-        results.add("".join(self.lat2cyr.get(ch, ch) for ch in abb))
-        results.add("".join(self.cyr2lat.get(ch, ch) for ch in abb))
-        
-        # Generate partial conversions
-        def backtrack(i: int, current: list):
-            if i == len(abb):
-                results.add("".join(current))
-                return
-
-            ch = abb[i]
-            # Original character
-            current.append(ch)
-            backtrack(i + 1, current)
-            current.pop()
-
-            # Convert if possible
-            if ch in self.cyr2lat:
-                current.append(self.cyr2lat[ch])
-                backtrack(i + 1, current)
-                current.pop()
-            if ch in self.lat2cyr:
-                current.append(self.lat2cyr[ch])
-                backtrack(i + 1, current)
-                current.pop()
-
-        backtrack(0, [])
-        return results - {abb}  # Exclude original form
-
-    def _highlight_mismatch_characters(
-            self, user_abb: str, dict_abb: str
-            ) -> list[HighlightedCharacter]:
-        """
-        Compare each character and return structured rendering metadata
-        with mismatch information for template rendering.
-        """
-        highlighted = []
-        for ch_user, ch_dict in zip(user_abb, dict_abb):
-            if ch_user != ch_dict:
-                mismatch_type = (
-                    "кириллическая" if ch_user in self.cyr2lat else "латинская"
-                )
-                correct_type = (
-                    "латинская" if ch_dict in self.lat2cyr else "кириллическая"
-                )
-                tooltip_text = (
-                    f"{ch_user} - {mismatch_type}, "
-                    f"в словаре {ch_dict} - {correct_type}"
-                )
-                highlighted.append({
-                    "char": ch_user,
-                    "tooltip": tooltip_text,
-                    "mismatch": True
-                })
-            else:
-                highlighted.append({
-                    "char": ch_user,
-                    "mismatch": False
-                })
-        return highlighted
-    
-    def _highlight_mixed_characters(
         self,
         abb: str,
-    ) -> list[HighlightedCharacter]:
-        """Return script metadata when no canonical form is known."""
-        highlighted: list[HighlightedCharacter] = []
+        abb_dict: List[Abbreviation],
+    ) -> dict:
+        """Return a known homoglyph-equivalent spelling, if one exists.
+
+        An exact approved dictionary spelling always has priority. Only when
+        the exact spelling is absent is its homoglyph-normalized spelling
+        compared with the approved dictionary.
+        """
+        if any(entry['abbreviation'] == abb for entry in abb_dict):
+            return {}
+
+        homoglyph_key = self.homoglyph_key(abb)
+        matched_entries = [
+            entry for entry in abb_dict
+            if (
+                entry['abbreviation'] != abb
+                and self.homoglyph_key(entry['abbreviation']) == homoglyph_key
+            )
+        ]
+        if not matched_entries:
+            return {}
+
+        unique_forms = {entry['abbreviation'] for entry in matched_entries}
+        if len(unique_forms) > 1:
+            raise ValueError(
+                '[ERROR] Homoglyph-equivalent abbreviations in the dictionary:'
+                f'\n{matched_entries}'
+            )
+
+        matched_entry = matched_entries[0]
+        return {
+            'correct_form': matched_entry['abbreviation'],
+            'descriptions': matched_entry['descriptions'],
+            'highlighted': self._highlight_mismatch_characters(
+                abb, matched_entry['abbreviation']
+            ),
+        }
+
+    def homoglyph_key(self, abb: str) -> str:
+        """Normalize Cyrillic homoglyphs to their Latin counterparts."""
+        return ''.join(self.cyr2lat.get(char, char) for char in abb)
+
+    def homoglyph_parts(self, abb: str) -> list[dict[str, str]]:
+        """Return script metadata only for Cyrillic/Latin homoglyphs."""
+        parts: list[dict[str, str]] = []
         for char in abb:
             if char in self.cyr2lat:
-                tooltip = f'{char} - кириллическая'
+                script = 'cyrillic'
             elif char in self.lat2cyr:
-                tooltip = f'{char} - латинская'
+                script = 'latin'
             else:
-                tooltip = ''
+                script = ''
+            parts.append({'char': char, 'script': script})
+        return parts
 
-            part: HighlightedCharacter = {
-                'char': char,
-                'mismatch': False,
-            }
-            if tooltip:
-                part['tooltip'] = tooltip
-            highlighted.append(part)
-
+    def _highlight_mismatch_characters(
+        self,
+        user_abb: str,
+        dict_abb: str,
+    ) -> list[HighlightedCharacter]:
+        """Mark characters that differ from the approved spelling."""
+        highlighted: list[HighlightedCharacter] = []
+        for user_char, dict_char in zip(user_abb, dict_abb):
+            if user_char != dict_char:
+                user_script = (
+                    'кириллическая'
+                    if user_char in self.cyr2lat
+                    else 'латинская'
+                )
+                dict_script = (
+                    'латинская'
+                    if dict_char in self.lat2cyr
+                    else 'кириллическая'
+                )
+                highlighted.append({
+                    'char': user_char,
+                    'tooltip': (
+                        f'{user_char} - {user_script}, '
+                        f'в словаре {dict_char} - {dict_script}'
+                    ),
+                    'mismatch': True,
+                })
+            else:
+                highlighted.append({
+                    'char': user_char,
+                    'mismatch': False,
+                })
         return highlighted
 
 
@@ -443,8 +376,9 @@ def process_abbreviations(
             'is_ai_generated': is_ai_generated
         }
             
-        # Validate and update if it's 9 or less characters long
-        if len(abb) <= 15:
+        # Search homoglyph-equivalent dictionary spelling only when exact
+        # approved spelling is absent.
+        if dict_entry is None and len(abb) <= 15:
             try:
                 val_result = validator.validate_abbreviation(abb, abb_dict)
                 if val_result:

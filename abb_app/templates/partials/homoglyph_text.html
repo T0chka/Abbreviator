@@ -1,0 +1,11 @@
+{% spaceless %}
+{% for part in parts %}
+    {% if part.script == 'cyrillic' %}
+        <span class="homoglyph-cyrillic" title="кириллица">{{ part.char }}</span>
+    {% elif part.script == 'latin' %}
+        <span class="homoglyph-latin" title="латиница">{{ part.char }}</span>
+    {% else %}
+        <span>{{ part.char }}</span>
+    {% endif %}
+{% endfor %}
+{% endspaceless %}

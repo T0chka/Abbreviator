@@ -26,6 +26,7 @@ from .services.documents import (
     prepare_abbreviation_table_entries,
     process_document,
 )
+from .services.extraction import CharacterValidator
 from .services.llm import (
     LLMServiceError,
     generate_abbreviation_description,
@@ -453,18 +454,26 @@ def make_abbreviation_table(request: HttpRequest) -> HttpResponse:
 
 @require_http_methods(['GET'])
 def dictionary_view(request: HttpRequest) -> HttpResponse:
-    """Public view of the abbreviation dictionary."""
-    abbreviations = AbbreviationEntry.objects.filter(
+    """Public read-only view of the approved abbreviation dictionary."""
+    queryset = AbbreviationEntry.objects.filter(
         status='approved'
     ).order_by('abbreviation')
+    validator = CharacterValidator()
+    abbreviations = [
+        {
+            'abbreviation': entry.abbreviation,
+            'description': entry.description,
+            'updated_at': entry.updated_at,
+            'homoglyph_parts': validator.homoglyph_parts(entry.abbreviation),
+        }
+        for entry in queryset
+    ]
 
-    total_count = abbreviations.count()
+    total_count = queryset.count()
     last_month = now() - timedelta(days=30)
-    new_count = abbreviations.filter(
-        created_at__gte=last_month
-    ).count()
-    last_entry = abbreviations.order_by('-created_at').first()
-    last_update = last_entry.created_at if last_entry else None
+    new_count = queryset.filter(created_at__gte=last_month).count()
+    last_entry = queryset.order_by('-updated_at').first()
+    last_update = last_entry.updated_at if last_entry else None
 
     return render(
         request,
@@ -474,7 +483,7 @@ def dictionary_view(request: HttpRequest) -> HttpResponse:
             'total_count': total_count,
             'new_count': new_count,
             'last_update': last_update,
-        }
+        },
     )
 
 

@@ -1,0 +1,10 @@
+{% extends "admin/change_list.html" %}
+
+{% block content %}
+<div class="homoglyph-legend" aria-label="Легенда омоглифов">
+    <strong>Омоглифы:</strong>
+    <span><span class="homoglyph-cyrillic">А</span> кириллица</span>
+    <span><span class="homoglyph-latin">A</span> латиница</span>
+</div>
+{{ block.super }}
+{% endblock %}

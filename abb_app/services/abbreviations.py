@@ -84,10 +84,7 @@ def update_abbreviation_selection(
     AbbreviationEntry.objects.get_or_create(
         abbreviation=entry.get('correct_form') or abbreviation,
         description=description,
-        defaults={
-            'status': 'for_review',
-            'highlighted': entry.get('highlighted'),
-        },
+        defaults={'status': 'for_review'},
     )
 
 
