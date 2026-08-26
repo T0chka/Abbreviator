@@ -7,3 +7,8 @@
     color: #9a5a3f;
     font-weight: 600;
 }
+
+.field-colored_abbreviation > a:link,
+.field-colored_abbreviation > a:visited {
+    color: var(--body-fg);
+}
