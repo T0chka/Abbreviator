@@ -19,6 +19,7 @@ another deployment.
 
 Secrets are stored in the project `.env` file and are not committed. Production
 requires `SECRET_KEY` and the GigaChat settings used by the application.
+`DJANGO_DEBUG` must remain unset or false.
 
 ## systemd
 

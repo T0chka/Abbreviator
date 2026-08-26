@@ -9,13 +9,17 @@ git pull --ff-only origin main
 echo "Syncing dependencies..."
 ~/.local/bin/uv sync --frozen
 
+echo "Checking Django configuration..."
+~/.local/bin/uv run --frozen python manage.py check
+
 echo "Applying migrations..."
-~/.local/bin/uv run python manage.py migrate --noinput
+~/.local/bin/uv run --frozen python manage.py migrate --noinput
 
 echo "Collecting static files..."
-STATIC_ROOT=/home/tonia/datadelic.dev/static-root/public/abbrstatic/ STATIC_URL=/abbrstatic/ ~/.local/bin/uv run python manage.py collectstatic --noinput
+STATIC_ROOT=/home/tonia/datadelic.dev/static-root/public/abbrstatic/ STATIC_URL=/abbrstatic/ ~/.local/bin/uv run --frozen python manage.py collectstatic --noinput
 
 echo "Restarting service..."
 sudo systemctl restart abbreviator
+sudo systemctl is-active --quiet abbreviator
 
 echo "Deploy complete."

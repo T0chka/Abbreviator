@@ -28,6 +28,9 @@ jobs:
       - name: Install dependencies
         run: uv sync --frozen
 
+      - name: Check JavaScript syntax
+        run: find abb_app/static/js -type f -name '*.js' -print0 | xargs -0 -n1 node --check
+
       - name: Check Django configuration
         run: uv run --frozen python manage.py check
 

@@ -9,6 +9,7 @@ WorkingDirectory=/home/tonia/datadelic.dev/Abbreviator
 EnvironmentFile=/home/tonia/datadelic.dev/Abbreviator/.env
 ExecStart=/home/tonia/datadelic.dev/Abbreviator/.venv/bin/gunicorn \
           --workers 1 \
+          --timeout 90 \
           --max-requests 500 \
           --max-requests-jitter 50 \
           --bind 127.0.0.1:8001 \

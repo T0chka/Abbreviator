@@ -49,6 +49,7 @@ Create a local `.env`:
 
 ```env
 SECRET_KEY=local-development-key
+DJANGO_DEBUG=True
 ```
 
 Then initialize the database and run the application:
