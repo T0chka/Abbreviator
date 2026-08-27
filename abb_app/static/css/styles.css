@@ -695,6 +695,10 @@ table.dataTable thead th.sorting_desc::after {
         padding: 0 20px;
     }
 
+    body.processing-page {
+        overflow-x: hidden;
+    }
+
     body h2 {
         font-size: 1.2rem;
         padding: 0.5rem 1rem;
@@ -706,9 +710,32 @@ table.dataTable thead th.sorting_desc::after {
         padding: 0;
     }
 
+    .abb-title {
+        min-width: 0;
+    }
+
+    .abb-title-left {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+    }
+
     .abb-description {
-        flex-direction: column;
-        align-items: flex-start;
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    .description-text {
+        display: block;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .abb-title-controls {
+        flex: 0 0 auto;
     }
 
     .btn-select-option {
@@ -738,9 +765,10 @@ table.dataTable thead th.sorting_desc::after {
 
     /* FAB Container */
     .fab-container {
+        right: 28px;
         bottom: 20px;
-        right: 20px;
         gap: 10px;
+        z-index: 1200;
     }
 
     .fab,
@@ -778,6 +806,10 @@ table.dataTable thead th.sorting_desc::after {
 
     .generate-buttons-section {
         margin: 0.5rem 0;
+    }
+
+    .fab-container {
+        right: 18px;
     }
 }
 

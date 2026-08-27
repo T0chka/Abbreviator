@@ -489,6 +489,13 @@ body.is-resizing-workflow {
     color: color-mix(in srgb, var(--text-primary) 70%, white);
 }
 
+.table-preview-wrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
 .table-preview {
     width: 100%;
     border-collapse: collapse;
@@ -717,5 +724,18 @@ body.is-resizing-workflow {
 
     .card-settings-reset {
         font-size: 0.74rem;
+    }
+
+    .workflow-tool-body {
+        max-width: 100%;
+    }
+
+    .table-preview {
+        min-width: 620px;
+    }
+
+    .table-preview th:first-child,
+    .table-preview td:first-child {
+        width: 150px;
     }
 }

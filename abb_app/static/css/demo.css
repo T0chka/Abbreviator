@@ -145,3 +145,21 @@
     color: var(--primary-color);
     background: var(--bg-accent);
 }
+
+@media (max-width: 760px) {
+    .generate-buttons-section {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .generate-buttons-section .generate-btn,
+    .generate-buttons-section .demo-document-btn {
+        display: flex;
+        width: 100%;
+        box-sizing: border-box;
+        justify-content: center;
+        text-align: center;
+    }
+}
