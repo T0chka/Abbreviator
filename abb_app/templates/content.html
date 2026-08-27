@@ -20,6 +20,7 @@
 
 <div id="processing-config"
      data-update-url="{% url 'update_abbreviation' %}"
+     data-card-state-url="{% if not is_demo %}{% url 'update_card_state' %}{% endif %}"
      data-difference-url="{% url 'update_difference_section' %}"
      data-table-check-url="{% url 'update_table_check' %}"
      data-workflow-state-url="{% if not is_demo %}{% url 'update_workflow_state' %}{% endif %}"
@@ -89,13 +90,13 @@
     {% for abb in doc_abbs %}
     <div class="abbreviation-item"
          data-abbreviation="{{ abb.abbreviation }}"
-         data-selected="{{ abb.selected_description|yesno:'true,false' }}">
+         data-collapsed="{% if abb.abbreviation in collapsed_abbreviations %}true{% else %}false{% endif %}">
         <!-- Clickable title area -->
         <div class="abb-title" data-processing-action="toggle-abbreviation">
             <div class="abb-title-left" data-abb="{{ abb.abbreviation }}">
                 <!-- Status icon -->
                 <span class="status-icon">
-                    {% if abb.selected_description %}✓{% endif %}
+                    {% if abb.selected_description %}✓{% elif abb.reviewed %}✗{% endif %}
                 </span>
 
                 <!-- Abbreviation with mixed-alphabet highlighting -->
@@ -107,6 +108,8 @@
                 <span class="description-text">
                     {% if abb.selected_description %}
                         - {{ abb.selected_description }}
+                    {% elif abb.reviewed %}
+                        - (убрано)
                     {% endif %}
                 </span>
             </div>

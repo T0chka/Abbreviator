@@ -10,6 +10,7 @@ from docx import Document
 
 from abb_app.models import AbbreviationEntry
 from abb_app.services.sessions import (
+    CARD_STATE_SESSION_KEY,
     PROCESSED_FILE_SESSION_KEY,
     SESSION_FILE_KEY,
     TABLE_CHECK_SESSION_KEY,
@@ -54,7 +55,7 @@ class ProcessingViewTests(TestCase):
             self.assertEqual(doc_abbs[0]['abbreviation'], 'T4')
             self.assertEqual(doc_abbs[0]['descriptions'], ['thyroxine'])
 
-    def test_refresh_preserves_reviewed_abbreviation_state(self):
+    def test_refresh_preserves_review_and_comparison_state(self):
         AbbreviationEntry.objects.create(
             abbreviation='T4',
             description='thyroxine',
@@ -78,6 +79,16 @@ class ProcessingViewTests(TestCase):
                 DOCUMENT_SESSION_TIMEOUT_SECONDS=600,
             ):
                 first = self.client.get(f'/process/{session_id}/')
+
+                session = self.client.session
+                session['initial_abbs'] = [{
+                    'abbreviation': 'T4',
+                    'descriptions': ['thyroxine'],
+                }]
+                session[TABLE_CHECK_SESSION_KEY] = True
+                session.save()
+
+                before_review = self.client.get(f'/process/{session_id}/')
                 update = self.client.post(
                     '/update_abbreviation/',
                     data=json.dumps({
@@ -90,13 +101,103 @@ class ProcessingViewTests(TestCase):
                 refreshed = self.client.get(f'/process/{session_id}/')
 
             self.assertEqual(first.status_code, 200)
+            self.assertEqual(before_review.status_code, 200)
+            self.assertContains(
+                before_review,
+                'Сравнение будет обновляться по мере подтверждения',
+            )
+            self.assertNotContains(
+                before_review,
+                'Есть в исходной таблице, но нет в новой',
+            )
             self.assertEqual(update.status_code, 200)
             self.assertEqual(refreshed.status_code, 200)
-            self.assertEqual(
-                self.client.session['doc_abbs'][0]['selected_description'],
-                'thyroxine',
+
+            entry = self.client.session['doc_abbs'][0]
+            self.assertEqual(entry['selected_description'], 'thyroxine')
+            self.assertTrue(entry['reviewed'])
+            self.assertIn(
+                'T4',
+                self.client.session[CARD_STATE_SESSION_KEY],
             )
-            self.assertContains(refreshed, 'data-selected="true"')
+            self.assertContains(refreshed, 'data-collapsed="true"')
+            self.assertContains(
+                refreshed,
+                'Есть в исходной таблице, но нет в новой',
+            )
+            self.assertNotContains(
+                refreshed,
+                'Сравнение будет обновляться по мере подтверждения',
+            )
+
+    def test_refresh_preserves_skipped_and_manual_card_state(self):
+        with TemporaryDirectory() as media_root:
+            session_id = 'card-state'
+            path = Path(media_root) / f'{session_id}.docx'
+            Document().save(path)
+
+            session = self.client.session
+            session[SESSION_FILE_KEY] = path.name
+            session[PROCESSED_FILE_SESSION_KEY] = path.name
+            session['doc_abbs'] = [
+                {
+                    'abbreviation': 'T4',
+                    'descriptions': ['thyroxine'],
+                    'selected_description': None,
+                    'reviewed': False,
+                },
+                {
+                    'abbreviation': 'ABC',
+                    'descriptions': [],
+                    'selected_description': None,
+                    'reviewed': False,
+                },
+            ]
+            session['initial_abbs'] = []
+            session.save()
+
+            with self.settings(
+                MEDIA_ROOT=media_root,
+                DOCUMENT_SESSION_TIMEOUT_SECONDS=600,
+            ):
+                skipped = self.client.post(
+                    reverse('update_abbreviation'),
+                    data=json.dumps({
+                        'abbreviation': 'T4',
+                        'action': 'skip',
+                    }),
+                    content_type='application/json',
+                )
+                collapsed = self.client.post(
+                    reverse('update_card_state'),
+                    data=json.dumps({
+                        'abbreviation': 'ABC',
+                        'collapsed': True,
+                    }),
+                    content_type='application/json',
+                )
+                refreshed = self.client.get(
+                    reverse(
+                        'process_file_with_session',
+                        args=[session_id],
+                    )
+                )
+
+            self.assertEqual(skipped.status_code, 200)
+            self.assertEqual(collapsed.status_code, 200)
+            self.assertEqual(refreshed.status_code, 200)
+
+            entries = {
+                item['abbreviation']: item
+                for item in self.client.session['doc_abbs']
+            }
+            self.assertTrue(entries['T4']['reviewed'])
+            self.assertIsNone(entries['T4']['selected_description'])
+            self.assertContains(refreshed, '- (убрано)')
+            self.assertEqual(
+                refreshed.content.decode().count('data-collapsed="true"'),
+                2,
+            )
 
     def test_refresh_preserves_table_check_choice(self):
         for enabled in (True, False):
@@ -161,6 +262,7 @@ class ProcessingViewTests(TestCase):
 
         session = self.client.session
         session[TABLE_CHECK_SESSION_KEY] = True
+        session[CARD_STATE_SESSION_KEY] = ['OLD']
         session[WORKFLOW_STATE_SESSION_KEY] = {
             'comparison-block': True,
             'table-preview-tool': True,
@@ -181,6 +283,7 @@ class ProcessingViewTests(TestCase):
         session = self.client.session
         self.assertNotIn(TABLE_CHECK_SESSION_KEY, session)
         self.assertNotIn(WORKFLOW_STATE_SESSION_KEY, session)
+        self.assertNotIn(CARD_STATE_SESSION_KEY, session)
         self.assertNotIn(PROCESSED_FILE_SESSION_KEY, session)
         self.assertNotIn('doc_abbs', session)
         self.assertNotIn('initial_abbs', session)

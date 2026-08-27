@@ -14,10 +14,14 @@
         <div class="workflow-tool-body"{% if comparison_height %}
              style="height: {{ comparison_height }}px;"{% endif %}>
             <div id="differences-section">
-                <p>В исходной таблице: {{ initial_abbs_count }} сокращений.</p>
-                <p>
-                    Сравнение будет обновляться по мере подтверждения расшифровок.
-                </p>
+                {% if comparison_context %}
+                    {% include 'partials/differences_section.html' with waiting_for_review=comparison_context.waiting_for_review initial_abbs_count=comparison_context.initial_abbs_count missing_abbs=comparison_context.missing_abbs new_found=comparison_context.new_found only %}
+                {% else %}
+                    <p>В исходной таблице: {{ initial_abbs_count }} сокращений.</p>
+                    <p>
+                        Сравнение будет обновляться по мере подтверждения расшифровок.
+                    </p>
+                {% endif %}
             </div>
         </div>
         <div class="workflow-resize-handle"

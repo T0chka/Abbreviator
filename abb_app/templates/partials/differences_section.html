@@ -1,3 +1,7 @@
+{% if waiting_for_review %}
+<p>В исходной таблице: {{ initial_abbs_count }} сокращений.</p>
+<p>Сравнение будет обновляться по мере подтверждения расшифровок.</p>
+{% else %}
 <section class="comparison-table">
     <h3 class="comparison-table-title">
         Есть в исходной таблице, но нет в новой
@@ -77,3 +81,5 @@
         </table>
     </div>
 </section>
+
+{% endif %}

@@ -32,6 +32,7 @@ from .services.llm import (
     generate_abbreviation_description,
 )
 from .services.sessions import (
+    CARD_STATE_SESSION_KEY,
     DEMO_FILENAME,
     PROCESSED_FILE_SESSION_KEY,
     SESSION_FILE_KEY,
@@ -185,6 +186,7 @@ def upload_file(request: HttpRequest) -> HttpResponse:
     request.session.pop('initial_abbs', None)
     request.session.pop(TABLE_CHECK_SESSION_KEY, None)
     request.session.pop(WORKFLOW_STATE_SESSION_KEY, None)
+    request.session.pop(CARD_STATE_SESSION_KEY, None)
 
     requested_id = generate_session_id()
     filename = FileSystemStorage().save(
@@ -236,6 +238,14 @@ def process_file_with_session(
     is_demo = session_id == DEMO_SESSION_ID
     filename = DEMO_FILENAME if is_demo else f'{session_id}.docx'
 
+    if is_demo:
+        request.session.pop(PROCESSED_FILE_SESSION_KEY, None)
+        request.session.pop('doc_abbs', None)
+        request.session.pop('initial_abbs', None)
+        request.session.pop(TABLE_CHECK_SESSION_KEY, None)
+        request.session.pop(WORKFLOW_STATE_SESSION_KEY, None)
+        request.session.pop(CARD_STATE_SESSION_KEY, None)
+
     session_filename = request.session.get(SESSION_FILE_KEY)
     if not is_demo and (
         session_filename != filename or not fs.exists(filename)
@@ -268,6 +278,43 @@ def parse_optional_json_body(request: HttpRequest) -> Dict[str, Any]:
     return parse_request_json(request)
 
 
+def build_comparison_context(
+    doc_abbs: List[Abbreviation],
+    initial_abbs: List[Abbreviation],
+    table_settings: Dict[str, Any],
+) -> Dict[str, Any]:
+    review_started = any(
+        entry.get('reviewed') or entry.get('selected_description')
+        for entry in doc_abbs
+    )
+    if not review_started and initial_abbs:
+        return {
+            'waiting_for_review': True,
+            'initial_abbs_count': len(initial_abbs),
+        }
+
+    reviewed_abbs = prepare_abbreviation_table_entries(
+        doc_abbs,
+        initial_abbreviations=initial_abbs,
+        sort_mode=table_settings['sort_mode'],
+        script_order=table_settings['script_order'],
+        use_correct_form=table_settings['use_correct_form'],
+        scope='all',
+    )
+
+    if not initial_abbs:
+        return {'new_found': reviewed_abbs}
+
+    changes = compare_abbreviations(
+        old_abbs=initial_abbs,
+        new_abbs=reviewed_abbs,
+    )
+    return {
+        'missing_abbs': changes.get('missing_abbs', []),
+        'new_found': changes.get('new_found', []),
+    }
+
+
 @require_http_methods(['POST'])
 def update_difference_section(request: HttpRequest) -> HttpResponse:
     try:
@@ -280,45 +327,15 @@ def update_difference_section(request: HttpRequest) -> HttpResponse:
             status=400,
         )
 
-    initial_abbs: List[Abbreviation] = request.session.get(
-        'initial_abbs',
-        [],
-    )
-    reviewed_abbs = prepare_abbreviation_table_entries(
+    context = build_comparison_context(
         request.session.get('doc_abbs', []),
-        initial_abbreviations=initial_abbs,
-        sort_mode=table_settings['sort_mode'],
-        script_order=table_settings['script_order'],
-        use_correct_form=table_settings['use_correct_form'],
-        scope='all',
-    )
-
-    if not reviewed_abbs and not initial_abbs:
-        return render(request, 'partials/differences_section.html')
-    if not reviewed_abbs:
-        return render(
-            request,
-            'partials/differences_section.html',
-            {'missing_abbs': initial_abbs},
-        )
-    if not initial_abbs:
-        return render(
-            request,
-            'partials/differences_section.html',
-            {'new_found': reviewed_abbs},
-        )
-
-    changes = compare_abbreviations(
-        old_abbs=initial_abbs,
-        new_abbs=reviewed_abbs,
+        request.session.get('initial_abbs', []),
+        table_settings,
     )
     return render(
         request,
         'partials/differences_section.html',
-        {
-            'missing_abbs': changes.get('missing_abbs', []),
-            'new_found': changes.get('new_found', []),
-        },
+        context,
     )
 
 
@@ -344,6 +361,43 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
         )
 
     request.session['doc_abbs'] = doc_abbs
+    collapsed = set(request.session.get(CARD_STATE_SESSION_KEY, []))
+    collapsed.add(abbreviation)
+    request.session[CARD_STATE_SESSION_KEY] = sorted(collapsed)
+    return JsonResponse({'success': True})
+
+
+@require_http_methods(['POST'])
+def update_card_state(request: HttpRequest) -> JsonResponse:
+    try:
+        data = parse_request_json(request)
+        abbreviation = data.get('abbreviation')
+        collapsed = data.get('collapsed')
+        if not abbreviation:
+            raise ValueError('Abbreviation is required')
+        if not isinstance(collapsed, bool):
+            raise ValueError('Boolean collapsed value required')
+        if not any(
+            item.get('abbreviation') == abbreviation
+            for item in request.session.get('doc_abbs', [])
+        ):
+            raise ValueError('Abbreviation not found')
+    except ValueError as exc:
+        return JsonResponse(
+            {'success': False, 'error': str(exc)},
+            status=400,
+        )
+
+    collapsed_abbreviations = set(
+        request.session.get(CARD_STATE_SESSION_KEY, [])
+    )
+    if collapsed:
+        collapsed_abbreviations.add(abbreviation)
+    else:
+        collapsed_abbreviations.discard(abbreviation)
+    request.session[CARD_STATE_SESSION_KEY] = sorted(
+        collapsed_abbreviations
+    )
     return JsonResponse({'success': True})
 
 
@@ -447,6 +501,27 @@ def process_and_display(
     if not isinstance(table_preview_state, dict):
         table_preview_state = {'open': bool(table_preview_state)}
 
+    collapsed_abbreviations = set(
+        request.session.get(CARD_STATE_SESSION_KEY, [])
+    )
+    if CARD_STATE_SESSION_KEY not in request.session:
+        collapsed_abbreviations = {
+            entry['abbreviation']
+            for entry in doc_abbs
+            if entry.get('reviewed') or entry.get('selected_description')
+        }
+        request.session[CARD_STATE_SESSION_KEY] = sorted(
+            collapsed_abbreviations
+        )
+
+    comparison_context: Dict[str, Any] = {}
+    if table_check_enabled and initial_abbs:
+        comparison_context = build_comparison_context(
+            doc_abbs,
+            initial_abbs,
+            parse_table_settings({}),
+        )
+
     return render(
         request,
         'content.html',
@@ -463,6 +538,8 @@ def process_and_display(
                 table_preview_state.get('open', False)
             ),
             'table_preview_height': table_preview_state.get('height'),
+            'collapsed_abbreviations': collapsed_abbreviations,
+            'comparison_context': comparison_context,
             'llm_model': settings.GIGACHAT_MODEL,
             'document_session_timeout_ms': (
                 settings.DOCUMENT_SESSION_TIMEOUT_SECONDS * 1000

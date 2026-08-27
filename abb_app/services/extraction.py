@@ -349,6 +349,7 @@ def process_abbreviations(
             'abbreviation': abb,
             'descriptions': descriptions,
             'selected_description': None,
+            'reviewed': False,
             'contexts': contexts,
             'correct_form': None,
             'highlighted': None,

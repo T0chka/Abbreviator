@@ -2,6 +2,7 @@ const processingConfig = document.getElementById('processing-config');
 
 const processingUrls = {
     update: processingConfig.dataset.updateUrl,
+    cardState: processingConfig.dataset.cardStateUrl,
     difference: processingConfig.dataset.differenceUrl,
     tableCheck: processingConfig.dataset.tableCheckUrl,
     workflowState: processingConfig.dataset.workflowStateUrl,
@@ -187,9 +188,6 @@ async function chooseTableCheck(enabled) {
         }
 
         document.getElementById('table-check-dialog')?.close();
-        if (enabled) {
-            updateDifferenceSection();
-        }
     } catch (error) {
         alert(`Не удалось сохранить выбор: ${error.message}`);
     }
@@ -390,7 +388,7 @@ async function handleAbbreviation(
         }
 
         updateAbbreviationUI(item, description, action);
-        toggleAbbreviationContent(abbreviation, true);
+        setCardCollapseState(item, true);
 
         await refreshTableViews();
     } catch (error) {
@@ -437,10 +435,28 @@ function setCardCollapseState(item, collapsed) {
     titleLeft.classList.toggle('moved', collapsed);
 }
 
-function toggleAbbreviationContent(
-    abbreviation,
-    forceCollapse = false
-) {
+async function persistCardState(abbreviation, collapsed) {
+    if (!processingUrls.cardState) return;
+
+    try {
+        const response = await fetch(processingUrls.cardState, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({abbreviation, collapsed}),
+            keepalive: true
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Failed to save card state:', error);
+    }
+}
+
+function toggleAbbreviationContent(abbreviation) {
     const item = getAbbreviationItem(abbreviation);
     if (!item) {
         throw new Error(`Abbreviation card not found: ${abbreviation}`);
@@ -449,8 +465,10 @@ function toggleAbbreviationContent(
     const content = item.querySelector('.abb-content');
     const isCollapsed =
         window.getComputedStyle(content).display === 'none';
+    const collapsed = !isCollapsed;
 
-    setCardCollapseState(item, !isCollapsed || forceCollapse);
+    setCardCollapseState(item, collapsed);
+    persistCardState(abbreviation, collapsed);
 }
 
 async function generateAbbreviationTable() {
@@ -785,7 +803,7 @@ document.addEventListener('DOMContentLoaded', () => {
     applyGlobalContextSetting('window');
 
     document.querySelectorAll(
-        '.abbreviation-item[data-selected="true"]'
+        '.abbreviation-item[data-collapsed="true"]'
     ).forEach(item => setCardCollapseState(item, true));
 
     updateTablePreview();
@@ -806,7 +824,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const comparisonBlock = document.getElementById('comparison-block');
     if (tableCheckEnabled && comparisonBlock) {
         comparisonBlock.classList.remove('is-hidden');
-        updateDifferenceSection();
     }
 
     const tableDialog = document.getElementById('table-check-dialog');

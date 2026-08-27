@@ -13,6 +13,7 @@ class Abbreviation(TypedDict):
     abbreviation: str
     descriptions: List[str]
     selected_description: NotRequired[Optional[str]]
+    reviewed: NotRequired[bool]
     contexts: NotRequired[Optional[List[str]]]
     correct_form: NotRequired[Optional[str]]
     highlighted: NotRequired[Optional[List[HighlightedCharacter]]]
@@ -67,6 +68,7 @@ def update_abbreviation_selection(
 
     if action == 'skip':
         entry['selected_description'] = None
+        entry['reviewed'] = True
         return
 
     if action != 'add':
@@ -75,6 +77,7 @@ def update_abbreviation_selection(
         raise ValueError('Description is required')
 
     entry['selected_description'] = description
+    entry['reviewed'] = True
     if description in entry['descriptions']:
         return
 

@@ -309,10 +309,21 @@ footer p {
     padding: 0 14px;
     align-items: center;
     gap: 8px;
+    border-radius: var(--border-radius);
     color: var(--text-primary);
     font-weight: 600;
     cursor: pointer;
     list-style: none;
+    transition: background-color var(--transition-fast);
+}
+
+.workflow-tool[open] > .workflow-tool-summary {
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    background: var(--bg-accent);
+}
+
+.workflow-tool > .workflow-tool-summary:hover {
+    background: var(--bg-accent-hover);
 }
 
 .workflow-tool-summary::-webkit-details-marker {
