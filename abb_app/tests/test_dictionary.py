@@ -12,25 +12,13 @@ from abb_app.models import AbbreviationEntry
 from abb_app.views import dictionary_view
 
 
-class DictionaryViewTests(TestCase):
-    def test_dictionary_colors_only_homoglyph_letters(self):
+class DictionaryTests(TestCase):
+    def test_public_dictionary_shows_only_approved_entries_with_script_markup(self):
         AbbreviationEntry.objects.create(
             abbreviation='ЖA',
-            description='Test description',
+            description='Approved description',
             status='approved',
         )
-
-        request = RequestFactory().get('/dictionary/')
-        response = dictionary_view(request)
-        html = response.content.decode()
-
-        self.assertIn('<span>Ж</span>', html)
-        self.assertIn(
-            '<span class="homoglyph-latin" title="латиница">A</span>',
-            html,
-        )
-
-    def test_dictionary_hides_unapproved_entries(self):
         AbbreviationEntry.objects.create(
             abbreviation='XYZ',
             description='Pending description',
@@ -39,41 +27,37 @@ class DictionaryViewTests(TestCase):
 
         request = RequestFactory().get('/dictionary/')
         response = dictionary_view(request)
+        html = response.content.decode()
 
-        self.assertNotContains(response, 'Pending description')
+        self.assertIn('Approved description', html)
+        self.assertNotIn('Pending description', html)
+        self.assertIn('<span>Ж</span>', html)
+        self.assertIn(
+            '<span class="homoglyph-latin" title="латиница">A</span>',
+            html,
+        )
 
-
-class DictionaryAdminTests(TestCase):
-    def test_approved_homoglyph_duplicate_is_rejected(self):
+    def test_admin_allows_same_spelling_but_rejects_homoglyph_alias(self):
         AbbreviationEntry.objects.create(
             abbreviation='АТХ',
             description='Existing description',
             status='approved',
         )
 
-        form = AbbreviationEntryAdminForm(data={
-            'abbreviation': 'ATX',
-            'description': 'Another description',
-            'status': 'approved',
-        })
-
-        self.assertFalse(form.is_valid())
-        self.assertIn('abbreviation', form.errors)
-
-    def test_same_approved_spelling_can_have_another_description(self):
-        AbbreviationEntry.objects.create(
-            abbreviation='АТХ',
-            description='Existing description',
-            status='approved',
-        )
-
-        form = AbbreviationEntryAdminForm(data={
-            'abbreviation': 'АТХ',
-            'description': 'Another description',
-            'status': 'approved',
-        })
-
-        self.assertTrue(form.is_valid(), form.errors)
+        cases = [
+            ('АТХ', True),
+            ('ATX', False),
+        ]
+        for abbreviation, expected_valid in cases:
+            with self.subTest(abbreviation=abbreviation):
+                form = AbbreviationEntryAdminForm(data={
+                    'abbreviation': abbreviation,
+                    'description': 'Another description',
+                    'status': 'approved',
+                })
+                self.assertEqual(form.is_valid(), expected_valid)
+                if not expected_valid:
+                    self.assertIn('abbreviation', form.errors)
 
     def test_bulk_approval_skips_homoglyph_duplicate(self):
         AbbreviationEntry.objects.create(

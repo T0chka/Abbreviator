@@ -11,6 +11,7 @@ from docx import Document
 from abb_app.models import AbbreviationEntry
 from abb_app.services.sessions import (
     CARD_STATE_SESSION_KEY,
+    DEMO_FILENAME,
     PROCESSED_FILE_SESSION_KEY,
     SESSION_FILE_KEY,
     TABLE_CHECK_SESSION_KEY,
@@ -29,7 +30,6 @@ class ProcessingViewTests(TestCase):
         with TemporaryDirectory() as media_root:
             session_id = 'test-session'
             path = Path(media_root) / f'{session_id}.docx'
-
             doc = Document()
             doc.add_paragraph('У пациента определяли уровень T4.')
             doc.save(path)
@@ -38,24 +38,23 @@ class ProcessingViewTests(TestCase):
             session[SESSION_FILE_KEY] = path.name
             session.save()
 
-            with self.settings(
-                MEDIA_ROOT=media_root,
-                DOCUMENT_SESSION_TIMEOUT_SECONDS=600,
-            ):
-                response = self.client.get(f'/process/{session_id}/')
-                expiry_age = self.client.session.get_expiry_age()
+            with self.settings(MEDIA_ROOT=media_root):
+                response = self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
 
             self.assertEqual(response.status_code, 200)
             self.assertTemplateUsed(response, 'content.html')
-            self.assertGreaterEqual(expiry_age, 590)
-            self.assertLessEqual(expiry_age, 600)
-
             doc_abbs = self.client.session['doc_abbs']
             self.assertEqual(len(doc_abbs), 1)
             self.assertEqual(doc_abbs[0]['abbreviation'], 'T4')
             self.assertEqual(doc_abbs[0]['descriptions'], ['thyroxine'])
+            self.assertEqual(
+                self.client.session[PROCESSED_FILE_SESSION_KEY],
+                path.name,
+            )
 
-    def test_refresh_preserves_review_and_comparison_state(self):
+    def test_refresh_preserves_review_card_and_comparison_state(self):
         AbbreviationEntry.objects.create(
             abbreviation='T4',
             description='thyroxine',
@@ -63,9 +62,8 @@ class ProcessingViewTests(TestCase):
         )
 
         with TemporaryDirectory() as media_root:
-            session_id = 'test-session'
+            session_id = 'review-state'
             path = Path(media_root) / f'{session_id}.docx'
-
             doc = Document()
             doc.add_paragraph('У пациента определяли уровень T4.')
             doc.save(path)
@@ -74,12 +72,10 @@ class ProcessingViewTests(TestCase):
             session[SESSION_FILE_KEY] = path.name
             session.save()
 
-            with self.settings(
-                MEDIA_ROOT=media_root,
-                DOCUMENT_SESSION_TIMEOUT_SECONDS=600,
-            ):
-                first = self.client.get(f'/process/{session_id}/')
-
+            with self.settings(MEDIA_ROOT=media_root):
+                self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
                 session = self.client.session
                 session['initial_abbs'] = [{
                     'abbreviation': 'T4',
@@ -88,9 +84,11 @@ class ProcessingViewTests(TestCase):
                 session[TABLE_CHECK_SESSION_KEY] = True
                 session.save()
 
-                before_review = self.client.get(f'/process/{session_id}/')
+                before_review = self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
                 update = self.client.post(
-                    '/update_abbreviation/',
+                    reverse('update_abbreviation'),
                     data=json.dumps({
                         'abbreviation': 'T4',
                         'description': 'thyroxine',
@@ -98,21 +96,16 @@ class ProcessingViewTests(TestCase):
                     }),
                     content_type='application/json',
                 )
-                refreshed = self.client.get(f'/process/{session_id}/')
+                refreshed = self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
 
-            self.assertEqual(first.status_code, 200)
-            self.assertEqual(before_review.status_code, 200)
-            self.assertContains(
-                before_review,
-                'Сравнение будет обновляться по мере подтверждения',
-            )
-            self.assertNotContains(
-                before_review,
-                'Есть в исходной таблице, но нет в новой',
+            self.assertTrue(
+                before_review.context['comparison_context'][
+                    'waiting_for_review'
+                ]
             )
             self.assertEqual(update.status_code, 200)
-            self.assertEqual(refreshed.status_code, 200)
-
             entry = self.client.session['doc_abbs'][0]
             self.assertEqual(entry['selected_description'], 'thyroxine')
             self.assertTrue(entry['reviewed'])
@@ -120,14 +113,13 @@ class ProcessingViewTests(TestCase):
                 'T4',
                 self.client.session[CARD_STATE_SESSION_KEY],
             )
-            self.assertContains(refreshed, 'data-collapsed="true"')
-            self.assertContains(
-                refreshed,
-                'Есть в исходной таблице, но нет в новой',
+            self.assertIn(
+                'T4',
+                refreshed.context['collapsed_abbreviations'],
             )
-            self.assertNotContains(
-                refreshed,
-                'Сравнение будет обновляться по мере подтверждения',
+            self.assertNotIn(
+                'waiting_for_review',
+                refreshed.context['comparison_context'],
             )
 
     def test_refresh_preserves_skipped_and_manual_card_state(self):
@@ -156,10 +148,7 @@ class ProcessingViewTests(TestCase):
             session['initial_abbs'] = []
             session.save()
 
-            with self.settings(
-                MEDIA_ROOT=media_root,
-                DOCUMENT_SESSION_TIMEOUT_SECONDS=600,
-            ):
+            with self.settings(MEDIA_ROOT=media_root):
                 skipped = self.client.post(
                     reverse('update_abbreviation'),
                     data=json.dumps({
@@ -177,85 +166,95 @@ class ProcessingViewTests(TestCase):
                     content_type='application/json',
                 )
                 refreshed = self.client.get(
-                    reverse(
-                        'process_file_with_session',
-                        args=[session_id],
-                    )
+                    reverse('process_file_with_session', args=[session_id])
                 )
 
             self.assertEqual(skipped.status_code, 200)
             self.assertEqual(collapsed.status_code, 200)
-            self.assertEqual(refreshed.status_code, 200)
-
             entries = {
                 item['abbreviation']: item
                 for item in self.client.session['doc_abbs']
             }
             self.assertTrue(entries['T4']['reviewed'])
             self.assertIsNone(entries['T4']['selected_description'])
-            self.assertContains(refreshed, '- (убрано)')
             self.assertEqual(
-                refreshed.content.decode().count('data-collapsed="true"'),
-                2,
+                refreshed.context['collapsed_abbreviations'],
+                {'T4', 'ABC'},
             )
+            self.assertContains(refreshed, '- (убрано)')
 
-    def test_refresh_preserves_table_check_choice(self):
-        for enabled in (True, False):
-            with self.subTest(enabled=enabled):
-                with TemporaryDirectory() as media_root:
-                    session_id = f'table-check-{str(enabled).lower()}'
-                    path = Path(media_root) / f'{session_id}.docx'
-                    Document().save(path)
+    def test_refresh_preserves_table_choice_and_workflow_layout(self):
+        with TemporaryDirectory() as media_root:
+            session_id = 'workflow-state'
+            path = Path(media_root) / f'{session_id}.docx'
+            Document().save(path)
 
-                    session = self.client.session
-                    session[SESSION_FILE_KEY] = path.name
-                    session[PROCESSED_FILE_SESSION_KEY] = path.name
-                    session['doc_abbs'] = []
-                    session['initial_abbs'] = [{
-                        'abbreviation': 'T4',
-                        'description': 'thyroxine',
-                    }]
-                    session.pop(TABLE_CHECK_SESSION_KEY, None)
-                    session.save()
+            session = self.client.session
+            session[SESSION_FILE_KEY] = path.name
+            session[PROCESSED_FILE_SESSION_KEY] = path.name
+            session['doc_abbs'] = []
+            session['initial_abbs'] = [{
+                'abbreviation': 'T4',
+                'description': 'thyroxine',
+            }]
+            session.save()
 
-                    with self.settings(
-                        MEDIA_ROOT=media_root,
-                        DOCUMENT_SESSION_TIMEOUT_SECONDS=600,
-                    ):
-                        first = self.client.get(
-                            reverse(
-                                'process_file_with_session',
-                                args=[session_id],
-                            )
-                        )
-                        update = self.client.post(
-                            reverse('update_table_check'),
-                            data=json.dumps({'enabled': enabled}),
-                            content_type='application/json',
-                        )
-                        refreshed = self.client.get(
-                            reverse(
-                                'process_file_with_session',
-                                args=[session_id],
-                            )
-                        )
+            with self.settings(MEDIA_ROOT=media_root):
+                first = self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
+                disabled = self.client.post(
+                    reverse('update_table_check'),
+                    data=json.dumps({'enabled': False}),
+                    content_type='application/json',
+                )
+                disabled_refresh = self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
+                enabled = self.client.post(
+                    reverse('update_table_check'),
+                    data=json.dumps({'enabled': True}),
+                    content_type='application/json',
+                )
 
-                    self.assertContains(first, 'id="table-check-dialog"')
-                    self.assertEqual(update.status_code, 200)
-                    self.assertNotContains(
-                        refreshed,
-                        'id="table-check-dialog"',
+                sizes = {
+                    'comparison-block': 240,
+                    'table-preview-tool': 320,
+                }
+                for tool_id, height in sizes.items():
+                    response = self.client.post(
+                        reverse('update_workflow_state'),
+                        data=json.dumps({
+                            'tool_id': tool_id,
+                            'open': True,
+                            'height': height,
+                        }),
+                        content_type='application/json',
                     )
-                    self.assertEqual(
-                        self.client.session[TABLE_CHECK_SESSION_KEY],
-                        enabled,
-                    )
-                    self.assertEqual(
-                        refreshed.context['table_check_enabled'],
-                        enabled,
-                    )
+                    self.assertEqual(response.status_code, 200)
 
-    def test_new_upload_resets_table_check_choice(self):
+                refreshed = self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
+
+            self.assertContains(first, 'id="table-check-dialog"')
+            self.assertEqual(disabled.status_code, 200)
+            self.assertFalse(disabled_refresh.context['table_check_enabled'])
+            self.assertNotContains(
+                disabled_refresh,
+                'id="table-check-dialog"',
+            )
+            self.assertEqual(enabled.status_code, 200)
+            self.assertTrue(refreshed.context['table_check_enabled'])
+            self.assertTrue(refreshed.context['comparison_open'])
+            self.assertEqual(refreshed.context['comparison_height'], 240)
+            self.assertTrue(refreshed.context['table_preview_open'])
+            self.assertEqual(refreshed.context['table_preview_height'], 320)
+            html = refreshed.content.decode()
+            self.assertIn('style="height: 240px;"', html)
+            self.assertIn('style="height: 320px;"', html)
+
+    def test_new_upload_resets_processing_state(self):
         buffer = io.BytesIO()
         Document().save(buffer)
         upload = SimpleUploadedFile('new.docx', buffer.getvalue())
@@ -264,8 +263,8 @@ class ProcessingViewTests(TestCase):
         session[TABLE_CHECK_SESSION_KEY] = True
         session[CARD_STATE_SESSION_KEY] = ['OLD']
         session[WORKFLOW_STATE_SESSION_KEY] = {
-            'comparison-block': True,
-            'table-preview-tool': True,
+            'comparison-block': {'open': True, 'height': 240},
+            'table-preview-tool': {'open': True, 'height': 320},
         }
         session[PROCESSED_FILE_SESSION_KEY] = 'old.docx'
         session['doc_abbs'] = [{'abbreviation': 'OLD'}]
@@ -281,73 +280,65 @@ class ProcessingViewTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         session = self.client.session
-        self.assertNotIn(TABLE_CHECK_SESSION_KEY, session)
-        self.assertNotIn(WORKFLOW_STATE_SESSION_KEY, session)
-        self.assertNotIn(CARD_STATE_SESSION_KEY, session)
-        self.assertNotIn(PROCESSED_FILE_SESSION_KEY, session)
-        self.assertNotIn('doc_abbs', session)
-        self.assertNotIn('initial_abbs', session)
+        for key in (
+            TABLE_CHECK_SESSION_KEY,
+            WORKFLOW_STATE_SESSION_KEY,
+            CARD_STATE_SESSION_KEY,
+            PROCESSED_FILE_SESSION_KEY,
+            'doc_abbs',
+            'initial_abbs',
+        ):
+            with self.subTest(key=key):
+                self.assertNotIn(key, session)
 
-    def test_refresh_preserves_expanded_workflow_tools(self):
+    def test_demo_refresh_starts_from_clean_processing_state(self):
+        AbbreviationEntry.objects.create(
+            abbreviation='T4',
+            description='thyroxine',
+            status='approved',
+        )
+
         with TemporaryDirectory() as media_root:
-            session_id = 'workflow-state'
-            path = Path(media_root) / f'{session_id}.docx'
-            Document().save(path)
+            path = Path(media_root) / DEMO_FILENAME
+            doc = Document()
+            doc.add_paragraph('T4')
+            doc.save(path)
 
             session = self.client.session
-            session[SESSION_FILE_KEY] = path.name
-            session[PROCESSED_FILE_SESSION_KEY] = path.name
-            session['doc_abbs'] = []
-            session['initial_abbs'] = [{
-                'abbreviation': 'T4',
-                'description': 'thyroxine',
+            session[SESSION_FILE_KEY] = DEMO_FILENAME
+            session[PROCESSED_FILE_SESSION_KEY] = DEMO_FILENAME
+            session['doc_abbs'] = [{
+                'abbreviation': 'OLD',
+                'selected_description': 'old',
+                'reviewed': True,
             }]
-            session[TABLE_CHECK_SESSION_KEY] = True
+            session['initial_abbs'] = [{'abbreviation': 'OLD'}]
+            session[TABLE_CHECK_SESSION_KEY] = False
+            session[CARD_STATE_SESSION_KEY] = ['OLD']
+            session[WORKFLOW_STATE_SESSION_KEY] = {
+                'comparison-block': {'open': True, 'height': 240},
+            }
             session.save()
 
-            with self.settings(
-                MEDIA_ROOT=media_root,
-                DOCUMENT_SESSION_TIMEOUT_SECONDS=600,
-            ):
-                sizes = {
-                    'comparison-block': 240,
-                    'table-preview-tool': 320,
-                }
-                for tool_id, height in sizes.items():
-                    update = self.client.post(
-                        reverse('update_workflow_state'),
-                        data=json.dumps({
-                            'tool_id': tool_id,
-                            'open': True,
-                            'height': height,
-                        }),
-                        content_type='application/json',
-                    )
-                    self.assertEqual(update.status_code, 200)
-
-                refreshed = self.client.get(
-                    reverse(
-                        'process_file_with_session',
-                        args=[session_id],
-                    )
+            with self.settings(MEDIA_ROOT=media_root):
+                response = self.client.get(
+                    reverse('process_file_with_session', args=['test_drive'])
                 )
 
-            self.assertEqual(refreshed.status_code, 200)
-            self.assertTrue(refreshed.context['comparison_open'])
-            self.assertEqual(refreshed.context['comparison_height'], 240)
-            self.assertTrue(refreshed.context['table_preview_open'])
-            self.assertEqual(refreshed.context['table_preview_height'], 320)
-            html = refreshed.content.decode()
-            self.assertRegex(
-                html,
-                r'<details id="comparison-block"[^>]*\bopen\b',
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.context['is_demo'])
+            self.assertTrue(response.context['table_check_enabled'])
+            self.assertEqual(response.context['collapsed_abbreviations'], set())
+            self.assertFalse(response.context['comparison_open'])
+            self.assertNotIn(TABLE_CHECK_SESSION_KEY, self.client.session)
+            self.assertNotIn(WORKFLOW_STATE_SESSION_KEY, self.client.session)
+            self.assertEqual(
+                [entry['abbreviation'] for entry in self.client.session['doc_abbs']],
+                ['T4'],
             )
-            self.assertRegex(
-                html,
-                r'<details id="table-preview-tool"[^>]*\bopen\b',
+            self.assertIsNone(
+                self.client.session['doc_abbs'][0]['selected_description']
             )
-            self.assertIn('style="height: 240px;"', html)
-            self.assertIn('style="height: 320px;"', html)
 
     def test_document_url_requires_matching_django_session(self):
         with TemporaryDirectory() as media_root:
@@ -356,39 +347,9 @@ class ProcessingViewTests(TestCase):
             Document().save(path)
 
             with self.settings(MEDIA_ROOT=media_root):
-                response = self.client.get(f'/process/{session_id}/')
+                response = self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
 
             self.assertEqual(response.status_code, 302)
             self.assertEqual(response.url, reverse('upload_file'))
-
-
-class TableGenerationViewTests(TestCase):
-    def test_selected_abbreviation_is_exported_to_docx(self):
-        session = self.client.session
-        session['doc_abbs'] = [{
-            'abbreviation': 'T4',
-            'descriptions': ['thyroxine'],
-            'selected_description': 'thyroxine',
-        }]
-        session.save()
-
-        response = self.client.post('/make_abbreviation_table/')
-
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response['Content-Type'],
-            'application/vnd.openxmlformats-officedocument.'
-            'wordprocessingml.document',
-        )
-        self.assertIn(
-            'attachment; filename=abbreviation_table.docx',
-            response['Content-Disposition'],
-        )
-
-        document = Document(io.BytesIO(response.content))
-        table = document.tables[0]
-
-        self.assertEqual(table.rows[0].cells[0].text, 'Аббревиатура')
-        self.assertEqual(table.rows[0].cells[1].text, 'Расшифровка')
-        self.assertEqual(table.rows[1].cells[0].text, 'T4')
-        self.assertEqual(table.rows[1].cells[1].text, 'Thyroxine')

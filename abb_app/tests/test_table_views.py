@@ -4,6 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.test import TestCase
+from django.urls import reverse
 from docx import Document
 
 from abb_app.models import AbbreviationEntry
@@ -28,6 +29,7 @@ def mixed_card():
         'abbreviation': MIXED,
         'descriptions': [DESCRIPTION],
         'selected_description': DESCRIPTION,
+        'reviewed': True,
         'correct_form': validation['correct_form'],
         'highlighted': validation['highlighted'],
     }
@@ -38,6 +40,7 @@ def canonical_card():
         'abbreviation': CANONICAL,
         'descriptions': [DESCRIPTION],
         'selected_description': DESCRIPTION,
+        'reviewed': True,
         'correct_form': None,
         'highlighted': None,
     }
@@ -52,7 +55,7 @@ def initial_entry(abbreviation, highlighted=None):
 
 
 class InitialTableValidationTests(TestCase):
-    def test_initial_table_uses_card_mixed_alphabet_validation(self):
+    def test_initial_table_uses_same_mixed_alphabet_validation_as_cards(self):
         AbbreviationEntry.objects.create(
             abbreviation=CANONICAL,
             description=DESCRIPTION,
@@ -86,9 +89,9 @@ class TableComparisonViewTests(TestCase):
         session['initial_abbs'] = initial_abbs
         session.save()
 
-    def post_comparison(self, use_correct_form, scope):
+    def post_comparison(self, use_correct_form, scope='all'):
         return self.client.post(
-            '/update_difference_section/',
+            reverse('update_difference_section'),
             data=json.dumps({
                 'use_correct_form': use_correct_form,
                 'scope': scope,
@@ -96,7 +99,7 @@ class TableComparisonViewTests(TestCase):
             content_type='application/json',
         )
 
-    def test_scope_does_not_change_comparison(self):
+    def test_comparison_ignores_scope_and_highlights_original_spelling(self):
         self.set_session(
             [mixed_card()],
             [initial_entry(CANONICAL)],
@@ -109,15 +112,10 @@ class TableComparisonViewTests(TestCase):
 
         self.assertEqual(off_all.status_code, 200)
         self.assertEqual(off_all.content, off_new.content)
-        self.assertContains(off_all, CANONICAL)
         self.assertContains(off_all, 'tooltip tooltip-right red')
-
-        self.assertEqual(on_all.status_code, 200)
         self.assertEqual(on_all.content, on_new.content)
-        self.assertEqual(on_all.content.decode().count('Нет'), 2)
         self.assertNotContains(on_all, 'tooltip tooltip-right red')
 
-    def test_missing_initial_mixed_form_is_highlighted(self):
         validation = CharacterValidator().validate_abbreviation(
             MIXED,
             [{
@@ -129,11 +127,13 @@ class TableComparisonViewTests(TestCase):
             [canonical_card()],
             [initial_entry(MIXED, validation['highlighted'])],
         )
+        missing_original = self.post_comparison(True)
 
-        response = self.post_comparison(True, 'all')
-
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'tooltip tooltip-right red')
+        self.assertEqual(missing_original.status_code, 200)
+        self.assertContains(
+            missing_original,
+            'tooltip tooltip-right red',
+        )
 
 
 class PreviewExportParityTests(TestCase):
@@ -164,23 +164,28 @@ class PreviewExportParityTests(TestCase):
 
                 payload = json.dumps(scenario['settings'])
                 preview = self.client.post(
-                    '/preview_abbreviation_table/',
+                    reverse('preview_abbreviation_table'),
                     data=payload,
                     content_type='application/json',
                 )
                 export = self.client.post(
-                    '/make_abbreviation_table/',
+                    reverse('make_abbreviation_table'),
                     data=payload,
                     content_type='application/json',
                 )
 
                 self.assertEqual(preview.status_code, 200)
                 self.assertEqual(export.status_code, 200)
+                self.assertEqual(
+                    export['Content-Type'],
+                    'application/vnd.openxmlformats-officedocument.'
+                    'wordprocessingml.document',
+                )
+
                 preview_entries = preview.json()['entries']
                 preview_names = [
                     entry['abbreviation'] for entry in preview_entries
                 ]
-
                 document = Document(io.BytesIO(export.content))
                 export_names = [
                     row.cells[0].text

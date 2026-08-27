@@ -21,8 +21,7 @@ ALLOWED_HOSTS = ['datadelic.dev', '127.0.0.1']
 SESSION_COOKIE_SECURE = not DEBUG
 CSRF_COOKIE_SECURE = not DEBUG
 
-if not DEBUG:
-    FORCE_SCRIPT_NAME = '/abbreviator/'
+FORCE_SCRIPT_NAME = os.environ.get('DJANGO_FORCE_SCRIPT_NAME') or None
 
 INSTALLED_APPS = [
     'django.contrib.admin',

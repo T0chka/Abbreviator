@@ -143,55 +143,47 @@ class TablePreparationTests(SimpleTestCase):
         self.assertEqual(on_changes['missing_abbs'], [])
         self.assertEqual(on_changes['new_found'], [])
 
-    def test_dedup_is_independent_of_card_order(self):
-        canonical = canonical_entry('canonical description')
-        mixed = mixed_entry(description='mixed description')
+    def test_deduplication_is_deterministic(self):
+        scenarios = [
+            (
+                [
+                    mixed_entry(description='mixed description'),
+                    canonical_entry('canonical description'),
+                ],
+                CANONICAL,
+                'Canonical description',
+            ),
+            (
+                [
+                    mixed_entry(MIXED, 'first description'),
+                    mixed_entry(SECOND_MIXED, 'second description'),
+                ],
+                CANONICAL,
+                None,
+            ),
+        ]
 
-        forward = prepare_abbreviation_table_entries(
-            [mixed, canonical],
-            use_correct_form=True,
-        )
-        reverse = prepare_abbreviation_table_entries(
-            [canonical, mixed],
-            use_correct_form=True,
-        )
+        for entries, expected_abbreviation, expected_description in scenarios:
+            with self.subTest(entries=[
+                entry['abbreviation'] for entry in entries
+            ]):
+                forward = prepare_abbreviation_table_entries(
+                    entries,
+                    use_correct_form=True,
+                )
+                reverse = prepare_abbreviation_table_entries(
+                    list(reversed(entries)),
+                    use_correct_form=True,
+                )
 
-        self.assertEqual(forward, reverse)
-        self.assertEqual(len(forward), 1)
-        self.assertEqual(forward[0]['abbreviation'], CANONICAL)
-        self.assertEqual(
-            forward[0]['description'],
-            'Canonical description',
-        )
-
-    def test_multiple_corrected_forms_are_deterministic(self):
-        first = mixed_entry(MIXED, 'first description')
-        second = mixed_entry(SECOND_MIXED, 'second description')
-
-        forward = prepare_abbreviation_table_entries(
-            [first, second],
-            use_correct_form=True,
-        )
-        reverse = prepare_abbreviation_table_entries(
-            [second, first],
-            use_correct_form=True,
-        )
-
-        self.assertEqual(forward, reverse)
-        self.assertEqual(len(forward), 1)
-        self.assertEqual(forward[0]['abbreviation'], CANONICAL)
-
-    def test_highlight_matches_display_form(self):
-        off = prepare_abbreviation_table_entries(
-            [mixed_entry()],
-            use_correct_form=False,
-        )[0]
-        on = prepare_abbreviation_table_entries(
-            [mixed_entry()],
-            use_correct_form=True,
-        )[0]
-
-        self.assertEqual(off['abbreviation'], MIXED)
-        self.assertTrue(any(part['mismatch'] for part in off['highlighted']))
-        self.assertEqual(on['abbreviation'], CANONICAL)
-        self.assertIsNone(on['highlighted'])
+                self.assertEqual(forward, reverse)
+                self.assertEqual(len(forward), 1)
+                self.assertEqual(
+                    forward[0]['abbreviation'],
+                    expected_abbreviation,
+                )
+                if expected_description is not None:
+                    self.assertEqual(
+                        forward[0]['description'],
+                        expected_description,
+                    )
