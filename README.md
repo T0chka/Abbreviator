@@ -4,48 +4,39 @@
 
 [![CI](https://github.com/T0chka/Abbreviator/actions/workflows/ci.yml/badge.svg)](https://github.com/T0chka/Abbreviator/actions/workflows/ci.yml)
 
-[Live demo](https://datadelic.dev/abbreviator/) | [Source code](https://github.com/T0chka/Abbreviator)
+[Live demo](https://datadelic.dev/abbreviator/)
 
-Abbreviator is a Django web application for turning abbreviations found in Word documents into a reviewed abbreviation table. It extracts abbreviations with their surrounding context, checks them against a curated dictionary, helps resolve missing descriptions, compares the reviewed result with an existing abbreviation table, and exports the final table back to `.docx`.
+Abbreviator is a Django web application for turning abbreviations found in Word documents into a final abbreviation table. It extracts abbreviations with their surrounding context, checks them against a curated dictionary, helps resolve missing descriptions, optionally compares the result with an existing abbreviation table, and exports the final table back to `.docx`.
 
-The bundled dictionary and optional AI prompt are aimed at medical and scientific documents. The document-processing and review workflow itself is not tied to a specific therapeutic area or study type.
+The bundled dictionary is aimed at medical and scientific documents. The extraction, review, and AI suggestion workflow itself is not tied to a specific therapeutic area or study type.
 
 ## Workflow
 
-```text
-DOCX document
-    ↓
-Abbreviation extraction + context collection
-    ↓
-Dictionary lookup + Cyrillic/Latin homoglyph checks
-    ↓
-Human review + optional AI suggestion
-    ↓
-Comparison with the document's existing abbreviation table
-    ↓
-Preview and configurable table generation
-    ↓
-Reviewed DOCX export
-```
+1. **Upload a DOCX document.**
+   Abbreviator extracts abbreviations and collects surrounding context while preserving document order.
 
-The live site includes a guided demo using a bundled sample document, so the full workflow can be explored without uploading a file.
+2. **Check abbreviations against the dictionary.**
+   The application can suggest one or more approved descriptions from the curated dictionary and detects visually ambiguous Cyrillic/Latin homoglyphs. If enabled, mixed-alphabet spelling can be normalized to the approved dictionary form.
 
-## Key features
+3. **Process each abbreviation.**
+   The user can select one of the available descriptions, enter a description manually, request an optional AI suggestion, or remove the abbreviation from the final table. Context-display settings can be configured globally and overridden for individual abbreviations.
 
-- Extracts abbreviations from `.docx` documents and keeps context in document order.
-- Suggests one or more approved descriptions from a curated dictionary.
-- Allows each abbreviation to be confirmed, removed, or entered manually.
-- Detects visually ambiguous Cyrillic/Latin homoglyphs and can normalize spelling to the approved dictionary form.
-- Compares the reviewed abbreviations with a table already present in the source document.
-- Provides global context-display settings with per-abbreviation overrides.
-- Generates a configurable abbreviation table with an in-browser preview.
-- Exports the reviewed table back to Word.
-- Preserves review state across page refreshes for the active document.
-- Provides a read-only public dictionary and a separate Django admin moderation workflow.
+4. **Optionally compare the result with an abbreviation table already present in the document.**
+   When an existing table is detected, the user can enable comparison and see how the processed abbreviations differ from the source table.
+
+5. **Preview and configure the final table.**
+   The generated table can be previewed in the browser and adjusted before export.
+
+6. **Export the result back to Word.**
+   Abbreviator generates the final abbreviation table and inserts it into the `.docx` document.
+
+The active processing state is preserved across page refreshes, including selected descriptions and workflow state. A read-only public dictionary is available separately, while dictionary moderation is handled through Django admin.
+
+The live site also includes a guided demo using a bundled sample document, so the full workflow can be explored without uploading a file.
 
 ## Optional AI suggestions
 
-AI generation is deliberately secondary to the dictionary and manual review workflow. It is requested for an individual abbreviation only after explicit user confirmation.
+AI generation is deliberately secondary to the dictionary and manual workflow. It is requested for an individual abbreviation only after explicit user action.
 
 For an AI request, Abbreviator sends only:
 
