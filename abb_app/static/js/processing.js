@@ -3,6 +3,8 @@ const processingConfig = document.getElementById('processing-config');
 const processingUrls = {
     update: processingConfig.dataset.updateUrl,
     difference: processingConfig.dataset.differenceUrl,
+    tableCheck: processingConfig.dataset.tableCheckUrl,
+    workflowState: processingConfig.dataset.workflowStateUrl,
     export: processingConfig.dataset.exportUrl,
     preview: processingConfig.dataset.previewUrl,
     generate: processingConfig.dataset.generateUrl
@@ -166,15 +168,31 @@ function toggleGlobalSettings() {
     );
 }
 
-function chooseTableCheck(enabled) {
-    tableCheckEnabled = enabled;
-    const comparisonBlock = document.getElementById('comparison-block');
+async function chooseTableCheck(enabled) {
+    try {
+        const response = await fetchWrapper(
+            processingUrls.tableCheck,
+            {enabled}
+        );
+        if (!response.ok) {
+            throw new Error(
+                response.data?.error || 'Не удалось сохранить выбор'
+            );
+        }
 
-    if (comparisonBlock) {
-        comparisonBlock.classList.toggle('is-hidden', !enabled);
+        tableCheckEnabled = enabled;
+        const comparisonBlock = document.getElementById('comparison-block');
+        if (comparisonBlock) {
+            comparisonBlock.classList.toggle('is-hidden', !enabled);
+        }
+
+        document.getElementById('table-check-dialog')?.close();
+        if (enabled) {
+            updateDifferenceSection();
+        }
+    } catch (error) {
+        alert(`Не удалось сохранить выбор: ${error.message}`);
     }
-
-    document.getElementById('table-check-dialog').close();
 }
 
 async function updateDifferenceSection() {
@@ -600,11 +618,15 @@ function stopWorkflowResize(event) {
         return;
     }
 
-    if (workflowResize.handle.hasPointerCapture(event.pointerId)) {
-        workflowResize.handle.releasePointerCapture(event.pointerId);
+    const { body, handle } = workflowResize;
+    if (handle.hasPointerCapture(event.pointerId)) {
+        handle.releasePointerCapture(event.pointerId);
     }
     workflowResize = null;
     document.body.classList.remove('is-resizing-workflow');
+
+    const details = body.closest('.workflow-tool');
+    persistWorkflowState(details, body.getBoundingClientRect().height);
 }
 
 document.addEventListener('click', event => {
@@ -731,15 +753,48 @@ function updateWorkflowToggle(details) {
         : 'Развернуть';
 }
 
+async function persistWorkflowState(details, height = null) {
+    if (!processingUrls.workflowState || !details?.id) return;
+
+    const payload = {
+        tool_id: details.id,
+        open: details.open,
+    };
+    if (height !== null) payload.height = Math.round(height);
+
+    try {
+        const response = await fetch(processingUrls.workflowState, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: JSON.stringify(payload),
+            keepalive: true,
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+    } catch (error) {
+        console.error('Failed to save workflow state:', error);
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     applyGlobalContextSetting('limit');
     applyGlobalContextSetting('window');
+
+    document.querySelectorAll(
+        '.abbreviation-item[data-selected="true"]'
+    ).forEach(item => setCardCollapseState(item, true));
+
     updateTablePreview();
 
     document.querySelectorAll('.workflow-tool').forEach(details => {
         updateWorkflowToggle(details);
         details.addEventListener('toggle', () => {
             updateWorkflowToggle(details);
+            persistWorkflowState(details);
         });
     });
 
@@ -751,6 +806,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const comparisonBlock = document.getElementById('comparison-block');
     if (tableCheckEnabled && comparisonBlock) {
         comparisonBlock.classList.remove('is-hidden');
+        updateDifferenceSection();
     }
 
     const tableDialog = document.getElementById('table-check-dialog');

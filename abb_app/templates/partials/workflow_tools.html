@@ -1,7 +1,8 @@
 <div id="workflow-tools" class="workflow-tools">
     {% if has_initial_abbs %}
     <details id="comparison-block"
-             class="workflow-tool {% if not is_demo %}is-hidden{% endif %}">
+             class="workflow-tool {% if not table_check_enabled %}is-hidden{% endif %}"
+             {% if comparison_open %}open{% endif %}>
         <summary class="workflow-tool-summary">
             <span class="material-icons-outlined workflow-tool-icon">fact_check</span>
             <span class="workflow-tool-label">Проверка таблицы сокращений</span>
@@ -10,7 +11,8 @@
                 <span class="tooltiptext">Развернуть</span>
             </span>
         </summary>
-        <div class="workflow-tool-body">
+        <div class="workflow-tool-body"{% if comparison_height %}
+             style="height: {{ comparison_height }}px;"{% endif %}>
             <div id="differences-section">
                 <p>В исходной таблице: {{ initial_abbs_count }} сокращений.</p>
                 <p>
@@ -23,7 +25,8 @@
     </details>
     {% endif %}
 
-    <details id="table-preview-tool" class="workflow-tool">
+    <details id="table-preview-tool" class="workflow-tool"
+             {% if table_preview_open %}open{% endif %}>
         <summary class="workflow-tool-summary">
             <span class="material-icons-outlined workflow-tool-icon">table_view</span>
             <span class="workflow-tool-label">Итоговая таблица</span>
@@ -32,7 +35,8 @@
                 <span class="tooltiptext">Развернуть</span>
             </span>
         </summary>
-        <div class="workflow-tool-body">
+        <div class="workflow-tool-body"{% if table_preview_height %}
+             style="height: {{ table_preview_height }}px;"{% endif %}>
             <p id="table-preview-empty" class="table-preview-empty">
                 В итоговой таблице пока нет строк.
             </p>

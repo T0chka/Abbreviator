@@ -9,6 +9,8 @@ from django.http import HttpRequest
 DEMO_FILENAME = 'test_drive.docx'
 SESSION_FILE_KEY = 'uploaded_file_path'
 PROCESSED_FILE_SESSION_KEY = 'processed_file_path'
+TABLE_CHECK_SESSION_KEY = 'table_check_enabled'
+WORKFLOW_STATE_SESSION_KEY = 'workflow_tools_open'
 
 
 def delete_session_document(request: HttpRequest) -> None:

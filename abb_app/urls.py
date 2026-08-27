@@ -12,6 +12,8 @@ from .views import (
     touch_document_session,
     update_abbreviation,
     update_difference_section,
+    update_table_check,
+    update_workflow_state,
     upload_file,
 )
 
@@ -37,4 +39,8 @@ urlpatterns = [
          name='update_abbreviation'),
     path('update_difference_section/', update_difference_section,
          name='update_difference_section'),
+    path('update_table_check/', update_table_check,
+         name='update_table_check'),
+    path('update_workflow_state/', update_workflow_state,
+         name='update_workflow_state'),
 ]

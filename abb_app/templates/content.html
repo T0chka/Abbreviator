@@ -21,10 +21,12 @@
 <div id="processing-config"
      data-update-url="{% url 'update_abbreviation' %}"
      data-difference-url="{% url 'update_difference_section' %}"
+     data-table-check-url="{% url 'update_table_check' %}"
+     data-workflow-state-url="{% if not is_demo %}{% url 'update_workflow_state' %}{% endif %}"
      data-export-url="{% url 'make_abbreviation_table' %}"
      data-preview-url="{% url 'preview_abbreviation_table' %}"
      data-generate-url="{% url 'generate_description' %}"
-     data-compare-with-existing="{{ is_demo|yesno:'true,false' }}"
+     data-compare-with-existing="{{ table_check_enabled|yesno:'true,false' }}"
      hidden></div>
 
 <dialog id="llm-consent-dialog" class="app-dialog llm-consent-dialog">
@@ -56,7 +58,7 @@
 
 {% if is_demo %}
 {% include 'partials/demo_tour.html' %}
-{% elif has_initial_abbs %}
+{% elif show_table_check_dialog %}
 <dialog id="table-check-dialog" class="app-dialog table-check-dialog">
     <h3>В документе найдена таблица сокращений</h3>
     <p>
@@ -85,7 +87,9 @@
 <!-- Section with abbreviation list -->
 <div class="abbreviation-list">
     {% for abb in doc_abbs %}
-    <div class="abbreviation-item" data-abbreviation="{{ abb.abbreviation }}">
+    <div class="abbreviation-item"
+         data-abbreviation="{{ abb.abbreviation }}"
+         data-selected="{{ abb.selected_description|yesno:'true,false' }}">
         <!-- Clickable title area -->
         <div class="abb-title" data-processing-action="toggle-abbreviation">
             <div class="abb-title-left" data-abb="{{ abb.abbreviation }}">

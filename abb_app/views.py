@@ -35,6 +35,8 @@ from .services.sessions import (
     DEMO_FILENAME,
     PROCESSED_FILE_SESSION_KEY,
     SESSION_FILE_KEY,
+    TABLE_CHECK_SESSION_KEY,
+    WORKFLOW_STATE_SESSION_KEY,
     delete_session_document,
     refresh_document_session,
 )
@@ -50,6 +52,7 @@ CONTEXT_WINDOWS = {25, 50, 75, 100, 150}
 TABLE_SORT_MODES = {'alphabetical', 'appearance'}
 TABLE_SCRIPT_ORDERS = {'cyrillic_first', 'latin_first'}
 TABLE_SCOPES = {'all', 'new'}
+WORKFLOW_TOOL_IDS = {'comparison-block', 'table-preview-tool'}
 
 
 def parse_context_limit(value: Any) -> Optional[int]:
@@ -177,6 +180,11 @@ def upload_file(request: HttpRequest) -> HttpResponse:
         )
 
     delete_session_document(request)
+    request.session.pop(PROCESSED_FILE_SESSION_KEY, None)
+    request.session.pop('doc_abbs', None)
+    request.session.pop('initial_abbs', None)
+    request.session.pop(TABLE_CHECK_SESSION_KEY, None)
+    request.session.pop(WORKFLOW_STATE_SESSION_KEY, None)
 
     requested_id = generate_session_id()
     filename = FileSystemStorage().save(
@@ -339,6 +347,57 @@ def update_abbreviation(request: HttpRequest) -> JsonResponse:
     return JsonResponse({'success': True})
 
 
+@require_http_methods(['POST'])
+def update_workflow_state(request: HttpRequest) -> JsonResponse:
+    try:
+        data = parse_request_json(request)
+        tool_id = data.get('tool_id')
+        is_open = data.get('open')
+        height = data.get('height')
+        if tool_id not in WORKFLOW_TOOL_IDS:
+            raise ValueError('Unknown workflow tool')
+        if not isinstance(is_open, bool):
+            raise ValueError('Boolean open value required')
+        if height is not None:
+            if isinstance(height, bool) or not isinstance(height, (int, float)):
+                raise ValueError('Numeric height value required')
+            if not 110 <= height <= 2000:
+                raise ValueError('Workflow height is out of range')
+            height = round(height)
+    except ValueError as exc:
+        return JsonResponse(
+            {'success': False, 'error': str(exc)},
+            status=400,
+        )
+
+    state = request.session.get(WORKFLOW_STATE_SESSION_KEY, {})
+    tool_state = state.get(tool_id, {})
+    if not isinstance(tool_state, dict):
+        tool_state = {'open': bool(tool_state)}
+    tool_state['open'] = is_open
+    if height is not None:
+        tool_state['height'] = height
+    state[tool_id] = tool_state
+    request.session[WORKFLOW_STATE_SESSION_KEY] = state
+    return JsonResponse({'success': True})
+
+
+@require_http_methods(['POST'])
+def update_table_check(request: HttpRequest) -> JsonResponse:
+    try:
+        enabled = parse_request_json(request).get('enabled')
+        if not isinstance(enabled, bool):
+            raise ValueError('Boolean enabled value required')
+    except ValueError as exc:
+        return JsonResponse(
+            {'success': False, 'error': str(exc)},
+            status=400,
+        )
+
+    request.session[TABLE_CHECK_SESSION_KEY] = enabled
+    return JsonResponse({'success': True})
+
+
 def process_and_display(
     request: HttpRequest,
     is_demo: bool = False,
@@ -371,6 +430,23 @@ def process_and_display(
         request.session['doc_abbs'] = doc_abbs
         request.session['initial_abbs'] = initial_abbs
         request.session[PROCESSED_FILE_SESSION_KEY] = file_name
+
+    table_check_enabled = (
+        is_demo or request.session.get(TABLE_CHECK_SESSION_KEY) is True
+    )
+    show_table_check_dialog = (
+        not is_demo
+        and bool(initial_abbs)
+        and TABLE_CHECK_SESSION_KEY not in request.session
+    )
+    workflow_state = request.session.get(WORKFLOW_STATE_SESSION_KEY, {})
+    comparison_state = workflow_state.get('comparison-block', {})
+    table_preview_state = workflow_state.get('table-preview-tool', {})
+    if not isinstance(comparison_state, dict):
+        comparison_state = {'open': bool(comparison_state)}
+    if not isinstance(table_preview_state, dict):
+        table_preview_state = {'open': bool(table_preview_state)}
+
     return render(
         request,
         'content.html',
@@ -379,6 +455,14 @@ def process_and_display(
             'has_initial_abbs': bool(initial_abbs),
             'initial_abbs_count': len(initial_abbs),
             'is_demo': is_demo,
+            'table_check_enabled': table_check_enabled,
+            'show_table_check_dialog': show_table_check_dialog,
+            'comparison_open': bool(comparison_state.get('open', False)),
+            'comparison_height': comparison_state.get('height'),
+            'table_preview_open': bool(
+                table_preview_state.get('open', False)
+            ),
+            'table_preview_height': table_preview_state.get('height'),
             'llm_model': settings.GIGACHAT_MODEL,
             'document_session_timeout_ms': (
                 settings.DOCUMENT_SESSION_TIMEOUT_SECONDS * 1000
