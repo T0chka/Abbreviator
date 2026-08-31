@@ -16,10 +16,11 @@
      hidden></div>
 
 <dialog id="bibliography-review-dialog"
-        class="app-dialog bibliography-review-dialog">
+        class="app-dialog bibliography-review-dialog"
+        aria-labelledby="bibliography-review-title">
     <form method="post">
         {% csrf_token %}
-        <h3>
+        <h3 id="bibliography-review-title" tabindex="-1" autofocus>
             Из анализа исключены разделы, распознанные как список
             литературы
         </h3>
@@ -50,16 +51,7 @@
     </form>
 </dialog>
 
-<div id="loading-overlay" class="is-hidden" aria-live="polite">
-    <div class="loading-content">
-        <p>Обработка документа</p>
-        <div class="dot-loader" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-    </div>
-</div>
+{% include 'partials/loading_overlay.html' %}
 {% endblock %}
 
 {% block extra_js %}
@@ -73,10 +65,6 @@ bibliographyDialog.addEventListener('cancel', event => {
 });
 
 bibliographyDialog.showModal();
-
-if (document.activeElement?.matches('[data-bibliography-toggle]')) {
-    document.activeElement.blur();
-}
 
 bibliographyDialog.querySelector('form').addEventListener('submit', () => {
     bibliographyDialog.close();

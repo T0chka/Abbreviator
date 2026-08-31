@@ -39,6 +39,7 @@ from .services.sessions import (
     SESSION_FILE_KEY,
     TABLE_CHECK_SESSION_KEY,
     WORKFLOW_STATE_SESSION_KEY,
+    clear_processing_state,
     delete_session_document,
     refresh_document_session,
 )
@@ -206,12 +207,7 @@ def upload_file(request: HttpRequest) -> HttpResponse:
         )
 
     delete_session_document(request)
-    request.session.pop(PROCESSED_FILE_SESSION_KEY, None)
-    request.session.pop('doc_abbs', None)
-    request.session.pop('initial_abbs', None)
-    request.session.pop(TABLE_CHECK_SESSION_KEY, None)
-    request.session.pop(WORKFLOW_STATE_SESSION_KEY, None)
-    request.session.pop(CARD_STATE_SESSION_KEY, None)
+    clear_processing_state(request)
 
     requested_id = generate_session_id()
     filename = FileSystemStorage().save(
@@ -278,12 +274,7 @@ def process_file_with_session(
     filename = DEMO_FILENAME if is_demo else f'{session_id}.docx'
 
     if is_demo:
-        request.session.pop(PROCESSED_FILE_SESSION_KEY, None)
-        request.session.pop('doc_abbs', None)
-        request.session.pop('initial_abbs', None)
-        request.session.pop(TABLE_CHECK_SESSION_KEY, None)
-        request.session.pop(WORKFLOW_STATE_SESSION_KEY, None)
-        request.session.pop(CARD_STATE_SESSION_KEY, None)
+        clear_processing_state(request)
 
     session_filename = request.session.get(SESSION_FILE_KEY)
     if not is_demo and (

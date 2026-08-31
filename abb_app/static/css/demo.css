@@ -20,7 +20,6 @@
     z-index: 1090;
     inset: 0;
 }
-
 .demo-tour-highlight {
     position: fixed;
     z-index: 1100;
@@ -33,7 +32,6 @@
     );
     pointer-events: none;
 }
-
 .demo-popover {
     position: fixed;
     z-index: 1200;
@@ -54,7 +52,6 @@
     gap: 16px;
     margin-bottom: 8px;
 }
-
 .demo-popover-header h4 {
     margin: 0;
     font-size: 1rem;
@@ -62,7 +59,7 @@
 
 .demo-step-counter {
     flex-shrink: 0;
-    color: var(--text-secondary);
+    color: color-mix(in srgb, var(--text-primary) 70%, white);
     font-size: 0.8rem;
     font-weight: 600;
 }
@@ -82,7 +79,6 @@
     justify-content: flex-end;
     margin-top: 14px;
 }
-
 .demo-popover button {
     font-family: var(--font-stack);
     font-size: 0.85rem;
@@ -96,7 +92,6 @@
     color: var(--bg-light);
     background: var(--primary-color);
 }
-
 .demo-inline-icon {
     display: inline-flex;
     width: 22px;
@@ -118,11 +113,8 @@
 }
 
 .generate-buttons-section {
-    display: flex;
-    justify-content: center;
     gap: 16px;
 }
-
 .demo-document-btn {
     display: inline-flex;
     min-height: 48px;
@@ -139,7 +131,6 @@
     text-decoration: none;
     cursor: pointer;
 }
-
 .demo-document-btn:hover,
 .demo-document-btn:active {
     color: var(--primary-color);
@@ -153,7 +144,6 @@
         align-items: stretch;
         gap: 10px;
     }
-
     .generate-buttons-section .generate-btn,
     .generate-buttons-section .demo-document-btn {
         display: flex;

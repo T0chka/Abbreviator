@@ -753,6 +753,10 @@ body.is-resizing-workflow {
     white-space: nowrap;
 }
 
+.bibliography-review-dialog h3:focus {
+    outline: none;
+}
+
 .bibliography-review-list {
     display: grid;
     gap: 12px;

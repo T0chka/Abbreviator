@@ -21,7 +21,6 @@
             {% endfor %}
         </div>
         {% endif %}
-
         {% if error %}
         <div class="alert alert-error">{{ error }}</div>
         {% endif %}
@@ -36,7 +35,6 @@
         <p class="upload-intro">
             Находит сокращения в DOCX и помогает проверить или собрать таблицу расшифровок.
         </p>
-
         <div class="abbreviation-item upload-card">
             <div class="upload-container" id="uploadContainer">
                 <div class="upload-label">
@@ -47,7 +45,6 @@
                               stroke-width="1.8" stroke-linecap="round"
                               stroke-linejoin="round"/>
                     </svg>
-
                     <p>Перетащите сюда файл .docx</p>
                     <p>или</p>
 
@@ -60,7 +57,6 @@
                         (максимальный размер файла: {{ max_upload_size_mb }} МБ)
                     </p>
                 </div>
-
                 <form method="post"
                       enctype="multipart/form-data"
                       id="uploadForm"
@@ -87,18 +83,7 @@
             </a>
         </div>
     </div>
-
-    <div id="loading-overlay" class="is-hidden" aria-live="polite">
-        <div class="loading-content">
-            <p>Обработка документа</p>
-            <div class="dot-loader" aria-hidden="true">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-        </div>
-    </div>
-
+    {% include 'partials/loading_overlay.html' %}
     <dialog id="upload-error-dialog" class="app-dialog error-dialog">
         <h3>Не удалось загрузить файл</h3>
         <p id="upload-error-message"></p>
@@ -110,7 +95,6 @@
             </button>
         </div>
     </dialog>
-
     <footer>
         <p>
             <span>&copy; 2026 Antonina Dolgorukova</span>
@@ -135,7 +119,6 @@
             </a>
         </p>
     </footer>
-
     <script src="{% static 'js/upload.js' %}"></script>
 </body>
 </html>

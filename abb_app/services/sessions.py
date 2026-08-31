@@ -14,6 +14,18 @@ WORKFLOW_STATE_SESSION_KEY = 'workflow_tools_open'
 CARD_STATE_SESSION_KEY = 'collapsed_abbreviations'
 
 
+def clear_processing_state(request: HttpRequest) -> None:
+    for key in (
+        PROCESSED_FILE_SESSION_KEY,
+        'doc_abbs',
+        'initial_abbs',
+        TABLE_CHECK_SESSION_KEY,
+        WORKFLOW_STATE_SESSION_KEY,
+        CARD_STATE_SESSION_KEY,
+    ):
+        request.session.pop(key, None)
+
+
 def delete_session_document(request: HttpRequest) -> None:
     filename = request.session.pop(SESSION_FILE_KEY, None)
     if filename and filename != DEMO_FILENAME:
