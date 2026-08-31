@@ -1,5 +1,4 @@
 from django.test import SimpleTestCase
-from docx import Document
 
 from abb_app.services.extraction import (
     CharacterValidator,
@@ -19,6 +18,26 @@ class TextProcessorTests(SimpleTestCase):
 
         self.assertEqual(result, ['T4', 'ABC'])
 
+    def test_author_initials_are_not_treated_as_abbreviations(self):
+        text = (
+            'Liu TT et al. compared ABC. '
+            'Cornelison LE, 2020 reported ABC. '
+            'Иванов АА и соавт. оценивали АД. '
+            'TT повышался после стимуляции. '
+            'Иванов АД сообщил результат. '
+            'TT, 2022. АД и др. параметры.'
+        )
+
+        result = process_abbreviations(text, [])
+        entries = {entry['abbreviation']: entry for entry in result}
+
+        self.assertNotIn('LE', entries)
+        self.assertNotIn('АА', entries)
+        self.assertIn('TT', entries)
+        self.assertEqual(entries['TT']['occurrence_count'], 2)
+        self.assertIn('ABC', entries)
+        self.assertIn('АД', entries)
+
     def test_contexts_keep_document_order(self):
         processor = TextProcessor()
         text = 'first-context ABC separator second-context ABC end'
@@ -32,6 +51,7 @@ class TextProcessorTests(SimpleTestCase):
         self.assertEqual(len(contexts), 2)
         self.assertIn('first-context', contexts[0])
         self.assertIn('second-context', contexts[1])
+
 
 
 class CharacterValidatorTests(SimpleTestCase):
@@ -108,11 +128,8 @@ class CharacterValidatorTests(SimpleTestCase):
 
         for case in cases:
             with self.subTest(text=case['text']):
-                document = Document()
-                document.add_paragraph(case['text'])
-
                 result = process_abbreviations(
-                    document,
+                    case['text'],
                     case['dictionary'],
                 )
 

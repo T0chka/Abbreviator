@@ -2,6 +2,7 @@ const processingConfig = document.getElementById('processing-config');
 
 const processingUrls = {
     update: processingConfig.dataset.updateUrl,
+    singletons: processingConfig.dataset.singletonsUrl,
     cardState: processingConfig.dataset.cardStateUrl,
     difference: processingConfig.dataset.differenceUrl,
     tableCheck: processingConfig.dataset.tableCheckUrl,
@@ -358,6 +359,38 @@ async function fetchWrapper(url, data = null) {
     };
 }
 
+async function toggleSingleOccurrenceAbbreviations(button) {
+    const action = button.dataset.bulkAction;
+
+    try {
+        const response = await fetchWrapper(processingUrls.singletons, {
+            action
+        });
+        if (!response.ok) {
+            throw new Error(
+                response.data?.error || 'Не удалось изменить сокращения'
+            );
+        }
+
+        const remove = action === 'remove';
+        document.querySelectorAll(
+            '#single-occurrence-section .abbreviation-item'
+        ).forEach(item => {
+            updateAbbreviationUI(item, null, remove ? 'skip' : 'clear');
+            setCardCollapseState(item, remove);
+        });
+
+        button.dataset.bulkAction = remove ? 'add' : 'remove';
+        button.textContent = remove ? 'Добавить все' : 'Убрать все';
+        button.classList.toggle('btn-success', remove);
+        button.classList.toggle('btn-skip', !remove);
+
+        await refreshTableViews();
+    } catch (error) {
+        alert(`Не удалось изменить сокращения: ${error.message}`);
+    }
+}
+
 async function handleAbbreviation(
     abbreviation,
     description = null,
@@ -404,6 +437,10 @@ function updateAbbreviationUI(item, description, action) {
     if (action === 'skip') {
         descriptionText.textContent = '- (убрано)';
         statusIcon.textContent = '✗';
+    } else if (action === 'clear') {
+        descriptionText.textContent = '';
+        statusIcon.textContent = '';
+        item.querySelector('input[type="text"]').value = '';
     } else {
         descriptionText.textContent = `- ${description}`;
         statusIcon.textContent = '✓';
@@ -699,6 +736,9 @@ document.addEventListener('click', event => {
             break;
         case 'skip-abbreviation':
             handleAbbreviation(abbreviation, null, 'skip');
+            break;
+        case 'toggle-singletons':
+            toggleSingleOccurrenceAbbreviations(control);
             break;
         case 'generate-description':
             event.stopPropagation();

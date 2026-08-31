@@ -7,11 +7,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const counter = document.getElementById('demoStepCounter');
     const nextButton = popover.querySelector('.demo-next-button');
     const comparisonBlock = document.getElementById('comparison-block');
-    const abbreviationList = document.querySelector('.abbreviation-list');
-    const firstCard = abbreviationList.querySelector('.abbreviation-item');
-    const atxCard = abbreviationList.querySelector(
-        '[data-abbreviation="ATХ"]'
+    const abbreviationCards = Array.from(
+        document.querySelectorAll('.abbreviation-item')
     );
+    const firstCard = abbreviationCards.find(
+        card => card.querySelector('.btn-select-option')
+    ) || abbreviationCards[0];
+    const singletonSection = document.getElementById('single-occurrence-section');
+    const atxCard = document.querySelector('[data-abbreviation="ATХ"]');
     const atxAbbreviation = atxCard.querySelector('.abb-description h4');
 
     const stepContent = Object.fromEntries(
@@ -48,6 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
             expand: firstCard,
             targets: () => firstCard.querySelectorAll('.btn-select-option')
         },
+        ...(singletonSection ? [{
+            name: 'single-occurrence',
+            targets: () => singletonSection.querySelector('h2')
+        }] : []),
         {
             name: 'ai-generation',
             expand: firstCard,

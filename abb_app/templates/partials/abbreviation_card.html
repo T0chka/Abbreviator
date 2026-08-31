@@ -1,0 +1,123 @@
+<div class="abbreviation-item"
+     data-abbreviation="{{ abb.abbreviation }}"
+     data-collapsed="{% if abb.abbreviation in collapsed_abbreviations %}true{% else %}false{% endif %}">
+    <div class="abb-title" data-processing-action="toggle-abbreviation">
+        <div class="abb-title-left" data-abb="{{ abb.abbreviation }}">
+            <span class="status-icon">
+                {% if abb.selected_description %}✓{% elif abb.reviewed %}✗{% endif %}
+            </span>
+
+            <div class="abb-description">
+                <h4>{% include 'partials/abbreviation_text.html' with abbreviation=abb.abbreviation highlighted=abb.highlighted only %}</h4>
+            </div>
+
+            <span class="description-text">
+                {% if abb.selected_description %}
+                    - {{ abb.selected_description }}
+                {% elif abb.reviewed %}
+                    - (убрано)
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="abb-title-controls">
+            <button type="button"
+                    class="card-settings-btn tooltip tooltip-left"
+                    data-processing-action="toggle-card-settings"
+                    aria-label="Настройки контекста">
+                <span class="material-icons-outlined">settings</span>
+                <span class="tooltiptext">Настройки контекста</span>
+            </button>
+            <button type="button"
+                    class="toggle-btn tooltip tooltip-left"
+                    aria-label="Свернуть карточку">
+                <span class="material-icons">expand_less</span>
+                <span class="tooltiptext">Свернуть карточку</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="card-context-settings is-hidden">
+        <label>Максимальное количество фрагментов контекста</label>
+        <div class="context-range-control">
+            <input type="range" min="0" max="4" step="1" value="1"
+                   data-context-setting="limit"
+                   data-context-scope="card">
+            <div class="context-range-labels" aria-hidden="true">
+                <span>1</span>
+                <span>3</span>
+                <span>5</span>
+                <span>10</span>
+                <span>Все</span>
+            </div>
+        </div>
+
+        <label class="context-setting-label">
+            Количество отображаемых символов вокруг аббревиатуры
+        </label>
+        <div class="context-range-control">
+            <input type="range" min="0" max="4" step="1" value="1"
+                   data-context-setting="window"
+                   data-context-scope="card">
+            <div class="context-range-labels" aria-hidden="true">
+                <span>25</span>
+                <span>50</span>
+                <span>75</span>
+                <span>100</span>
+                <span>150</span>
+            </div>
+        </div>
+
+        <button type="button"
+                class="card-settings-reset is-hidden"
+                data-processing-action="reset-card-context">
+            Применить общие настройки
+        </button>
+    </div>
+
+    <div class="abb-content">
+        <div class="description-options">
+            {% if abb.descriptions %}
+                {% for description in abb.descriptions %}
+                    <button class="btn-select-option"
+                            data-processing-action="select-description"
+                            data-description="{{ description }}">
+                        {{ description }}
+                    </button>
+                {% endfor %}
+            {% endif %}
+
+            <div class="input-group">
+                <div class="description-input-wrap">
+                    <input type="text" placeholder="Введите расшифровку">
+                    <button class="generate-btn"
+                            type="button"
+                            data-processing-action="generate-description">
+                        <div class="tooltip tooltip-center">
+                            <span class="material-icons-outlined magic-wand-icon">
+                                auto_fix_high
+                            </span>
+                            <span class="tooltiptext">Сгенерировать расшифровку</span>
+                        </div>
+                    </button>
+                </div>
+                <button data-processing-action="add-description"
+                        class="btn-base btn-success">
+                    ✓
+                </button>
+                <button data-processing-action="skip-abbreviation"
+                        class="btn-base btn-skip">
+                    ✗
+                </button>
+            </div>
+        </div>
+
+        {% if abb.contexts %}
+            {% for context in abb.contexts %}
+                <div class="context-item{% if forloop.counter > 3 %} is-hidden{% endif %}">
+                    <p class="context-text">{{ context }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>

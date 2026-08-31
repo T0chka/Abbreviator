@@ -13,13 +13,13 @@ The bundled dictionary is aimed at medical and scientific documents. The extract
 ## Workflow
 
 1. **Upload a DOCX document.**
-   Abbreviator extracts abbreviations and collects surrounding context while preserving document order.
+   Abbreviator extracts abbreviations and collects surrounding context while preserving document order. Recognized bibliography sections are excluded from extraction and shown for review before abbreviation processing; a misclassified section can be returned to the analysis.
 
 2. **Check abbreviations against the dictionary.**
    The application can suggest one or more approved descriptions from the curated dictionary and detects visually ambiguous Cyrillic/Latin homoglyphs. If enabled, mixed-alphabet spelling can be normalized to the approved dictionary form.
 
 3. **Process each abbreviation.**
-   The user can select one of the available descriptions, enter a description manually, request an optional AI suggestion, or remove the abbreviation from the final table. Context-display settings can be configured globally and overridden for individual abbreviations.
+   The user can select one of the available descriptions, enter a description manually, request an optional AI suggestion, or remove the abbreviation from the final table. Abbreviations found only once are grouped separately and can be removed together. Context-display settings can be configured globally and overridden for individual abbreviations.
 
 4. **Optionally compare the result with an abbreviation table already present in the document.**
    When an existing table is detected, the user can enable comparison and see how the processed abbreviations differ from the source table.
@@ -27,8 +27,8 @@ The bundled dictionary is aimed at medical and scientific documents. The extract
 5. **Preview and configure the final table.**
    The generated table can be previewed in the browser and adjusted before export.
 
-6. **Export the result back to Word.**
-   Abbreviator generates the final abbreviation table and inserts it into the `.docx` document.
+6. **Export the result to Word.**
+   Abbreviator generates the final abbreviation table and downloads it as a separate `.docx` document.
 
 The active processing state is preserved across page refreshes, including selected descriptions and workflow state. A read-only public dictionary is available separately, while dictionary moderation is handled through Django admin.
 

@@ -2,8 +2,6 @@ import json
 
 from django.test import TestCase
 from django.urls import reverse
-from docx import Document
-
 from abb_app.models import AbbreviationEntry
 from abb_app.services.abbreviations import (
     load_approved_dictionary,
@@ -73,10 +71,8 @@ class UpdateAbbreviationTests(TestCase):
                         status='approved',
                     )
 
-                document = Document()
-                document.add_paragraph(incoming)
                 processed = process_abbreviations(
-                    document,
+                    incoming,
                     load_approved_dictionary(),
                 )
                 self.assertEqual(len(processed), 1)

@@ -20,6 +20,7 @@
 
 <div id="processing-config"
      data-update-url="{% url 'update_abbreviation' %}"
+     data-singletons-url="{% url 'update_single_occurrence_abbreviations' %}"
      data-card-state-url="{% if not is_demo %}{% url 'update_card_state' %}{% endif %}"
      data-difference-url="{% url 'update_difference_section' %}"
      data-table-check-url="{% url 'update_table_check' %}"
@@ -85,143 +86,43 @@
 
 {% include 'partials/workflow_tools.html' %}
 
-<!-- Section with abbreviation list -->
-<div class="abbreviation-list">
-    {% for abb in doc_abbs %}
-    <div class="abbreviation-item"
-         data-abbreviation="{{ abb.abbreviation }}"
-         data-collapsed="{% if abb.abbreviation in collapsed_abbreviations %}true{% else %}false{% endif %}">
-        <!-- Clickable title area -->
-        <div class="abb-title" data-processing-action="toggle-abbreviation">
-            <div class="abb-title-left" data-abb="{{ abb.abbreviation }}">
-                <!-- Status icon -->
-                <span class="status-icon">
-                    {% if abb.selected_description %}✓{% elif abb.reviewed %}✗{% endif %}
-                </span>
-
-                <!-- Abbreviation with mixed-alphabet highlighting -->
-                <div class="abb-description">
-                    <h4>{% include 'partials/abbreviation_text.html' with abbreviation=abb.abbreviation highlighted=abb.highlighted only %}</h4>
-                </div>
-
-                <!-- Description text -->
-                <span class="description-text">
-                    {% if abb.selected_description %}
-                        - {{ abb.selected_description }}
-                    {% elif abb.reviewed %}
-                        - (убрано)
-                    {% endif %}
-                </span>
-            </div>
-
-            <div class="abb-title-controls">
-                <button type="button"
-                        class="card-settings-btn tooltip tooltip-left"
-                        data-processing-action="toggle-card-settings"
-                        aria-label="Настройки контекста">
-                    <span class="material-icons-outlined">settings</span>
-                    <span class="tooltiptext">Настройки контекста</span>
-                </button>
-                <button type="button"
-                        class="toggle-btn tooltip tooltip-left"
-                        aria-label="Свернуть карточку">
-                    <span class="material-icons">expand_less</span>
-                    <span class="tooltiptext">Свернуть карточку</span>
-                </button>
-            </div>
-        </div>
-
-        <div class="card-context-settings is-hidden">
-            <label>Максимальное количество фрагментов контекста</label>
-            <div class="context-range-control">
-                <input type="range" min="0" max="4" step="1" value="1"
-                       data-context-setting="limit"
-                       data-context-scope="card">
-                <div class="context-range-labels" aria-hidden="true">
-                    <span>1</span>
-                    <span>3</span>
-                    <span>5</span>
-                    <span>10</span>
-                    <span>Все</span>
-                </div>
-            </div>
-
-            <label class="context-setting-label">
-                Количество отображаемых символов вокруг аббревиатуры
-            </label>
-            <div class="context-range-control">
-                <input type="range" min="0" max="4" step="1" value="1"
-                       data-context-setting="window"
-                       data-context-scope="card">
-                <div class="context-range-labels" aria-hidden="true">
-                    <span>25</span>
-                    <span>50</span>
-                    <span>75</span>
-                    <span>100</span>
-                    <span>150</span>
-                </div>
-            </div>
-
-            <button type="button"
-                    class="card-settings-reset is-hidden"
-                    data-processing-action="reset-card-context">
-                Применить общие настройки
-            </button>
-        </div>
-
-        <!-- Collapsible content -->
-        <div class="abb-content">
-            <!-- Description options -->
-            <div class="description-options">
-                {% if abb.descriptions %}
-                    {% for description in abb.descriptions %}
-                        <button class="btn-select-option"
-                                data-processing-action="select-description"
-                                data-description="{{ description }}">
-                            {{ description }}
-                        </button>
-                    {% endfor %}
-                {% endif %}
-
-                <!-- Custom description input -->
-                <div class="input-group">
-                    <div class="description-input-wrap">
-                        <input type="text"
-                               placeholder="Введите расшифровку">
-                        <button class="generate-btn"
-                                type="button"
-                                data-processing-action="generate-description">
-                            <div class="tooltip tooltip-center">
-                                <span class="material-icons-outlined magic-wand-icon">
-                                    auto_fix_high
-                                </span>
-                                <span class="tooltiptext">Сгенерировать расшифровку</span>
-                            </div>
-                        </button>
-                    </div>
-                    <button data-processing-action="add-description"
-                            class="btn-base btn-success">
-                        ✓
-                    </button>
-                    <button data-processing-action="skip-abbreviation"
-                            class="btn-base btn-skip">
-                        ✗
-                    </button>
-                </div>
-            </div>
-
-            <!-- Contexts section -->
-            {% if abb.contexts %}
-                {% for context in abb.contexts %}
-                    <div class="context-item{% if forloop.counter > 3 %} is-hidden{% endif %}">
-                        <p class="context-text">{{ context }}</p>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        </div>
+<section class="processing-section">
+    <h2>Повторяющиеся сокращения</h2>
+    <ul class="statistics processing-section-summary">
+        <li>Найдено сокращений: {{ repeated_summary.total }}</li>
+        <li>Кириллических: {{ repeated_summary.cyrillic }}, латинских: {{ repeated_summary.latin }}, смешанных: {{ repeated_summary.mixed }}</li>
+    </ul>
+    {% if repeated_abbs %}
+    <div class="abbreviation-list">
+        {% for abb in repeated_abbs %}
+            {% include 'partials/abbreviation_card.html' with abb=abb collapsed_abbreviations=collapsed_abbreviations only %}
+        {% endfor %}
     </div>
-    {% endfor %}
-</div>
+    {% endif %}
+</section>
+
+<section id="single-occurrence-section" class="single-occurrence-section processing-section">
+    <h2>Единичные сокращения</h2>
+    <ul class="statistics processing-section-summary">
+        <li>Найдено сокращений: {{ single_occurrence_summary.total }}</li>
+        <li>Кириллических: {{ single_occurrence_summary.cyrillic }}, латинских: {{ single_occurrence_summary.latin }}, смешанных: {{ single_occurrence_summary.mixed }}</li>
+    </ul>
+    {% if single_occurrence_abbs %}
+    <div class="single-occurrence-actions">
+        <button type="button"
+                class="btn-base {% if single_occurrence_all_removed %}btn-success{% else %}btn-skip{% endif %} single-occurrence-toggle-all"
+                data-processing-action="toggle-singletons"
+                data-bulk-action="{% if single_occurrence_all_removed %}add{% else %}remove{% endif %}">
+            {% if single_occurrence_all_removed %}Добавить все{% else %}Убрать все{% endif %}
+        </button>
+    </div>
+    <div class="abbreviation-list single-occurrence-list">
+        {% for abb in single_occurrence_abbs %}
+            {% include 'partials/abbreviation_card.html' with abb=abb collapsed_abbreviations=collapsed_abbreviations only %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</section>
 
 <!-- Section with buttons for generating table -->
 <div class="generate-buttons-section">

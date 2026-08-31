@@ -739,3 +739,109 @@ body.is-resizing-workflow {
         width: 150px;
     }
 }
+
+/* ==========================================================================
+   Bibliography review and single-occurrence abbreviations
+   ========================================================================== */
+
+.bibliography-review-dialog {
+    width: min(800px, calc(100vw - 48px));
+}
+
+.bibliography-review-dialog h3 {
+    margin-bottom: 20px;
+    white-space: nowrap;
+}
+
+.bibliography-review-list {
+    display: grid;
+    gap: 12px;
+}
+
+.bibliography-review-item {
+    display: flex;
+    min-width: 0;
+    padding: 14px 16px;
+    border: var(--border);
+    border-radius: var(--border-radius);
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--bg-accent);
+}
+
+.bibliography-review-item strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.bibliography-toggle-button {
+    min-width: 164px;
+    padding: 0.75rem 1rem;
+    flex: 0 0 auto;
+    letter-spacing: normal;
+}
+
+
+.bibliography-review-actions {
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.bibliography-review-actions .dialog-button {
+    flex: 0 0 140px;
+}
+
+.processing-section {
+    margin-bottom: 28px;
+}
+
+.processing-section-summary {
+    margin: -6px 0 18px;
+}
+
+.processing-section-summary li + li {
+    margin-top: 4px;
+}
+
+.single-occurrence-section {
+    margin: 28px 0 24px;
+    padding-top: 0;
+    border-top: 0;
+}
+
+.single-occurrence-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: 2px 0 22px;
+}
+
+.single-occurrence-toggle-all {
+    min-width: 140px;
+}
+
+@media (max-width: 600px) {
+    .bibliography-review-dialog h3 {
+        white-space: normal;
+    }
+
+    .bibliography-review-item {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .bibliography-toggle-button,
+    .bibliography-review-actions .dialog-button,
+    .single-occurrence-toggle-all {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .bibliography-review-actions .dialog-button {
+        flex-basis: auto;
+    }
+
+}

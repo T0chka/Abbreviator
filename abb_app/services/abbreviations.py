@@ -14,6 +14,7 @@ class Abbreviation(TypedDict):
     descriptions: List[str]
     selected_description: NotRequired[Optional[str]]
     reviewed: NotRequired[bool]
+    occurrence_count: NotRequired[int]
     contexts: NotRequired[Optional[List[str]]]
     correct_form: NotRequired[Optional[str]]
     highlighted: NotRequired[Optional[List[HighlightedCharacter]]]

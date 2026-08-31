@@ -16,7 +16,12 @@ from .abbreviations import (
     TableEntry,
     load_approved_dictionary,
 )
-from .extraction import CharacterValidator, process_abbreviations
+from .extraction import (
+    CharacterValidator,
+    ExcludedSection,
+    TextProcessor,
+    process_abbreviations,
+)
 
 
 SECTION_PATTERNS = [
@@ -365,7 +370,15 @@ class DisplayAbbreviation:
     highlighted: Optional[List[HighlightedCharacter]]
 
 
-def process_document(file_path: str) -> ProcessedDocument:
+def find_bibliography_sections(file_path: str) -> List[ExcludedSection]:
+    document = Document(file_path)
+    return TextProcessor().extract_relevant_text(document).excluded_sections
+
+
+def process_document(
+    file_path: str,
+    included_bibliography_sections: Optional[set[str]] = None,
+) -> ProcessedDocument:
     dictionary = load_approved_dictionary()
 
     document = Document(file_path)
@@ -379,7 +392,12 @@ def process_document(file_path: str) -> ProcessedDocument:
         if validation.get('correct_form'):
             entry['highlighted'] = validation.get('highlighted')
 
-    abbreviations = process_abbreviations(document, dictionary)
+    text_processor = TextProcessor()
+    text = text_processor.extract_relevant_text(
+        document,
+        included_section_ids=included_bibliography_sections,
+    ).text
+    abbreviations = process_abbreviations(text, dictionary)
 
     return ProcessedDocument(
         abbreviations=abbreviations,

@@ -137,12 +137,14 @@ class ProcessingViewTests(TestCase):
                     'descriptions': ['thyroxine'],
                     'selected_description': None,
                     'reviewed': False,
+                    'occurrence_count': 2,
                 },
                 {
                     'abbreviation': 'ABC',
                     'descriptions': [],
                     'selected_description': None,
                     'reviewed': False,
+                    'occurrence_count': 2,
                 },
             ]
             session['initial_abbs'] = []
@@ -338,6 +340,231 @@ class ProcessingViewTests(TestCase):
             )
             self.assertIsNone(
                 self.client.session['doc_abbs'][0]['selected_description']
+            )
+
+    def test_bibliography_review_precedes_processing_and_table_check(self):
+        with TemporaryDirectory() as media_root:
+            session_id = 'bibliography'
+            path = Path(media_root) / f'{session_id}.docx'
+            document = Document()
+
+            document.add_heading('СПИСОК СОКРАЩЕНИЙ', level=1)
+            table = document.add_table(rows=2, cols=2)
+            table.cell(0, 0).text = 'Аббревиатура'
+            table.cell(0, 1).text = 'Расшифровка'
+            table.cell(1, 0).text = 'ABC'
+            table.cell(1, 1).text = 'alpha beta complex'
+
+            document.add_paragraph('Основной текст ABC ABC.')
+            document.add_paragraph('12: ЛИТЕРАТУРА')
+            document.add_paragraph(
+                'Akerman S, Goadsby PJ. WHO study. 2005;146(1):7-14. '
+                'doi:10.1/first'
+            )
+            document.add_heading('Вторая часть', level=1)
+            document.add_paragraph('Основной текст DEF DEF.')
+            document.add_heading('Публикации по второй части', level=1)
+            document.add_paragraph(
+                'Smith A, Jones BC. XYZ study. 2021;12(1):123-130. '
+                'doi:10.1/second'
+            )
+            document.add_paragraph(
+                'Brown D, White EF. XYZ study. 2022;13(2):131-140. '
+                'doi:10.1/third'
+            )
+            document.add_heading('Заключение', level=1)
+            document.add_paragraph('Итоговый текст END END.')
+            document.save(path)
+
+            session = self.client.session
+            session[SESSION_FILE_KEY] = path.name
+            session.save()
+
+            process_url = reverse(
+                'process_file_with_session',
+                args=[session_id],
+            )
+            with self.settings(MEDIA_ROOT=media_root):
+                review = self.client.get(process_url)
+                sections = review.context['bibliography_sections']
+                first_section_id = sections[0].section_id
+
+                self.assertEqual(review.status_code, 200)
+                self.assertTemplateUsed(
+                    review,
+                    'bibliography_review.html',
+                )
+                self.assertEqual(
+                    [section.title for section in sections],
+                    [
+                        '12: ЛИТЕРАТУРА',
+                        'Публикации по второй части',
+                    ],
+                )
+                self.assertContains(review, 'Вернуть в анализ')
+                self.assertContains(
+                    review,
+                    'class="btn-base btn-success '
+                    'bibliography-toggle-button"',
+                    count=2,
+                )
+                self.assertContains(review, 'id="loading-overlay"')
+                self.assertContains(review, 'Обработка документа')
+                self.assertNotContains(
+                    review,
+                    'id="table-check-dialog"',
+                )
+                self.assertNotIn('doc_abbs', self.client.session)
+
+                processed = self.client.post(
+                    process_url,
+                    data={
+                        'include_bibliography_sections': first_section_id,
+                    },
+                    follow=True,
+                )
+
+            self.assertEqual(processed.status_code, 200)
+            self.assertEqual(
+                processed.redirect_chain,
+                [(process_url, 302)],
+            )
+            self.assertTemplateUsed(processed, 'content.html')
+            self.assertContains(processed, 'id="table-check-dialog"')
+            entries = {
+                entry['abbreviation']: entry
+                for entry in self.client.session['doc_abbs']
+            }
+            self.assertIn('WHO', entries)
+            self.assertNotIn('XYZ', entries)
+            self.assertEqual(
+                self.client.session[PROCESSED_FILE_SESSION_KEY],
+                path.name,
+            )
+
+    def test_frequency_groups_and_bulk_toggle_singletons(self):
+        with TemporaryDirectory() as media_root:
+            session_id = 'singletons'
+            path = Path(media_root) / f'{session_id}.docx'
+            document = Document()
+            document.add_paragraph('ABC ABC АБВ СD СD')
+            document.save(path)
+
+            session = self.client.session
+            session[SESSION_FILE_KEY] = path.name
+            session.save()
+
+            with self.settings(MEDIA_ROOT=media_root):
+                response = self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
+                selected = self.client.post(
+                    reverse('update_abbreviation'),
+                    data=json.dumps({
+                        'abbreviation': 'АБВ',
+                        'description': 'тестовая расшифровка',
+                        'action': 'add',
+                    }),
+                    content_type='application/json',
+                )
+                removed = self.client.post(
+                    reverse('update_single_occurrence_abbreviations'),
+                    data=json.dumps({'action': 'remove'}),
+                    content_type='application/json',
+                )
+
+            self.assertEqual(
+                [
+                    entry['abbreviation']
+                    for entry in response.context['repeated_abbs']
+                ],
+                ['ABC', 'СD'],
+            )
+            self.assertEqual(
+                [
+                    entry['abbreviation']
+                    for entry in response.context['single_occurrence_abbs']
+                ],
+                ['АБВ'],
+            )
+            self.assertContains(response, 'Повторяющиеся сокращения')
+            self.assertContains(response, 'Единичные сокращения')
+            content = response.content.decode()
+            self.assertLess(
+                content.index('data-processing-action="toggle-singletons"'),
+                content.index('single-occurrence-list'),
+            )
+            button_start = content.index(
+                'data-processing-action="toggle-singletons"'
+            )
+            button_end = content.index('</button>', button_start)
+            self.assertIn(
+                'data-bulk-action="remove"',
+                content[button_start:button_end],
+            )
+            self.assertIn('Убрать все', content[button_start:button_end])
+            self.assertNotIn('single-occurrence-controls', content)
+            self.assertContains(response, 'Найдено сокращений: 2')
+            self.assertContains(
+                response,
+                'Кириллических: 0, латинских: 1, смешанных: 1',
+            )
+            self.assertContains(response, 'Найдено сокращений: 1')
+            self.assertContains(
+                response,
+                'Кириллических: 1, латинских: 0, смешанных: 0',
+            )
+            self.assertEqual(selected.status_code, 200)
+            self.assertEqual(removed.status_code, 204)
+
+            removed_entry = next(
+                entry for entry in self.client.session['doc_abbs']
+                if entry['abbreviation'] == 'АБВ'
+            )
+            self.assertTrue(removed_entry['reviewed'])
+            self.assertIsNone(removed_entry['selected_description'])
+            self.assertIn(
+                'АБВ',
+                self.client.session.get(CARD_STATE_SESSION_KEY, []),
+            )
+
+            with self.settings(MEDIA_ROOT=media_root):
+                removed_page = self.client.get(
+                    reverse('process_file_with_session', args=[session_id])
+                )
+                added = self.client.post(
+                    reverse('update_single_occurrence_abbreviations'),
+                    data=json.dumps({'action': 'add'}),
+                    content_type='application/json',
+                )
+
+            removed_content = removed_page.content.decode()
+            button_start = removed_content.index(
+                'data-processing-action="toggle-singletons"'
+            )
+            button_end = removed_content.index('</button>', button_start)
+            self.assertIn(
+                'data-bulk-action="add"',
+                removed_content[button_start:button_end],
+            )
+            self.assertIn(
+                'Добавить все',
+                removed_content[button_start:button_end],
+            )
+            self.assertEqual(added.status_code, 204)
+
+            entries = {
+                entry['abbreviation']: entry
+                for entry in self.client.session['doc_abbs']
+            }
+            self.assertEqual(entries['ABC']['occurrence_count'], 2)
+            self.assertEqual(entries['СD']['occurrence_count'], 2)
+            self.assertEqual(entries['АБВ']['occurrence_count'], 1)
+            self.assertFalse(entries['АБВ']['reviewed'])
+            self.assertIsNone(entries['АБВ']['selected_description'])
+            self.assertNotIn(
+                'АБВ',
+                self.client.session.get(CARD_STATE_SESSION_KEY, []),
             )
 
     def test_document_url_requires_matching_django_session(self):

@@ -1,14 +1,32 @@
 import re
-from typing import List, Set
+from dataclasses import dataclass
+from typing import List, Optional, Set
 
 from docx import Document
+from docx.text.paragraph import Paragraph
 
 from .abbreviations import Abbreviation, HighlightedCharacter
 
 
 SKIP_SECTIONS = [
-    'СПИСОК ЛИТЕРАТУРЫ', 'Список использованной литературы',
-    'Список использованных источников'
+    'СПИСОК ЛИТЕРАТУРЫ',
+    'ЛИТЕРАТУРА',
+    'ИСПОЛЬЗОВАННАЯ ЛИТЕРАТУРА',
+    'СПИСОК ИСПОЛЬЗОВАННОЙ ЛИТЕРАТУРЫ',
+    'СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ',
+    'СПИСОК ИСТОЧНИКОВ',
+    'СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ '
+    'И ЛИТЕРАТУРЫ',
+    'ИСТОЧНИКИ И ЛИТЕРАТУРА',
+    'СПИСОК ЦИТИРУЕМОЙ ЛИТЕРАТУРЫ',
+    'ЦИТИРУЕМАЯ ЛИТЕРАТУРА',
+    'ИСТОЧНИКИ',
+    'БИБЛИОГРАФИЯ',
+    'БИБЛИОГРАФИЧЕСКИЙ СПИСОК',
+    'REFERENCES',
+    'BIBLIOGRAPHY',
+    'LITERATURE CITED',
+    'WORKS CITED',
 ]
 EXCLUDE_TERMS = {
     'ДИЗАЙН', 'ГЛАВНЫЙ', 'СПИСОК', 'ПРЯМОЙ', 'ПРИЕМ', 'ПРОТОКОЛ', 'ОТБОР',
@@ -36,34 +54,126 @@ ROMAN_STAGE_PATTERN = re.compile(
     re.IGNORECASE
 )
 
+SECTION_NUMBER_PREFIX = re.compile(
+    r'^\s*(?:(?:\d+(?:\.\d+)*)|(?:[IVXLCDM]+))[.):\s-]+',
+    re.IGNORECASE,
+)
+REFERENCE_NUMBER_PATTERN = re.compile(r'^\s*(?:\[\d+\]|\d+[.)])\s*')
+REFERENCE_YEAR_PATTERN = re.compile(
+    r'\b(?:18|19|20)\d{2}[a-zа-я]?\b',
+    re.IGNORECASE,
+)
+REFERENCE_IDENTIFIER_PATTERN = re.compile(
+    r'\b(?:doi\s*:|pmid\s*:|pmcid\s*:|https?://|www\.)',
+    re.IGNORECASE,
+)
+REFERENCE_INITIALS_PATTERN = re.compile(
+    r'\b[A-ZА-ЯЁ]{1,3}\.?(?=\s*[,.;])',
+)
+REFERENCE_STYLE_TERMS = (
+    'bibliograph', 'reference', 'литератур', 'библиограф',
+)
+QUOTED_TEXT_PATTERN = re.compile(r'«\S+?»|"[^"]+"')
+
+
+@dataclass(frozen=True)
+class ExcludedSection:
+    section_id: str
+    title: str
+
+
+@dataclass(frozen=True)
+class ExtractedText:
+    text: str
+    excluded_sections: List[ExcludedSection]
+
+
+@dataclass(frozen=True)
+class _ParagraphInfo:
+    index: int
+    paragraph: Paragraph
+    text: str
+    style_name: str
+    is_heading: bool
+    is_bold: bool
+
+    @property
+    def is_section_marker(self) -> bool:
+        return self.is_heading or self.is_bold
+
+    @property
+    def section_id(self) -> str:
+        return f'paragraph-{self.index}'
+
 
 class TextProcessor:
-    """
-    Class for extracting a relevant text, abbreviations and their contexts from
-    a Word document.
-    """
+    """Extract relevant text, abbreviations, and contexts from DOCX."""
+
     def __init__(
         self,
         skip_sections: List[str] = SKIP_SECTIONS,
         exclude_terms: Set[str] = EXCLUDE_TERMS,
     ):
         self.skip_sections = {
-            section.upper() for section in skip_sections
+            self._normalize_section_title(section)
+            for section in skip_sections
         }
         self.exclude_terms = exclude_terms
 
-    def extract_relevant_text(self, doc: Document) -> str:
-        """
-        Extracts text from the document, excluding `skip_sections`.
-        The exclusion starts at the section title in bold or heading style
-        and resumes at the next bold or heading section.
-        """
-        paragraphs = []
-        skip = False
+    def extract_relevant_text(
+        self,
+        doc: Document,
+        included_section_ids: Optional[Set[str]] = None,
+    ) -> ExtractedText:
+        """Extract text while identifying and excluding bibliography sections.
 
-        for para in doc.paragraphs:
-            para_text = para.text.strip()
-            if not para_text:
+        A known bibliography title is recognized from normalized paragraph
+        text regardless of its Word style. A non-standard title can be
+        inferred from a following block of reference-like paragraphs.
+        Exclusion ends at the next bold or heading paragraph.
+        """
+        included = included_section_ids or set()
+        infos = self._paragraph_infos(doc)
+        bibliography_starts = self._detect_bibliography_sections(infos)
+
+        paragraphs: List[str] = []
+        excluded_sections: List[ExcludedSection] = []
+        active_section: Optional[ExcludedSection] = None
+
+        for info in infos:
+            starts_excluded_section = (
+                info.index in bibliography_starts
+                and info.section_id not in included
+            )
+
+            if active_section is not None and (
+                info.is_section_marker or starts_excluded_section
+            ):
+                excluded_sections.append(active_section)
+                active_section = None
+
+            if starts_excluded_section:
+                active_section = ExcludedSection(
+                    section_id=info.section_id,
+                    title=info.text,
+                )
+                continue
+
+            if active_section is None:
+                paragraphs.append(info.text)
+
+        if active_section is not None:
+            excluded_sections.append(active_section)
+        return ExtractedText(
+            text=' '.join(paragraphs),
+            excluded_sections=excluded_sections,
+        )
+
+    def _paragraph_infos(self, doc: Document) -> List[_ParagraphInfo]:
+        infos: List[_ParagraphInfo] = []
+        for index, para in enumerate(doc.paragraphs):
+            text = para.text.strip()
+            if not text:
                 continue
 
             style_name = para.style.name if para.style else ''
@@ -71,25 +181,102 @@ class TextProcessor:
                 style_name.startswith('Heading')
                 or 'Заголовок' in style_name
             )
+            is_bold = (
+                not is_heading
+                and any(run.text.strip() and run.bold for run in para.runs)
+            )
+            infos.append(_ParagraphInfo(
+                index=index,
+                paragraph=para,
+                text=text,
+                style_name=style_name,
+                is_heading=is_heading,
+                is_bold=is_bold,
+            ))
+        return infos
 
-            is_bold = False
-            if not is_heading:
-                for run in para.runs:
-                    if run.text.strip() and run.bold:
-                        is_bold = True
-                        break
+    def _detect_bibliography_sections(
+        self,
+        infos: List[_ParagraphInfo],
+    ) -> Set[int]:
+        detected = {
+            info.index
+            for info in infos
+            if self._normalize_section_title(info.text) in self.skip_sections
+        }
 
-            if is_bold or is_heading:
-                para_text_upper = para_text.upper()
-                if any(section in para_text_upper for section in self.skip_sections):
-                    skip = True
-                elif skip:
-                    skip = False
+        for position, info in enumerate(infos):
+            if (
+                info.index in detected
+                or not info.is_section_marker
+                or self._is_reference_entry(info)
+            ):
+                continue
 
-            if not skip:
-                paragraphs.append(para_text)
+            if self._section_contains_only_references(infos, position):
+                detected.add(info.index)
 
-        return ' '.join(paragraphs)
+        return detected
+
+    def _section_contains_only_references(
+        self,
+        infos: List[_ParagraphInfo],
+        heading_position: int,
+    ) -> bool:
+        section_paragraphs: List[_ParagraphInfo] = []
+        for info in infos[heading_position + 1:]:
+            if info.is_section_marker and not self._is_reference_entry(info):
+                break
+            section_paragraphs.append(info)
+
+        return len(section_paragraphs) >= 2 and all(
+            self._is_reference_entry(info)
+            for info in section_paragraphs
+        )
+
+    def _is_reference_entry(self, info: _ParagraphInfo) -> bool:
+        style_name = info.style_name.casefold()
+        if any(term in style_name for term in REFERENCE_STYLE_TERMS):
+            return True
+
+        text = info.text
+        has_numbering = (
+            REFERENCE_NUMBER_PATTERN.search(text) is not None
+            or self._has_numbering(info.paragraph)
+        )
+        has_year = REFERENCE_YEAR_PATTERN.search(text) is not None
+        has_identifier = REFERENCE_IDENTIFIER_PATTERN.search(text) is not None
+        has_initials = REFERENCE_INITIALS_PATTERN.search(text) is not None
+
+        if has_numbering and (has_year or has_identifier):
+            return True
+        if self._has_hanging_indent(info.paragraph) and (
+            has_year or has_identifier
+        ):
+            return True
+        return has_year and has_initials
+
+    @staticmethod
+    def _has_numbering(paragraph: Paragraph) -> bool:
+        paragraph_properties = paragraph._p.pPr
+        return (
+            paragraph_properties is not None
+            and paragraph_properties.numPr is not None
+        )
+
+    @staticmethod
+    def _has_hanging_indent(paragraph: Paragraph) -> bool:
+        indent = paragraph.paragraph_format.first_line_indent
+        if indent is None and paragraph.style is not None:
+            indent = paragraph.style.paragraph_format.first_line_indent
+        return indent is not None and indent.pt < 0
+
+    @staticmethod
+    def _normalize_section_title(text: str) -> str:
+        normalized = text.casefold().replace('ё', 'е').strip()
+        normalized = SECTION_NUMBER_PREFIX.sub('', normalized)
+        normalized = re.sub(r'[^\w\s]+', ' ', normalized)
+        return ' '.join(normalized.split())
 
     def extract_abbreviations(
         self,
@@ -99,11 +286,26 @@ class TextProcessor:
         """Extract unique abbreviations in document order."""
         doc_abbs: List[str] = []
         seen: Set[str] = set()
-        text_no_quotes = re.compile(r'«\S+?»|"[^"]+"').sub('', text)
+        text_no_quotes = QUOTED_TEXT_PATTERN.sub('', text)
 
-        for word in text_no_quotes.split():
-            candidate = self._clean_abbreviation(word)
-            if not candidate or candidate in seen:
+        for token_match in re.finditer(r'\S+', text_no_quotes):
+            token = token_match.group()
+            candidate = self._clean_abbreviation(token)
+            if not candidate:
+                continue
+
+            offset = token.find(candidate)
+            candidate_start = token_match.start() + offset
+            candidate_end = candidate_start + len(candidate)
+            if self._is_author_initials(
+                text_no_quotes,
+                candidate,
+                candidate_start,
+                candidate_end,
+            ):
+                continue
+
+            if candidate in seen:
                 continue
 
             if candidate not in known_abbreviations:
@@ -160,6 +362,62 @@ class TextProcessor:
 
         return filtered
 
+    def count_occurrences(self, text: str, abbreviation: str) -> int:
+        """Count abbreviation occurrences excluding author initials."""
+        pattern = re.compile(
+            rf'(?<!\w){re.escape(abbreviation)}(?!\w)'
+        )
+        return sum(
+            1
+            for match in pattern.finditer(text)
+            if not self._is_author_initials(
+                text,
+                abbreviation,
+                match.start(),
+                match.end(),
+            )
+        )
+
+    @staticmethod
+    def _is_author_initials(
+        text: str,
+        candidate: str,
+        start: int,
+        end: int,
+    ) -> bool:
+        initials = candidate.replace('.', '')
+        if re.fullmatch(r'[A-ZА-ЯЁ]{1,3}', initials) is None:
+            return False
+
+        surname_match = re.search(
+            r"([^\W\d_]+(?:[-'’][^\W\d_]+)*)\s+$",
+            text[:start],
+            re.UNICODE,
+        )
+        if surname_match is None:
+            return False
+
+        surname = surname_match.group(1)
+        letters = [char for char in surname if char.isalpha()]
+        if (
+            not letters
+            or not letters[0].isupper()
+            or not any(char.islower() for char in letters)
+        ):
+            return False
+
+        suffix = text[end:]
+        if re.match(r'^\.*\s+et\s+al\.?', suffix, re.IGNORECASE):
+            return True
+        if re.match(r'^\.*\s+и\s+соавт\.?', suffix, re.IGNORECASE):
+            return True
+
+        year = r'(?:18|19|20)\d{2}[a-zа-я]?'
+        return bool(
+            re.match(rf'^\.*\s*,\s*{year}\b', suffix, re.IGNORECASE)
+            or re.match(rf'^\.*\s+\({year}\)', suffix, re.IGNORECASE)
+        )
+
     @staticmethod
     def _is_roman_token(candidate: str) -> bool:
         parts = candidate.split('-')
@@ -172,10 +430,9 @@ class TextProcessor:
         )
 
     def _clean_abbreviation(self, match: str) -> str:
-        """Helper method to clean and format abbreviation matches."""
+        """Clean and format an abbreviation token."""
         clean_match = match.strip(':;,.»«][')
 
-        # Remove '(' and ')' if unmatched, e.g. 'IgG)' but not in 'IgG(1)'
         if clean_match.startswith('('):
             clean_match = clean_match[1:]
         if clean_match.endswith(')') and clean_match.count('(') == 0:
@@ -190,14 +447,12 @@ class TextProcessor:
         window: int = 150,
         max_contexts: int = 1000,
     ) -> List[str]:
-        """
-        Finds and returns snippets of text around occurrences of the abbreviation.
-        Limits the number of contexts returned to `max_contexts`.
-        """
+        """Return context snippets in document order."""
         contexts: List[str] = []
         seen_contexts: Set[str] = set()
         matches = re.finditer(
-            rf'(?<!\w){re.escape(abbreviation)}(?!\w)', text
+            rf'(?<!\w){re.escape(abbreviation)}(?!\w)',
+            text,
         )
         for match in matches:
             start = max(0, match.start() - window)
@@ -323,25 +578,28 @@ class CharacterValidator:
 
 
 def process_abbreviations(
-    doc: Document,
+    text: str,
     abb_dict: List[Abbreviation],
 ) -> List[Abbreviation]:
-    """Process abbreviations found in document"""
+    """Process abbreviations found in relevant document text."""
     text_processor = TextProcessor()
     validator = CharacterValidator()
-
-    # Get abbreviations from document text
     dictionary = {
         entry['abbreviation']: entry
         for entry in abb_dict
     }
 
-    text = text_processor.extract_relevant_text(doc)
-    raw_abbs = text_processor.extract_abbreviations(text, set(dictionary))
+    raw_abbs = text_processor.extract_abbreviations(
+        text,
+        set(dictionary),
+    )
     processed_abbs: List[Abbreviation] = []
 
     for abb in raw_abbs:
-        contexts = text_processor.find_abbreviation_context(text, abb)
+        contexts = text_processor.find_abbreviation_context(
+            text,
+            abb,
+        )
         dict_entry = dictionary.get(abb)
         descriptions = dict_entry['descriptions'] if dict_entry else []
 
@@ -350,6 +608,10 @@ def process_abbreviations(
             'descriptions': descriptions,
             'selected_description': None,
             'reviewed': False,
+            'occurrence_count': text_processor.count_occurrences(
+                text,
+                abb,
+            ),
             'contexts': contexts,
             'correct_form': None,
             'highlighted': None,

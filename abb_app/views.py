@@ -23,6 +23,7 @@ from .services.abbreviations import (
 )
 from .services.documents import (
     build_abbreviation_table_docx,
+    find_bibliography_sections,
     prepare_abbreviation_table_entries,
     process_document,
 )
@@ -47,6 +48,30 @@ from .services.uploads import UploadValidationError, validate_docx_upload
 DEMO_SESSION_ID = 'test_drive'
 
 logger = logging.getLogger(__name__)
+
+
+def summarize_abbreviation_scripts(
+    entries: List[Abbreviation],
+) -> Dict[str, int]:
+    summary = {
+        'total': len(entries),
+        'cyrillic': 0,
+        'latin': 0,
+        'mixed': 0,
+    }
+    for entry in entries:
+        abbreviation = entry['abbreviation']
+        has_cyrillic = any('А' <= char <= 'я' or char in 'Ёё'
+                           for char in abbreviation)
+        has_latin = any('A' <= char <= 'Z' or 'a' <= char <= 'z'
+                        for char in abbreviation)
+        if has_cyrillic and has_latin:
+            summary['mixed'] += 1
+        elif has_cyrillic:
+            summary['cyrillic'] += 1
+        else:
+            summary['latin'] += 1
+    return summary
 
 CONTEXT_LIMITS = {1, 3, 5, 10}
 CONTEXT_WINDOWS = {25, 50, 75, 100, 150}
@@ -228,8 +253,22 @@ def end_document_session(request: HttpRequest) -> HttpResponse:
     return HttpResponse(status=204)
 
 
+def process_document_session(
+    request: HttpRequest,
+    file_name: str,
+    included_bibliography_sections: Optional[set[str]] = None,
+) -> None:
+    processed = process_document(
+        FileSystemStorage().path(file_name),
+        included_bibliography_sections=included_bibliography_sections,
+    )
+    request.session['doc_abbs'] = processed.abbreviations
+    request.session['initial_abbs'] = processed.initial_abbreviations
+    request.session[PROCESSED_FILE_SESSION_KEY] = file_name
+
+
 @ensure_csrf_cookie
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 def process_file_with_session(
     request: HttpRequest,
     session_id: str
@@ -257,6 +296,43 @@ def process_file_with_session(
         return redirect('upload_file')
 
     request.session[SESSION_FILE_KEY] = filename
+    refresh_document_session(request)
+
+    is_processed = (
+        request.session.get(PROCESSED_FILE_SESSION_KEY) == filename
+        and 'doc_abbs' in request.session
+        and 'initial_abbs' in request.session
+    )
+
+    if request.method == 'POST':
+        process_document_session(
+            request,
+            filename,
+            included_bibliography_sections=set(
+                request.POST.getlist('include_bibliography_sections')
+            ),
+        )
+        return redirect(
+            'process_file_with_session',
+            session_id=session_id,
+        )
+
+    if not is_processed:
+        if not is_demo:
+            sections = find_bibliography_sections(fs.path(filename))
+            if sections:
+                return render(
+                    request,
+                    'bibliography_review.html',
+                    {
+                        'bibliography_sections': sections,
+                        'document_session_timeout_ms': (
+                            settings.DOCUMENT_SESSION_TIMEOUT_SECONDS * 1000
+                        ),
+                    },
+                )
+        process_document_session(request, filename)
+
     return process_and_display(request, is_demo=is_demo)
 
 
@@ -426,8 +502,6 @@ def update_workflow_state(request: HttpRequest) -> JsonResponse:
 
     state = request.session.get(WORKFLOW_STATE_SESSION_KEY, {})
     tool_state = state.get(tool_id, {})
-    if not isinstance(tool_state, dict):
-        tool_state = {'open': bool(tool_state)}
     tool_state['open'] = is_open
     if height is not None:
         tool_state['height'] = height
@@ -452,38 +526,49 @@ def update_table_check(request: HttpRequest) -> JsonResponse:
     return JsonResponse({'success': True})
 
 
+@require_http_methods(['POST'])
+def update_single_occurrence_abbreviations(
+    request: HttpRequest,
+) -> HttpResponse:
+    try:
+        action = parse_request_json(request).get('action')
+        if action not in {'remove', 'add'}:
+            raise ValueError('Invalid action')
+    except ValueError as exc:
+        return JsonResponse(
+            {'success': False, 'error': str(exc)},
+            status=400,
+        )
+
+    doc_abbs: List[Abbreviation] = request.session.get('doc_abbs', [])
+    singletons = [
+        entry for entry in doc_abbs
+        if entry['occurrence_count'] == 1
+    ]
+
+    remove = action == 'remove'
+    for entry in singletons:
+        entry['selected_description'] = None
+        entry['reviewed'] = remove
+
+    request.session['doc_abbs'] = doc_abbs
+    singleton_names = {entry['abbreviation'] for entry in singletons}
+    collapsed = set(request.session.get(CARD_STATE_SESSION_KEY, []))
+    if remove:
+        collapsed.update(singleton_names)
+    else:
+        collapsed.difference_update(singleton_names)
+    request.session[CARD_STATE_SESSION_KEY] = sorted(collapsed)
+
+    return HttpResponse(status=204)
+
+
 def process_and_display(
     request: HttpRequest,
     is_demo: bool = False,
 ) -> HttpResponse:
-    file_name = request.session.get(SESSION_FILE_KEY)
-    if not file_name:
-        return render(
-            request,
-            'upload.html',
-            upload_page_context(
-                error='Пожалуйста, загрузите новый файл.'
-            ),
-        )
-
-    refresh_document_session(request)
-
-    if (
-        request.session.get(PROCESSED_FILE_SESSION_KEY) == file_name
-        and 'doc_abbs' in request.session
-        and 'initial_abbs' in request.session
-    ):
-        doc_abbs = request.session['doc_abbs']
-        initial_abbs = request.session['initial_abbs']
-    else:
-        file_path = FileSystemStorage().path(file_name)
-        processed = process_document(file_path)
-        doc_abbs = processed.abbreviations
-        initial_abbs = processed.initial_abbreviations
-
-        request.session['doc_abbs'] = doc_abbs
-        request.session['initial_abbs'] = initial_abbs
-        request.session[PROCESSED_FILE_SESSION_KEY] = file_name
+    doc_abbs = request.session['doc_abbs']
+    initial_abbs = request.session['initial_abbs']
 
     table_check_enabled = (
         is_demo or request.session.get(TABLE_CHECK_SESSION_KEY) is True
@@ -496,23 +581,23 @@ def process_and_display(
     workflow_state = request.session.get(WORKFLOW_STATE_SESSION_KEY, {})
     comparison_state = workflow_state.get('comparison-block', {})
     table_preview_state = workflow_state.get('table-preview-tool', {})
-    if not isinstance(comparison_state, dict):
-        comparison_state = {'open': bool(comparison_state)}
-    if not isinstance(table_preview_state, dict):
-        table_preview_state = {'open': bool(table_preview_state)}
 
     collapsed_abbreviations = set(
         request.session.get(CARD_STATE_SESSION_KEY, [])
     )
-    if CARD_STATE_SESSION_KEY not in request.session:
-        collapsed_abbreviations = {
-            entry['abbreviation']
-            for entry in doc_abbs
-            if entry.get('reviewed') or entry.get('selected_description')
-        }
-        request.session[CARD_STATE_SESSION_KEY] = sorted(
-            collapsed_abbreviations
-        )
+
+    repeated_abbs = [
+        entry for entry in doc_abbs
+        if entry['occurrence_count'] >= 2
+    ]
+    single_occurrence_abbs = [
+        entry for entry in doc_abbs
+        if entry['occurrence_count'] == 1
+    ]
+    single_occurrence_all_removed = bool(single_occurrence_abbs) and all(
+        entry['reviewed'] and entry['selected_description'] is None
+        for entry in single_occurrence_abbs
+    )
 
     comparison_context: Dict[str, Any] = {}
     if table_check_enabled and initial_abbs:
@@ -522,11 +607,20 @@ def process_and_display(
             parse_table_settings({}),
         )
 
+    repeated_summary = summarize_abbreviation_scripts(repeated_abbs)
+    single_occurrence_summary = summarize_abbreviation_scripts(
+        single_occurrence_abbs
+    )
+
     return render(
         request,
         'content.html',
         {
-            'doc_abbs': doc_abbs,
+            'repeated_abbs': repeated_abbs,
+            'single_occurrence_abbs': single_occurrence_abbs,
+            'single_occurrence_all_removed': single_occurrence_all_removed,
+            'repeated_summary': repeated_summary,
+            'single_occurrence_summary': single_occurrence_summary,
             'has_initial_abbs': bool(initial_abbs),
             'initial_abbs_count': len(initial_abbs),
             'is_demo': is_demo,
