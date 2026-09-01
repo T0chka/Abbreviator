@@ -40,13 +40,6 @@ document.addEventListener('DOMContentLoaded', () => {
             scroll: false
         },
         {
-            name: 'context',
-            expand: firstCard,
-            targets: () => firstCard.querySelectorAll(
-                '.context-item:not(.is-hidden)'
-            )
-        },
-        {
             name: 'description',
             expand: firstCard,
             targets: () => firstCard.querySelectorAll('.btn-select-option')

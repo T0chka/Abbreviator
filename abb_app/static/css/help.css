@@ -1,0 +1,72 @@
+/* ==========================================================================
+   Help page and help action
+   ========================================================================== */
+
+.help-fab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary-color);
+}
+
+.help-fab-symbol {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.help-page {
+    padding-bottom: 56px;
+}
+
+.help-content {
+    max-width: 900px;
+    margin: 0 auto 40px;
+}
+
+.help-section {
+    padding: 0 4px 20px;
+}
+
+.help-section + .help-section {
+    padding-top: 4px;
+    border-top: var(--border);
+}
+
+.help-section h3 {
+    margin: 20px 0 8px;
+    font-size: 1.05rem;
+}
+
+.help-section p {
+    margin: 8px 0;
+}
+
+.help-section ul {
+    margin: 8px 0 12px;
+    padding-left: 24px;
+}
+
+.help-section li + li {
+    margin-top: 6px;
+}
+
+.help-section code {
+    font-family: Consolas, 'Courier New', monospace;
+    font-size: 0.92em;
+}
+
+@media (max-width: 760px) {
+    .help-page {
+        padding-bottom: 72px;
+    }
+
+    .help-content {
+        margin-bottom: 28px;
+    }
+
+    .help-section {
+        padding-right: 0;
+        padding-left: 0;
+    }
+}

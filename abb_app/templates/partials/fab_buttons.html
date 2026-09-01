@@ -23,7 +23,7 @@
         </button>
         {% include 'partials/settings_panel.html' %}
     </div>
-    {% elif page == 'dictionary' %}
+    {% elif page == 'dictionary' or page == 'help' %}
     <button type="button"
             class="fab back-fab tooltip tooltip-left"
             data-fab-action="back">
@@ -44,5 +44,14 @@
         <span class="material-icons">arrow_downward</span>
         <span class="tooltiptext">Вниз</span>
     </button>
+
+    {% if page == 'process' %}
+    <a href="{% url 'how_it_works' %}"
+       class="fab help-fab tooltip tooltip-left"
+       aria-label="Как это работает">
+        <span class="help-fab-symbol" aria-hidden="true">?</span>
+        <span class="tooltiptext">Как это работает</span>
+    </a>
+    {% endif %}
 </div>
 <script src="{% static 'js/fab.js' %}"></script>

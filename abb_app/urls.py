@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import path
+from django.views.generic import TemplateView
 
 from .views import (
     dictionary_view,
@@ -18,13 +19,17 @@ from .views import (
     update_workflow_state,
     upload_file,
 )
-
 urlpatterns = [
     path('', upload_file, name='upload_file'),
     path('admin/', admin.site.urls),
     path('demo/document/', download_demo_document,
          name='download_demo_document'),
     path('dictionary/', dictionary_view, name='dictionary'),
+    path(
+        'how-it-works/',
+        TemplateView.as_view(template_name='how_it_works.html'),
+        name='how_it_works',
+    ),
     path('generate_description/', generate_description,
          name='generate_description'),
     path('make_abbreviation_table/', make_abbreviation_table,
