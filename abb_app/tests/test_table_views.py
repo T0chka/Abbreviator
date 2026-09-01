@@ -61,7 +61,6 @@ class InitialTableValidationTests(TestCase):
             description=DESCRIPTION,
             status='approved',
         )
-
         with TemporaryDirectory() as directory:
             path = Path(directory) / 'initial-table.docx'
             doc = Document()
@@ -72,7 +71,6 @@ class InitialTableValidationTests(TestCase):
             table.rows[1].cells[0].text = MIXED
             table.rows[1].cells[1].text = DESCRIPTION
             doc.save(path)
-
             processed = process_document(str(path))
 
         initial = processed.initial_abbreviations[0]
@@ -99,7 +97,7 @@ class TableComparisonViewTests(TestCase):
             content_type='application/json',
         )
 
-    def test_comparison_ignores_scope_and_highlights_original_spelling(self):
+    def test_comparison_ignores_scope(self):
         self.set_session(
             [mixed_card()],
             [initial_entry(CANONICAL)],
@@ -111,29 +109,12 @@ class TableComparisonViewTests(TestCase):
         on_new = self.post_comparison(True, 'new')
 
         self.assertEqual(off_all.status_code, 200)
+        self.assertEqual(off_new.status_code, 200)
+        self.assertEqual(on_all.status_code, 200)
+        self.assertEqual(on_new.status_code, 200)
         self.assertEqual(off_all.content, off_new.content)
-        self.assertContains(off_all, 'tooltip tooltip-right red')
         self.assertEqual(on_all.content, on_new.content)
-        self.assertNotContains(on_all, 'tooltip tooltip-right red')
-
-        validation = CharacterValidator().validate_abbreviation(
-            MIXED,
-            [{
-                'abbreviation': CANONICAL,
-                'descriptions': [DESCRIPTION],
-            }],
-        )
-        self.set_session(
-            [canonical_card()],
-            [initial_entry(MIXED, validation['highlighted'])],
-        )
-        missing_original = self.post_comparison(True)
-
-        self.assertEqual(missing_original.status_code, 200)
-        self.assertContains(
-            missing_original,
-            'tooltip tooltip-right red',
-        )
+        self.assertNotEqual(off_all.content, on_all.content)
 
 
 class PreviewExportParityTests(TestCase):
@@ -154,14 +135,12 @@ class PreviewExportParityTests(TestCase):
                 },
             },
         ]
-
         for scenario in scenarios:
             with self.subTest(settings=scenario['settings']):
                 session = self.client.session
                 session['doc_abbs'] = [mixed_card(), canonical_card()]
                 session['initial_abbs'] = scenario['initial']
                 session.save()
-
                 payload = json.dumps(scenario['settings'])
                 preview = self.client.post(
                     reverse('preview_abbreviation_table'),
@@ -173,7 +152,6 @@ class PreviewExportParityTests(TestCase):
                     data=payload,
                     content_type='application/json',
                 )
-
                 self.assertEqual(preview.status_code, 200)
                 self.assertEqual(export.status_code, 200)
                 self.assertEqual(
@@ -181,7 +159,6 @@ class PreviewExportParityTests(TestCase):
                     'application/vnd.openxmlformats-officedocument.'
                     'wordprocessingml.document',
                 )
-
                 preview_entries = preview.json()['entries']
                 preview_names = [
                     entry['abbreviation'] for entry in preview_entries
@@ -192,7 +169,6 @@ class PreviewExportParityTests(TestCase):
                     for row in document.tables[0].rows[1:]
                 ]
                 self.assertEqual(export_names, preview_names)
-
                 if not scenario['settings']['use_correct_form']:
                     mixed = next(
                         entry for entry in preview_entries

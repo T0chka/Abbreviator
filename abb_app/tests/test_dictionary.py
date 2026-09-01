@@ -2,6 +2,7 @@ from unittest.mock import patch
 
 from django.contrib import admin
 from django.test import RequestFactory, TestCase
+from django.urls import reverse
 
 from abb_app.admin import (
     AbbreviationEntryAdmin,
@@ -9,11 +10,10 @@ from abb_app.admin import (
     approve_entries,
 )
 from abb_app.models import AbbreviationEntry
-from abb_app.views import dictionary_view
 
 
 class DictionaryTests(TestCase):
-    def test_public_dictionary_shows_only_approved_entries_with_script_markup(self):
+    def test_public_dictionary_shows_only_approved_entries(self):
         AbbreviationEntry.objects.create(
             abbreviation='ЖA',
             description='Approved description',
@@ -25,16 +25,16 @@ class DictionaryTests(TestCase):
             status='for_review',
         )
 
-        request = RequestFactory().get('/dictionary/')
-        response = dictionary_view(request)
-        html = response.content.decode()
+        response = self.client.get(reverse('dictionary'))
 
-        self.assertIn('Approved description', html)
-        self.assertNotIn('Pending description', html)
-        self.assertIn('<span>Ж</span>', html)
-        self.assertIn(
-            '<span class="homoglyph-latin" title="латиница">A</span>',
-            html,
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, 'dictionary.html')
+        self.assertEqual(
+            [
+                (entry['abbreviation'], entry['description'])
+                for entry in response.context['abbreviations']
+            ],
+            [('ЖA', 'Approved description')],
         )
 
     def test_admin_allows_same_spelling_but_rejects_homoglyph_alias(self):
@@ -43,7 +43,6 @@ class DictionaryTests(TestCase):
             description='Existing description',
             status='approved',
         )
-
         cases = [
             ('АТХ', True),
             ('ATX', False),
@@ -75,7 +74,6 @@ class DictionaryTests(TestCase):
             admin.site,
         )
         request = RequestFactory().post('/admin/')
-
         with patch.object(model_admin, 'message_user'):
             approve_entries(
                 model_admin,

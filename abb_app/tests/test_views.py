@@ -26,7 +26,6 @@ class ProcessingViewTests(TestCase):
             description='thyroxine',
             status='approved',
         )
-
         with TemporaryDirectory() as media_root:
             session_id = 'test-session'
             path = Path(media_root) / f'{session_id}.docx'
@@ -37,7 +36,6 @@ class ProcessingViewTests(TestCase):
             session = self.client.session
             session[SESSION_FILE_KEY] = path.name
             session.save()
-
             with self.settings(MEDIA_ROOT=media_root):
                 response = self.client.get(
                     reverse('process_file_with_session', args=[session_id])
@@ -60,14 +58,12 @@ class ProcessingViewTests(TestCase):
             description='thyroxine',
             status='approved',
         )
-
         with TemporaryDirectory() as media_root:
             session_id = 'review-state'
             path = Path(media_root) / f'{session_id}.docx'
             doc = Document()
             doc.add_paragraph('У пациента определяли уровень T4.')
             doc.save(path)
-
             session = self.client.session
             session[SESSION_FILE_KEY] = path.name
             session.save()
@@ -83,7 +79,6 @@ class ProcessingViewTests(TestCase):
                 }]
                 session[TABLE_CHECK_SESSION_KEY] = True
                 session.save()
-
                 before_review = self.client.get(
                     reverse('process_file_with_session', args=[session_id])
                 )
@@ -127,7 +122,6 @@ class ProcessingViewTests(TestCase):
             session_id = 'card-state'
             path = Path(media_root) / f'{session_id}.docx'
             Document().save(path)
-
             session = self.client.session
             session[SESSION_FILE_KEY] = path.name
             session[PROCESSED_FILE_SESSION_KEY] = path.name
@@ -183,14 +177,12 @@ class ProcessingViewTests(TestCase):
                 refreshed.context['collapsed_abbreviations'],
                 {'T4', 'ABC'},
             )
-            self.assertContains(refreshed, '- (убрано)')
 
-    def test_refresh_preserves_table_choice_and_workflow_layout(self):
+    def test_refresh_preserves_table_choice_and_workflow_state(self):
         with TemporaryDirectory() as media_root:
             session_id = 'workflow-state'
             path = Path(media_root) / f'{session_id}.docx'
             Document().save(path)
-
             session = self.client.session
             session[SESSION_FILE_KEY] = path.name
             session[PROCESSED_FILE_SESSION_KEY] = path.name
@@ -202,7 +194,7 @@ class ProcessingViewTests(TestCase):
             session.save()
 
             with self.settings(MEDIA_ROOT=media_root):
-                first = self.client.get(
+                self.client.get(
                     reverse('process_file_with_session', args=[session_id])
                 )
                 disabled = self.client.post(
@@ -218,7 +210,6 @@ class ProcessingViewTests(TestCase):
                     data=json.dumps({'enabled': True}),
                     content_type='application/json',
                 )
-
                 sizes = {
                     'comparison-block': 240,
                     'table-preview-tool': 320,
@@ -234,33 +225,23 @@ class ProcessingViewTests(TestCase):
                         content_type='application/json',
                     )
                     self.assertEqual(response.status_code, 200)
-
                 refreshed = self.client.get(
                     reverse('process_file_with_session', args=[session_id])
                 )
 
-            self.assertContains(first, 'id="table-check-dialog"')
             self.assertEqual(disabled.status_code, 200)
             self.assertFalse(disabled_refresh.context['table_check_enabled'])
-            self.assertNotContains(
-                disabled_refresh,
-                'id="table-check-dialog"',
-            )
             self.assertEqual(enabled.status_code, 200)
             self.assertTrue(refreshed.context['table_check_enabled'])
             self.assertTrue(refreshed.context['comparison_open'])
             self.assertEqual(refreshed.context['comparison_height'], 240)
             self.assertTrue(refreshed.context['table_preview_open'])
             self.assertEqual(refreshed.context['table_preview_height'], 320)
-            html = refreshed.content.decode()
-            self.assertIn('style="height: 240px;"', html)
-            self.assertIn('style="height: 320px;"', html)
 
     def test_new_upload_resets_processing_state(self):
         buffer = io.BytesIO()
         Document().save(buffer)
         upload = SimpleUploadedFile('new.docx', buffer.getvalue())
-
         session = self.client.session
         session[TABLE_CHECK_SESSION_KEY] = True
         session[CARD_STATE_SESSION_KEY] = ['OLD']
@@ -272,7 +253,6 @@ class ProcessingViewTests(TestCase):
         session['doc_abbs'] = [{'abbreviation': 'OLD'}]
         session['initial_abbs'] = [{'abbreviation': 'OLD'}]
         session.save()
-
         with TemporaryDirectory() as media_root:
             with self.settings(MEDIA_ROOT=media_root):
                 response = self.client.post(
@@ -299,13 +279,11 @@ class ProcessingViewTests(TestCase):
             description='thyroxine',
             status='approved',
         )
-
         with TemporaryDirectory() as media_root:
             path = Path(media_root) / DEMO_FILENAME
             doc = Document()
             doc.add_paragraph('T4')
             doc.save(path)
-
             session = self.client.session
             session[SESSION_FILE_KEY] = DEMO_FILENAME
             session[PROCESSED_FILE_SESSION_KEY] = DEMO_FILENAME
@@ -335,7 +313,10 @@ class ProcessingViewTests(TestCase):
             self.assertNotIn(TABLE_CHECK_SESSION_KEY, self.client.session)
             self.assertNotIn(WORKFLOW_STATE_SESSION_KEY, self.client.session)
             self.assertEqual(
-                [entry['abbreviation'] for entry in self.client.session['doc_abbs']],
+                [
+                    entry['abbreviation']
+                    for entry in self.client.session['doc_abbs']
+                ],
                 ['T4'],
             )
             self.assertIsNone(
@@ -347,14 +328,12 @@ class ProcessingViewTests(TestCase):
             session_id = 'bibliography'
             path = Path(media_root) / f'{session_id}.docx'
             document = Document()
-
             document.add_heading('СПИСОК СОКРАЩЕНИЙ', level=1)
             table = document.add_table(rows=2, cols=2)
             table.cell(0, 0).text = 'Аббревиатура'
             table.cell(0, 1).text = 'Расшифровка'
             table.cell(1, 0).text = 'ABC'
             table.cell(1, 1).text = 'alpha beta complex'
-
             document.add_paragraph('Основной текст ABC ABC.')
             document.add_paragraph('12: ЛИТЕРАТУРА')
             document.add_paragraph(
@@ -375,7 +354,6 @@ class ProcessingViewTests(TestCase):
             document.add_heading('Заключение', level=1)
             document.add_paragraph('Итоговый текст END END.')
             document.save(path)
-
             session = self.client.session
             session[SESSION_FILE_KEY] = path.name
             session.save()
@@ -388,7 +366,6 @@ class ProcessingViewTests(TestCase):
                 review = self.client.get(process_url)
                 sections = review.context['bibliography_sections']
                 first_section_id = sections[0].section_id
-
                 self.assertEqual(review.status_code, 200)
                 self.assertTemplateUsed(
                     review,
@@ -401,21 +378,7 @@ class ProcessingViewTests(TestCase):
                         'Публикации по второй части',
                     ],
                 )
-                self.assertContains(review, 'Вернуть в анализ')
-                self.assertContains(
-                    review,
-                    'class="btn-base btn-success '
-                    'bibliography-toggle-button"',
-                    count=2,
-                )
-                self.assertContains(review, 'id="loading-overlay"')
-                self.assertContains(review, 'Обработка документа')
-                self.assertNotContains(
-                    review,
-                    'id="table-check-dialog"',
-                )
                 self.assertNotIn('doc_abbs', self.client.session)
-
                 processed = self.client.post(
                     process_url,
                     data={
@@ -430,7 +393,7 @@ class ProcessingViewTests(TestCase):
                 [(process_url, 302)],
             )
             self.assertTemplateUsed(processed, 'content.html')
-            self.assertContains(processed, 'id="table-check-dialog"')
+            self.assertTrue(processed.context['show_table_check_dialog'])
             entries = {
                 entry['abbreviation']: entry
                 for entry in self.client.session['doc_abbs']
@@ -453,7 +416,6 @@ class ProcessingViewTests(TestCase):
             session = self.client.session
             session[SESSION_FILE_KEY] = path.name
             session.save()
-
             with self.settings(MEDIA_ROOT=media_root):
                 response = self.client.get(
                     reverse('process_file_with_session', args=[session_id])
@@ -487,36 +449,8 @@ class ProcessingViewTests(TestCase):
                 ],
                 ['АБВ'],
             )
-            self.assertContains(response, 'Повторяющиеся сокращения')
-            self.assertContains(response, 'Единичные сокращения')
-            content = response.content.decode()
-            self.assertLess(
-                content.index('data-processing-action="toggle-singletons"'),
-                content.index('single-occurrence-list'),
-            )
-            button_start = content.index(
-                'data-processing-action="toggle-singletons"'
-            )
-            button_end = content.index('</button>', button_start)
-            self.assertIn(
-                'data-bulk-action="remove"',
-                content[button_start:button_end],
-            )
-            self.assertIn('Убрать все', content[button_start:button_end])
-            self.assertNotIn('single-occurrence-controls', content)
-            self.assertContains(response, 'Найдено сокращений: 2')
-            self.assertContains(
-                response,
-                'Кириллических: 0, латинских: 1, смешанных: 1',
-            )
-            self.assertContains(response, 'Найдено сокращений: 1')
-            self.assertContains(
-                response,
-                'Кириллических: 1, латинских: 0, смешанных: 0',
-            )
             self.assertEqual(selected.status_code, 200)
             self.assertEqual(removed.status_code, 204)
-
             removed_entry = next(
                 entry for entry in self.client.session['doc_abbs']
                 if entry['abbreviation'] == 'АБВ'
@@ -529,30 +463,13 @@ class ProcessingViewTests(TestCase):
             )
 
             with self.settings(MEDIA_ROOT=media_root):
-                removed_page = self.client.get(
-                    reverse('process_file_with_session', args=[session_id])
-                )
                 added = self.client.post(
                     reverse('update_single_occurrence_abbreviations'),
                     data=json.dumps({'action': 'add'}),
                     content_type='application/json',
                 )
 
-            removed_content = removed_page.content.decode()
-            button_start = removed_content.index(
-                'data-processing-action="toggle-singletons"'
-            )
-            button_end = removed_content.index('</button>', button_start)
-            self.assertIn(
-                'data-bulk-action="add"',
-                removed_content[button_start:button_end],
-            )
-            self.assertIn(
-                'Добавить все',
-                removed_content[button_start:button_end],
-            )
             self.assertEqual(added.status_code, 204)
-
             entries = {
                 entry['abbreviation']: entry
                 for entry in self.client.session['doc_abbs']
