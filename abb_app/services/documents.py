@@ -14,6 +14,7 @@ from .abbreviations import (
     Abbreviation,
     HighlightedCharacter,
     TableEntry,
+    format_description,
     load_approved_dictionary,
 )
 from .extraction import (
@@ -118,66 +119,24 @@ class AbbreviationTableExtractor:
 
 
 class AbbreviationFormatter:
-    """Class for formatting and cleaning abbreviation entries."""
-
-    GREEK_TO_LATIN = {
-        'α': 'A', 'β': 'B', 'γ': 'G', 'δ': 'D',
-        'ε': 'E', 'ζ': 'Z', 'η': 'H', 'θ': 'TH',
-        'ι': 'I', 'κ': 'K', 'λ': 'L', 'μ': 'M',
-        'ν': 'N', 'ξ': 'X', 'ο': 'O', 'π': 'P',
-        'ρ': 'R', 'σ': 'S', 'τ': 'T', 'υ': 'U',
-        'φ': 'PH', 'χ': 'CH', 'ψ': 'PS', 'ω': 'O'
-    }
-
-    def format_description(self, entry: Dict[str, str]  ) -> str:
-        """
-        Format description by capitalizing words that correspond to abbreviation
-        letters.
-        """
-        abbreviation: str = entry['abbreviation']
-        description: str = entry['description']
-
-        # Split description into English and Russian parts
-        parts = description.split('(', 1)
-        english_part = parts[0].strip().lower()
-        russian_part = f"({parts[1]}" if len(parts) > 1 else ''
-
-        # Convert abbreviation to uppercase Latin letters
-        latin_abbr = ''.join(
-            self.GREEK_TO_LATIN.get(char, char) for char in abbreviation
-        ).upper()
-        abbr_letters = ''.join(re.findall(r'[A-Z]', latin_abbr))
-
-        english_part_capitalized = self._capitalize_by_abbreviation(
-            english_part, abbr_letters
-        )
-        return f"{english_part_capitalized} {russian_part}".strip()
+    """Class for formatting and sorting abbreviation table entries."""
 
     def format_table_entries(
         self,
         entries: List[TableEntry],
     ) -> List[TableEntry]:
         """Format descriptions without changing table row identity."""
-        formatted: List[TableEntry] = []
-
-        for entry in entries:
-            abbreviation = entry['abbreviation'].strip()
-            description = entry['description'].strip()
-
-            if re.search(r'[A-Za-z]', abbreviation):
-                description = self.format_description({
-                    'abbreviation': abbreviation,
-                    'description': description,
-                })
-
-            description = self._capitalize_after_digits(description)
-            formatted.append({
-                'abbreviation': abbreviation,
-                'description': description,
+        return [
+            {
+                'abbreviation': entry['abbreviation'].strip(),
+                'description': format_description(
+                    entry['abbreviation'].strip(),
+                    entry['description'],
+                ),
                 'highlighted': entry.get('highlighted'),
-            })
-
-        return formatted
+            }
+            for entry in entries
+        ]
 
     def sort_abbreviations(
         self,
@@ -207,32 +166,6 @@ class AbbreviationFormatter:
                 entry['abbreviation'].casefold(),
                 entry['description'].casefold(),
             ),
-        )
-
-    def _capitalize_by_abbreviation(
-            self, text: str, abbr_letters: str
-        ) -> str:
-        """Capitalize words in text based on abbreviation letters."""
-        abbr_index = 0  # Position in the abbreviation
-        text_pos = 0  # Position in the text
-        text_chars = list(text)
-
-        while abbr_index < len(abbr_letters) and text_pos < len(text_chars):
-            current_char = text_chars[text_pos]
-            if (current_char.lower() == abbr_letters[abbr_index].lower()
-                and (text_pos == 0 or not text_chars[text_pos - 1].isalpha())):
-                text_chars[text_pos] = current_char.upper()
-                abbr_index += 1
-            text_pos += 1
-
-        return ''.join(text_chars)
-
-    def _capitalize_after_digits(self, text: str) -> str:
-        """Capitalize the first letter following any leading digits."""
-        return re.sub(
-            r'^(\d*)([a-zA-ZА-Яа-яЁё])',
-            lambda m: m.group(1) + m.group(2).upper(),
-            text
         )
 
 

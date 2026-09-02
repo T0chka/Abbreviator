@@ -1,6 +1,17 @@
+import re
 from typing import Dict, List, NotRequired, Optional, TypedDict
 
 from abb_app.models import AbbreviationEntry
+
+
+GREEK_TO_LATIN = {
+    'α': 'A', 'β': 'B', 'γ': 'G', 'δ': 'D',
+    'ε': 'E', 'ζ': 'Z', 'η': 'H', 'θ': 'TH',
+    'ι': 'I', 'κ': 'K', 'λ': 'L', 'μ': 'M',
+    'ν': 'N', 'ξ': 'X', 'ο': 'O', 'π': 'P',
+    'ρ': 'R', 'σ': 'S', 'τ': 'T', 'υ': 'U',
+    'φ': 'PH', 'χ': 'CH', 'ψ': 'PS', 'ω': 'O',
+}
 
 
 class HighlightedCharacter(TypedDict):
@@ -29,6 +40,55 @@ class TableEntry(TypedDict):
 class ComparisonResult(TypedDict):
     missing_abbs: List[Abbreviation]
     new_found: List[TableEntry]
+
+
+def normalize_description(description: str) -> str:
+    """Return a case-insensitive key used only to compare descriptions."""
+    return ' '.join(description.split()).casefold()
+
+
+def _capitalize_by_abbreviation(text: str, abbr_letters: str) -> str:
+    abbr_index = 0
+    text_pos = 0
+    text_chars = list(text)
+
+    while abbr_index < len(abbr_letters) and text_pos < len(text_chars):
+        current_char = text_chars[text_pos]
+        if (
+            current_char.lower() == abbr_letters[abbr_index].lower()
+            and (text_pos == 0 or not text_chars[text_pos - 1].isalpha())
+        ):
+            text_chars[text_pos] = current_char.upper()
+            abbr_index += 1
+        text_pos += 1
+
+    return ''.join(text_chars)
+
+
+def format_description(abbreviation: str, description: str) -> str:
+    """Return the canonical description stored in the dictionary."""
+    formatted = ' '.join(description.split())
+
+    if re.search(r'[A-Za-z]', abbreviation):
+        parts = formatted.split('(', 1)
+        english_part = parts[0].strip().lower()
+        parenthetical_part = f"({parts[1]}" if len(parts) > 1 else ''
+
+        latin_abbr = ''.join(
+            GREEK_TO_LATIN.get(char, char) for char in abbreviation
+        ).upper()
+        abbr_letters = ''.join(re.findall(r'[A-Z]', latin_abbr))
+        english_part = _capitalize_by_abbreviation(
+            english_part,
+            abbr_letters,
+        )
+        formatted = f'{english_part} {parenthetical_part}'.strip()
+
+    return re.sub(
+        r'^(\d*)([a-zA-ZА-Яа-яЁё])',
+        lambda match: match.group(1) + match.group(2).upper(),
+        formatted,
+    )
 
 
 def load_approved_dictionary() -> List[Abbreviation]:
@@ -77,15 +137,35 @@ def update_abbreviation_selection(
     if not description:
         raise ValueError('Description is required')
 
-    entry['selected_description'] = description
+    dictionary_abbreviation = entry.get('correct_form') or abbreviation
+    formatted_description = format_description(
+        dictionary_abbreviation,
+        description,
+    )
+    normalized_description = normalize_description(formatted_description)
+
+    entry['selected_description'] = formatted_description
     entry['reviewed'] = True
-    if description in entry['descriptions']:
+
+    if any(
+        normalize_description(existing) == normalized_description
+        for existing in entry['descriptions']
+    ):
         return
 
-    AbbreviationEntry.objects.get_or_create(
-        abbreviation=entry.get('correct_form') or abbreviation,
-        description=description,
-        defaults={'status': 'for_review'},
+    existing_descriptions = AbbreviationEntry.objects.filter(
+        abbreviation=dictionary_abbreviation,
+    ).values_list('description', flat=True)
+    if any(
+        normalize_description(existing) == normalized_description
+        for existing in existing_descriptions
+    ):
+        return
+
+    AbbreviationEntry.objects.create(
+        abbreviation=dictionary_abbreviation,
+        description=formatted_description,
+        status='for_review',
     )
 
 

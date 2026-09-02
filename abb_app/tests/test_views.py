@@ -102,7 +102,7 @@ class ProcessingViewTests(TestCase):
             )
             self.assertEqual(update.status_code, 200)
             entry = self.client.session['doc_abbs'][0]
-            self.assertEqual(entry['selected_description'], 'thyroxine')
+            self.assertEqual(entry['selected_description'], 'Thyroxine')
             self.assertTrue(entry['reviewed'])
             self.assertIn(
                 'T4',
