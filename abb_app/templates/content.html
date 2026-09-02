@@ -5,7 +5,6 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/workflow.css' %}">
-<link rel="stylesheet" href="{% static 'css/help.css' %}">
 {% if is_demo %}
 <link rel="stylesheet" href="{% static 'css/demo.css' %}">
 {% endif %}
@@ -132,7 +131,7 @@
     </a>
 
     {% if is_demo %}
-    <a href="{% url 'download_demo_document' %}" class="demo-document-btn">
+    <a href="{% url 'download_demo_document' %}" class="generate-btn demo-document-btn">
         Скачать демо-документ
     </a>
     {% endif %}

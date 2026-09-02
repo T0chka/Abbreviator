@@ -839,6 +839,11 @@ async function persistWorkflowState(details, height = null) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    if (window.matchMedia('(max-width: 768px)').matches) {
+        document.getElementById('global-context-window').value = String(
+            CONTEXT_WINDOWS.indexOf(25)
+        );
+    }
     applyGlobalContextSetting('limit');
     applyGlobalContextSetting('window');
 

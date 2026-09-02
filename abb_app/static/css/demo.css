@@ -116,21 +116,11 @@
     gap: 16px;
 }
 .demo-document-btn {
-    display: inline-flex;
-    min-height: 48px;
-    padding: 0 28px;
-    align-items: center;
-    justify-content: center;
     border: 1px solid var(--primary-color);
-    border-radius: var(--border-radius);
     color: var(--primary-color);
     background: var(--bg-light);
-    font-family: var(--font-stack);
-    font-size: 1rem;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
 }
+
 .demo-document-btn:hover,
 .demo-document-btn:active {
     color: var(--primary-color);
@@ -144,8 +134,7 @@
         align-items: stretch;
         gap: 10px;
     }
-    .generate-buttons-section .generate-btn,
-    .generate-buttons-section .demo-document-btn {
+    .generate-buttons-section .generate-btn {
         display: flex;
         width: 100%;
         box-sizing: border-box;

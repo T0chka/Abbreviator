@@ -1,5 +1,5 @@
 {% load static %}
-<div class="fab-container">
+<div class="fab-container fab-container-{{ page }}">
     {% if page == 'process' %}
     <a href="{% url 'upload_file' %}"
        class="fab new-upload-fab tooltip tooltip-left">
@@ -49,7 +49,7 @@
     <a href="{% url 'how_it_works' %}"
        class="fab help-fab tooltip tooltip-left"
        aria-label="Как это работает">
-        <span class="help-fab-symbol" aria-hidden="true">?</span>
+        <span class="material-icons" aria-hidden="true">help_outline</span>
         <span class="tooltiptext">Как это работает</span>
     </a>
     {% endif %}

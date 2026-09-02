@@ -34,6 +34,7 @@
     /* Typography */
     --font-stack: 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
     --border-radius: 4px;
+    --button-padding-y: 0.75rem;
 }
 
 /* ==========================================================================
@@ -281,7 +282,7 @@ h2 {
 }
    /* Base Button Styles */
 .btn-base, .input-group button, .generate-btn, .btn-select-option {
-    padding: 0.75rem 1.5rem;
+    padding: var(--button-padding-y) 1.5rem;
     border: none;
     border-radius: var(--border-radius);
     font-family: var(--font-stack);
@@ -396,7 +397,8 @@ h2 {
 .dictionary-fab,
 .back-fab,
 .new-upload-fab,
-.settings-fab {
+.settings-fab,
+.help-fab {
     color: var(--primary-color);
 }
 
@@ -691,10 +693,15 @@ table.dataTable thead th.sorting_desc::after {
    Media Queries
    ========================================================================== */
 @media screen and (max-width: 768px) {
+    :root {
+        --button-padding-y: 0.45rem;
+    }
+
     body {
         padding: 0 20px;
     }
 
+    html:has(body.processing-page),
     body.processing-page {
         overflow-x: hidden;
     }
@@ -763,9 +770,8 @@ table.dataTable thead th.sorting_desc::after {
         font-size: 0.75rem;
     }
 
-    /* FAB Container */
+    /* Floating Action Buttons */
     .fab-container {
-        right: 28px;
         bottom: 20px;
         gap: 10px;
         z-index: 1200;
@@ -775,6 +781,17 @@ table.dataTable thead th.sorting_desc::after {
     .fab-settings-control {
         width: 40px;
         height: 40px;
+    }
+
+    .fab-container-process {
+        right: 20px;
+        width: 40px;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .fab-container:not(.fab-container-process) {
+        right: 28px;
     }
 }
 
@@ -808,8 +825,8 @@ table.dataTable thead th.sorting_desc::after {
         margin: 0.5rem 0;
     }
 
-    .fab-container {
-        right: 18px;
+    .fab-container:not(.fab-container-process) {
+        right: 8px;
     }
 }
 

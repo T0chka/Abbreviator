@@ -189,7 +189,7 @@
 
 .dialog-button {
     flex: 1;
-    padding: 0.75rem 1rem;
+    padding: var(--button-padding-y) 1rem;
     border-radius: var(--border-radius);
     font-family: var(--font-stack);
     font-size: 0.95rem;
@@ -230,12 +230,18 @@
    Upload footer
    ========================================================================== */
 
-footer p {
+footer {
     position: fixed;
     right: 0;
     bottom: 0;
     left: 0;
+    z-index: 900;
+    background: var(--bg-light);
+}
+
+footer p {
     display: flex;
+    margin: 0;
     padding: 10px;
     align-items: center;
     justify-content: center;
@@ -783,11 +789,10 @@ body.is-resizing-workflow {
 
 .bibliography-toggle-button {
     min-width: 164px;
-    padding: 0.75rem 1rem;
+    padding: var(--button-padding-y) 1rem;
     flex: 0 0 auto;
     letter-spacing: normal;
 }
-
 
 .bibliography-review-actions {
     justify-content: flex-end;
