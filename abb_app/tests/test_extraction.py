@@ -38,6 +38,30 @@ class TextProcessorTests(SimpleTestCase):
         self.assertIn('ABC', entries)
         self.assertIn('АД', entries)
 
+    def test_author_initial_check_avoids_full_document_slices(self):
+        class BoundedSliceText(str):
+            def __getitem__(self, key):
+                if (
+                    isinstance(key, slice)
+                    and (key.start is None or key.stop is None)
+                ):
+                    raise AssertionError('Unbounded document slice')
+                return super().__getitem__(key)
+
+        text = BoundedSliceText(
+            ('ordinary text ' * 1000) + 'Liu TT et al. compared ABC.'
+        )
+        start = text.index('TT')
+
+        self.assertTrue(
+            TextProcessor._is_author_initials(
+                text,
+                'TT',
+                start,
+                start + 2,
+            )
+        )
+
     def test_contexts_keep_document_order(self):
         processor = TextProcessor()
         text = 'first-context ABC separator second-context ABC end'

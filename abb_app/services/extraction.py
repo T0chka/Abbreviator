@@ -74,6 +74,22 @@ REFERENCE_STYLE_TERMS = (
     'bibliograph', 'reference', 'литератур', 'библиограф',
 )
 QUOTED_TEXT_PATTERN = re.compile(r'«\S+?»|"[^"]+"')
+AUTHOR_ET_AL_PATTERN = re.compile(
+    r'\.*\s+et\s+al\.?',
+    re.IGNORECASE,
+)
+AUTHOR_COAUTHORS_PATTERN = re.compile(
+    r'\.*\s+и\s+соавт\.?',
+    re.IGNORECASE,
+)
+AUTHOR_COMMA_YEAR_PATTERN = re.compile(
+    r'\.*\s*,\s*(?:18|19|20)\d{2}[a-zа-я]?\b',
+    re.IGNORECASE,
+)
+AUTHOR_PAREN_YEAR_PATTERN = re.compile(
+    r'\.*\s+\((?:18|19|20)\d{2}[a-zа-я]?\)',
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -389,15 +405,28 @@ class TextProcessor:
         if re.fullmatch(r'[A-ZА-ЯЁ]{1,3}', initials) is None:
             return False
 
-        surname_match = re.search(
-            r"([^\W\d_]+(?:[-'’][^\W\d_]+)*)\s+$",
-            text[:start],
-            re.UNICODE,
-        )
-        if surname_match is None:
+        if start <= 0 or not text[start - 1].isspace():
             return False
 
-        surname = surname_match.group(1)
+        surname_end = start
+        while surname_end > 0 and text[surname_end - 1].isspace():
+            surname_end -= 1
+
+        surname_start = surname_end
+        while surname_start > 0:
+            char = text[surname_start - 1]
+            if char.isalpha() or char in "-'’":
+                surname_start -= 1
+                continue
+            break
+
+        surname = text[surname_start:surname_end]
+        if re.fullmatch(
+            r"[^\W\d_]+(?:[-'’][^\W\d_]+)*",
+            surname,
+            re.UNICODE,
+        ) is None:
+            return False
         letters = [char for char in surname if char.isalpha()]
         if (
             not letters
@@ -406,16 +435,14 @@ class TextProcessor:
         ):
             return False
 
-        suffix = text[end:]
-        if re.match(r'^\.*\s+et\s+al\.?', suffix, re.IGNORECASE):
+        if AUTHOR_ET_AL_PATTERN.match(text, end):
             return True
-        if re.match(r'^\.*\s+и\s+соавт\.?', suffix, re.IGNORECASE):
+        if AUTHOR_COAUTHORS_PATTERN.match(text, end):
             return True
 
-        year = r'(?:18|19|20)\d{2}[a-zа-я]?'
         return bool(
-            re.match(rf'^\.*\s*,\s*{year}\b', suffix, re.IGNORECASE)
-            or re.match(rf'^\.*\s+\({year}\)', suffix, re.IGNORECASE)
+            AUTHOR_COMMA_YEAR_PATTERN.match(text, end)
+            or AUTHOR_PAREN_YEAR_PATTERN.match(text, end)
         )
 
     @staticmethod
