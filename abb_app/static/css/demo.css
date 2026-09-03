@@ -36,7 +36,11 @@
     position: fixed;
     z-index: 1200;
     width: min(360px, calc(100vw - 32px));
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     box-sizing: border-box;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 16px;
     border: var(--border);
     border-radius: var(--border-radius);

@@ -273,7 +273,55 @@ class ProcessingViewTests(TestCase):
             with self.subTest(key=key):
                 self.assertNotIn(key, session)
 
-    def test_demo_refresh_starts_from_clean_processing_state(self):
+    def test_demo_refresh_reuses_processed_state(self):
+        with TemporaryDirectory() as media_root:
+            path = Path(media_root) / DEMO_FILENAME
+            doc = Document()
+            doc.add_paragraph('T4')
+            doc.save(path)
+            session = self.client.session
+            session[SESSION_FILE_KEY] = DEMO_FILENAME
+            session[PROCESSED_FILE_SESSION_KEY] = DEMO_FILENAME
+            session['doc_abbs'] = [{
+                'abbreviation': 'OLD',
+                'selected_description': 'old',
+                'reviewed': True,
+                'occurrence_count': 1,
+                'contexts': ['OLD context'],
+            }]
+            session['initial_abbs'] = [{'abbreviation': 'OLD'}]
+            session[TABLE_CHECK_SESSION_KEY] = False
+            session[CARD_STATE_SESSION_KEY] = ['OLD']
+            session[WORKFLOW_STATE_SESSION_KEY] = {
+                'comparison-block': {'open': True, 'height': 240},
+            }
+            session.save()
+
+            with self.settings(MEDIA_ROOT=media_root):
+                response = self.client.get(
+                    reverse('process_file_with_session', args=['test_drive'])
+                )
+
+            self.assertEqual(response.status_code, 200)
+            self.assertTrue(response.context['is_demo'])
+            self.assertTrue(response.context['table_check_enabled'])
+            self.assertEqual(
+                response.context['collapsed_abbreviations'],
+                {'OLD'},
+            )
+            self.assertTrue(response.context['comparison_open'])
+            self.assertIn(TABLE_CHECK_SESSION_KEY, self.client.session)
+            self.assertIn(WORKFLOW_STATE_SESSION_KEY, self.client.session)
+            self.assertEqual(
+                self.client.session['doc_abbs'][0]['abbreviation'],
+                'OLD',
+            )
+            self.assertEqual(
+                self.client.session['doc_abbs'][0]['selected_description'],
+                'old',
+            )
+
+    def test_entering_demo_resets_previous_document_state(self):
         AbbreviationEntry.objects.create(
             abbreviation='T4',
             description='thyroxine',
@@ -285,8 +333,8 @@ class ProcessingViewTests(TestCase):
             doc.add_paragraph('T4')
             doc.save(path)
             session = self.client.session
-            session[SESSION_FILE_KEY] = DEMO_FILENAME
-            session[PROCESSED_FILE_SESSION_KEY] = DEMO_FILENAME
+            session[SESSION_FILE_KEY] = 'previous.docx'
+            session[PROCESSED_FILE_SESSION_KEY] = 'previous.docx'
             session['doc_abbs'] = [{
                 'abbreviation': 'OLD',
                 'selected_description': 'old',
@@ -307,8 +355,10 @@ class ProcessingViewTests(TestCase):
 
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.context['is_demo'])
-            self.assertTrue(response.context['table_check_enabled'])
-            self.assertEqual(response.context['collapsed_abbreviations'], set())
+            self.assertEqual(
+                response.context['collapsed_abbreviations'],
+                set(),
+            )
             self.assertFalse(response.context['comparison_open'])
             self.assertNotIn(TABLE_CHECK_SESSION_KEY, self.client.session)
             self.assertNotIn(WORKFLOW_STATE_SESSION_KEY, self.client.session)

@@ -703,7 +703,7 @@ table.dataTable thead th.sorting_desc::after {
 
     html:has(body.processing-page),
     body.processing-page {
-        overflow-x: hidden;
+        overflow-x: clip;
     }
 
     body h2 {
@@ -766,7 +766,17 @@ table.dataTable thead th.sorting_desc::after {
     .tooltip .tooltiptext,
     .fab .tooltiptext,
     .abb-description .tooltiptext {
+        position: fixed;
+        right: 12px;
+        bottom: max(12px, env(safe-area-inset-bottom));
+        left: 12px;
+        z-index: 2000;
+        width: auto;
+        max-width: none;
+        box-sizing: border-box;
         padding: 6px 8px;
+        transform: none;
+        white-space: normal;
         font-size: 0.75rem;
     }
 

@@ -273,10 +273,10 @@ def process_file_with_session(
     is_demo = session_id == DEMO_SESSION_ID
     filename = DEMO_FILENAME if is_demo else f'{session_id}.docx'
 
-    if is_demo:
+    session_filename = request.session.get(SESSION_FILE_KEY)
+    if is_demo and session_filename != filename:
         clear_processing_state(request)
 
-    session_filename = request.session.get(SESSION_FILE_KEY)
     if not is_demo and (
         session_filename != filename or not fs.exists(filename)
     ):
@@ -815,13 +815,21 @@ def generate_description(request: HttpRequest) -> JsonResponse:
             status=400,
         )
 
-    selected_contexts = (
-        contexts if context_limit is None else contexts[:context_limit]
-    )
-    llm_contexts = [
-        trim_context(context, abbreviation, context_window)
-        for context in selected_contexts
-    ]
+    llm_contexts = []
+    seen_contexts = set()
+    for context in contexts:
+        trimmed_context = trim_context(
+            context, abbreviation, context_window
+        )
+        if trimmed_context in seen_contexts:
+            continue
+        seen_contexts.add(trimmed_context)
+        llm_contexts.append(trimmed_context)
+        if (
+            context_limit is not None
+            and len(llm_contexts) >= context_limit
+        ):
+            break
 
     try:
         description = generate_abbreviation_description(

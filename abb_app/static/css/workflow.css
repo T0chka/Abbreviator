@@ -500,6 +500,9 @@ body.is-resizing-workflow {
     max-width: 100%;
     overflow-x: auto;
     overflow-y: hidden;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
 }
 
 .table-preview {
@@ -732,8 +735,19 @@ body.is-resizing-workflow {
         font-size: 0.74rem;
     }
 
+    .workflow-tools {
+        position: sticky;
+        top: 0;
+        max-width: 100%;
+    }
+
+    .workflow-tool {
+        min-width: 0;
+    }
+
     .workflow-tool-body {
         max-width: 100%;
+        overflow-x: clip;
     }
 
     .table-preview {

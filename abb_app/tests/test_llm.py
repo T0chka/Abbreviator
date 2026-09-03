@@ -47,6 +47,38 @@ class GenerateDescriptionViewTests(TestCase):
         )
 
     @patch('abb_app.views.generate_abbreviation_description')
+    def test_context_limit_counts_unique_trimmed_contexts(self, generate):
+        generate.return_value = 'тироксин'
+        session = self.client.session
+        session['doc_abbs'][0]['contexts'] = [
+            'Одинаковый фрагмент T4.',
+            'Одинаковый фрагмент T4.',
+            'Второй уникальный T4.',
+            'Третий уникальный T4.',
+        ]
+        session.save()
+
+        response = self.client.post(
+            '/generate_description/',
+            data=json.dumps({
+                'abbreviation': 'T4',
+                'confirmed': True,
+                'context_limit': 3,
+            }),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 200)
+        generate.assert_called_once_with(
+            abbreviation='T4',
+            contexts=[
+                'Одинаковый фрагмент T4.',
+                'Второй уникальный T4.',
+                'Третий уникальный T4.',
+            ],
+        )
+
+    @patch('abb_app.views.generate_abbreviation_description')
     def test_rejects_untrusted_or_unconfirmed_requests(self, generate):
         payloads = [
             {

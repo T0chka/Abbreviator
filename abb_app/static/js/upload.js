@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorDialog = document.getElementById('upload-error-dialog');
     const errorMessage = document.getElementById('upload-error-message');
     const errorClose = document.getElementById('uploadErrorClose');
+    const demoLink = document.getElementById('demoLink');
 
     const maxUploadSize = Number(uploadForm.dataset.maxUploadSize);
     const maxUploadSizeMb = uploadForm.dataset.maxUploadSizeMb;
@@ -143,6 +144,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     errorClose.addEventListener('click', () => {
         errorDialog.close();
+    });
+
+    demoLink.addEventListener('click', () => {
+        setLoading(true);
     });
 
     window.addEventListener('pageshow', () => {

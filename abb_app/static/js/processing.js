@@ -87,23 +87,43 @@ function applyContextSettings(item) {
     const limit = getEffectiveContextLimit(item);
     const windowSize = getEffectiveContextWindow(item);
     const abbreviation = item.dataset.abbreviation;
+    const groupedContexts = new Map();
+    const contexts = Array.from(item.querySelectorAll('.context-item'));
 
-    item.querySelectorAll('.context-item').forEach((context, index) => {
-        context.classList.toggle(
-            'is-hidden',
-            Number.isFinite(limit) && index >= limit
-        );
-
+    contexts.forEach(context => {
         const text = context.querySelector('.context-text');
         if (!text.dataset.fullContext) {
             text.dataset.fullContext = text.textContent.trim();
         }
-        text.textContent = trimContextText(
+
+        const trimmed = trimContextText(
             text.dataset.fullContext,
             abbreviation,
             windowSize
         );
+        const grouped = groupedContexts.get(trimmed);
+        if (grouped) {
+            grouped.count += 1;
+            return;
+        }
+
+        groupedContexts.set(trimmed, {
+            context,
+            text,
+            count: 1
+        });
     });
+
+    contexts.forEach(context => context.classList.add('is-hidden'));
+    Array.from(groupedContexts.entries()).forEach(
+        ([trimmed, grouped], index) => {
+            const hidden = Number.isFinite(limit) && index >= limit;
+            grouped.context.classList.toggle('is-hidden', hidden);
+            grouped.text.textContent = grouped.count > 1
+                ? `${trimmed} (×${grouped.count})`
+                : trimmed;
+        }
+    );
 }
 
 function applyGlobalContextSetting(setting) {
@@ -543,9 +563,9 @@ function openGenerationConsent(button, item) {
 
     const contextLimit = getEffectiveContextLimit(item);
     const contextWindow = getEffectiveContextWindow(item);
-    const contexts = Number.isFinite(contextLimit)
-        ? allContexts.slice(0, contextLimit)
-        : allContexts;
+    const contexts = allContexts.filter(
+        context => !context.classList.contains('is-hidden')
+    );
     const dialog = document.getElementById('llm-consent-dialog');
     const contextContainer = document.getElementById(
         'llm-consent-contexts'

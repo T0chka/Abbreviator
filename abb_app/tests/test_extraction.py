@@ -52,6 +52,20 @@ class TextProcessorTests(SimpleTestCase):
         self.assertIn('first-context', contexts[0])
         self.assertIn('second-context', contexts[1])
 
+    def test_contexts_keep_duplicate_occurrences_for_display_grouping(self):
+        processor = TextProcessor()
+        text = 'prefix zz ABC yy middle zz ABC yy suffix'
+
+        contexts = processor.find_abbreviation_context(
+            text,
+            'ABC',
+            window=3,
+        )
+
+        self.assertEqual(contexts, [
+            '...zz ABC yy...',
+            '...zz ABC yy...',
+        ])
 
 
 class CharacterValidatorTests(SimpleTestCase):

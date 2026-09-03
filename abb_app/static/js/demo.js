@@ -120,24 +120,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const width = popover.offsetWidth;
         const height = popover.offsetHeight;
 
+        const maxLeft = window.innerWidth - width - margin;
+        const maxTop = window.innerHeight - height - margin;
+        let left;
+        let top;
+
         if (placement === 'right') {
-            popover.style.left = `${rect.right + gap}px`;
-            popover.style.top = `${rect.top}px`;
-            return;
+            const rightPlacement = rect.right + gap;
+            const leftPlacement = rect.left - width - gap;
+
+            if (rightPlacement <= maxLeft) {
+                left = rightPlacement;
+                top = rect.top;
+            } else if (leftPlacement >= margin) {
+                left = leftPlacement;
+                top = rect.top;
+            }
         }
 
-        const left = Math.max(
-            margin,
-            Math.min(rect.left, window.innerWidth - width - margin)
-        );
-
-        let top = rect.bottom + gap;
-        if (top + height > window.innerHeight - margin) {
-            top = rect.top - height - gap;
+        if (left === undefined) {
+            left = Math.max(margin, Math.min(rect.left, maxLeft));
+            top = rect.bottom + gap;
+            if (top + height > window.innerHeight - margin) {
+                top = rect.top - height - gap;
+            }
         }
 
-        popover.style.left = `${left}px`;
-        popover.style.top = `${Math.max(margin, top)}px`;
+        popover.style.left = `${Math.max(margin, Math.min(left, maxLeft))}px`;
+        popover.style.top = `${Math.max(margin, Math.min(top, maxTop))}px`;
     }
 
     function schedulePosition() {

@@ -449,7 +449,6 @@ class TextProcessor:
     ) -> List[str]:
         """Return context snippets in document order."""
         contexts: List[str] = []
-        seen_contexts: Set[str] = set()
         matches = re.finditer(
             rf'(?<!\w){re.escape(abbreviation)}(?!\w)',
             text,
@@ -462,11 +461,9 @@ class TextProcessor:
                 snippet = f'...{snippet}'
             if end < len(text):
                 snippet = f'{snippet}...'
-            if max_contexts == 1:
-                return [snippet]
-            if snippet not in seen_contexts:
-                seen_contexts.add(snippet)
-                contexts.append(snippet)
+            contexts.append(snippet)
+            if len(contexts) >= max_contexts:
+                break
 
         return contexts
 
